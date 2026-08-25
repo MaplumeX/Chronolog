@@ -1,39 +1,52 @@
 # Frontend Development Guidelines
 
-> Best practices for frontend development in this project.
+SPA in `web/`: Vite 8, React 19, TypeScript. No React Router, no Redux/Zustand, no CSS framework. Production assets are `web/dist`, served by Fastify.
+
+This is a single-repo Trellis project. npm workspace `web` is this layer.
 
 ---
 
-## Overview
+## Pre-Development Checklist
 
-This directory contains guidelines for frontend development. Fill in each file with your project's specific conventions.
+Read these before changing `web/`:
+
+1. [Directory Structure](./directory-structure.md)
+2. [Component Guidelines](./component-guidelines.md) — Toggl-like shell; timer vs stats
+3. [API Client](./api-client.md) — fetch, cookies, 401
+4. [State Management](./state-management.md) and [Hook Guidelines](./hook-guidelines.md)
+5. [Type Safety](./type-safety.md) if you add a payload field
+6. [Quality Guidelines](./quality-guidelines.md)
+7. Shared [Thinking Guides](../guides/index.md)
 
 ---
 
 ## Guidelines Index
 
-| Guide | Description | Status |
-|-------|-------------|--------|
-| [Directory Structure](./directory-structure.md) | `web/src` pages + Shell | Filled |
-| [Component Guidelines](./component-guidelines.md) | Toggl desktop shell; stats not on timer | Filled |
-| [Hook Guidelines](./hook-guidelines.md) | Page state; interval elapsed | Filled |
-| [State Management](./state-management.md) | App session + fetch; cookie same-origin | Filled |
-| [Quality Guidelines](./quality-guidelines.md) | Chinese UI; no totals on timer page | Filled |
-| [Type Safety](./type-safety.md) | API types in `api.ts`; ISO-Z instants | Filled |
+| Guide | When to use |
+|-------|-------------|
+| [Directory Structure](./directory-structure.md) | New page / shared module |
+| [Component Guidelines](./component-guidelines.md) | Layout, copy, timer vs stats |
+| [Hook Guidelines](./hook-guidelines.md) | Effects, interval, page-local fetch |
+| [State Management](./state-management.md) | Session, running timer, page id |
+| [API Client](./api-client.md) | `web/src/api.ts`, errors, credentials |
+| [Type Safety](./type-safety.md) | DTO types vs ISO-Z instants |
+| [Quality Guidelines](./quality-guidelines.md) | Chinese UI, typecheck, CSS |
 
 ---
 
-## How to Fill These Guidelines
+## Quality Check
 
-For each guideline file:
+```bash
+npm run typecheck -w web
+npm run build -w web
+```
 
-1. Document your project's **actual conventions** (not ideals)
-2. Include **code examples** from your codebase
-3. List **forbidden patterns** and why
-4. Add **common mistakes** your team has made
+There is no `web` test script. Verify UI by running the app (`npm run dev` or Docker) when behavior changes.
 
-The goal is to help AI assistants and new team members understand how YOUR project works.
+Also confirm:
 
----
-
-**Language**: All documentation should be written in **English**.
+- [ ] UI copy is Chinese (`index.html` is `lang="zh-CN"`)
+- [ ] Per-category totals stay on `StatsPage` only
+- [ ] All `fetch` goes through `api.ts` with `credentials: "same-origin"`
+- [ ] Instants are formatted with `format.ts` + browser IANA zone
+- [ ] New screens are a `pages/*.tsx` file plus a `PageId` on `Shell`

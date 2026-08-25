@@ -1,0 +1,67 @@
+# HTTP Routes
+
+`buildApp` in `server/src/app.ts` is the only composition root. Tests and `index.ts` both call it.
+
+## `AppConfig` / `Deps`
+
+```ts
+type AppConfig = {
+  dbPath: string;
+  cookieSecure: boolean;
+  sessionTtlSeconds: number;
+  webDist?: string;
+  now?: () => Date;
+  logger?: boolean;
+};
+```
+
+`Deps` (`server/src/db.ts`) is what routes receive: `{ db, sqlite, cookieSecure, sessionTtlSeconds, now }`. Pass `now` into domain helpers instead of calling `new Date()` inside queries so tests can freeze time.
+
+Production listen is `index.ts` (`host: "0.0.0.0"`). Tests use Fastify `inject` with `logger: false`.
+
+## Registering routes
+
+One `registerXRoutes(app, deps)` per file. `app.ts` calls:
+
+- `registerAuthRoutes`
+- `registerCategoryRoutes`
+- `registerTimerRoutes`
+- `registerTodayRoutes`
+
+New endpoints belong in an existing file if they share the resource, or a new `routes/*.ts` plus one line in `app.ts`. Keep `/api` as the prefix. JSON field names are camelCase.
+
+## Current surface
+
+| Method | Path | Auth | Notes |
+|--------|------|------|--------|
+| POST | `/api/auth/register` | no | seeds default categories; Set-Cookie |
+| POST | `/api/auth/login` | no | Set-Cookie; replaces previous sid |
+| POST | `/api/auth/logout` | cookie optional | always `{ ok: true }` |
+| GET | `/api/auth/me` | session | 401 if logged out |
+| GET | `/api/categories` | yes | includes `entryCount` |
+| POST | `/api/categories` | yes | `{ name }` |
+| PATCH | `/api/categories/:id` | yes | `{ name }` |
+| DELETE | `/api/categories/:id` | yes | occupied → 409 |
+| GET | `/api/timer/current` | yes | `{ entry: EntryDto \| null }` |
+| POST | `/api/timer/start` | yes | `{ categoryId, description? }` |
+| POST | `/api/timer/stop` | yes | no running → 409 |
+| GET | `/api/entries/today?tz=` | yes | overlapping entries + `clippedSeconds` |
+| GET | `/api/stats/today?tz=` | yes | per-category clipped seconds |
+
+`EntryDto` (`server/src/entries.ts`) is the timer/today payload: `id`, `categoryId`, `categoryName`, `description`, `startedAt`, `stoppedAt`, `durationSeconds`, optional `clippedSeconds`. Keep `web/src/api.ts` `TimeEntry` in sync.
+
+## SPA fallback
+
+When `WEB_DIST` exists, `@fastify/static` serves it. `setNotFoundHandler`:
+
+- `/api*` or non-GET → JSON 404 `NOT_FOUND`
+- other GET → `index.html` (client page switch has no URL router)
+
+Dev: Vite `:5173` proxies `/api` to `:8080` (`web/vite.config.ts`). Cookie stays same-origin via the proxy.
+
+## Anti-patterns
+
+- Do not accept client `startedAt` / `stoppedAt` on start/stop.
+- Do not add CORS or a second cookie domain — production is one origin.
+- Do not call `new Date()` in domain code when `deps.now()` exists.
+- Do not return drizzle row objects; map to DTO (join category name, compute durations).

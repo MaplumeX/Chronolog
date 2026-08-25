@@ -1,98 +1,55 @@
 # Thinking Guides
 
-> **Purpose**: Expand your thinking to catch things you might not have considered.
-
----
-
-## Why Thinking Guides?
-
-**Most bugs and tech debt come from "didn't think of that"**, not from lack of skill:
-
-- Didn't think about what happens at layer boundaries → cross-layer bugs
-- Didn't think about code patterns repeating → duplicated code everywhere
-- Didn't think about edge cases → runtime errors
-- Didn't think about future maintainers → unreadable code
-
-These guides help you **ask the right questions before coding**.
+Ask these questions before coding. Most Chronolog bugs so far sit on boundaries (timezone, isolation, dual clip math), not inside a single function.
 
 ---
 
 ## Available Guides
 
-| Guide | Purpose | When to Use |
+| Guide | Purpose | When to use |
 |-------|---------|-------------|
-| [Code Reuse Thinking Guide](./code-reuse-thinking-guide.md) | Identify patterns and reduce duplication | When you notice repeated patterns |
-| [Cross-Layer Thinking Guide](./cross-layer-thinking-guide.md) | Think through data flow across layers | Features spanning multiple layers |
+| [Cross-Layer Thinking](./cross-layer-thinking-guide.md) | Data flow across SQLite, Fastify JSON, and React | Feature spans API + UI, or changes a payload field |
+| [Code Reuse Thinking](./code-reuse-thinking-guide.md) | Stop duplicate clip/duration/DTO logic | New helper, new field, or copy-paste |
+| [Ops and Docker](./ops-and-docker.md) | One-process deploy, cookies, WAL volume | Env, Dockerfile, compose, `WEB_DIST` |
+
+## Quick triggers
+
+### Cross-layer
+
+- [ ] Adding a JSON field to an entry, category, or stats payload
+- [ ] Changing how “today” is computed or displayed
+- [ ] Auth, cookies, or user isolation
+- [ ] Error `code` / `message` the UI displays
+- [ ] `clipSeconds` on either server or web
+
+→ [Cross-Layer Thinking](./cross-layer-thinking-guide.md)
+
+### Reuse
+
+- [ ] Second copy of duration or clip math
+- [ ] New DTO type in a page file
+- [ ] New default category name
+- [ ] Same CSS pattern as an existing card/table
+
+→ [Code Reuse Thinking](./code-reuse-thinking-guide.md)
+
+### Ops
+
+- [ ] New env var
+- [ ] Cookie `Secure` / path
+- [ ] Database path or volume
+- [ ] How the SPA is served in production
+
+→ [Ops and Docker](./ops-and-docker.md)
 
 ---
 
-## Quick Reference: Thinking Triggers
+## Pre-modification rule
 
-### When to Think About Cross-Layer Issues
-
-- [ ] Feature touches 3+ layers (API, Service, Component, Database)
-- [ ] Data format changes between layers
-- [ ] Multiple consumers need the same data
-- [ ] You're not sure where to put some logic
-- [ ] You are adding an event kind, JSONL record, RPC payload, or config field
-- [ ] UI / command code starts casting raw payload fields directly
-- [ ] You are defining “today” or clipping durations — store UTC instants and pass IANA `tz` (see `.trellis/spec/backend/error-handling.md`)
-
-→ Read [Cross-Layer Thinking Guide](./cross-layer-thinking-guide.md)
-
-### When to Think About Code Reuse
-
-- [ ] You're writing similar code to something that exists
-- [ ] You see the same pattern repeated 3+ times
-- [ ] You're adding a new field to multiple places
-- [ ] **You're modifying any constant or config**
-- [ ] **You're creating a new utility/helper function** ← Search first!
-- [ ] Two files read the same untyped payload field with local casts
-- [ ] Multiple branches update the same derived state from `kind` / `action`
-
-→ Read [Code Reuse Thinking Guide](./code-reuse-thinking-guide.md)
-
-### When Verifying AI Cross-Review Results
-
-- [ ] Reviewer claims "user input can be malicious" → Check the actual data source (internal manifest? user config? external API?)
-- [ ] Reviewer flags "missing validation" → Is the data from a trusted internal source?
-- [ ] Reviewer says "behavior change" → Read the code comments — is it intentional design?
-- [ ] Reviewer identifies a "bug" in test → Mentally delete the feature being tested — does the test still pass? If yes → tautological test
-
-**Common AI reviewer false-positive patterns**:
-1. **Trust boundary confusion**: Treating internal data (bundled JSON manifests) as untrusted external input
-2. **Ignoring design comments**: Flagging intentional behavior documented in code comments as bugs
-3. **Variable misreading**: Not tracing a variable to its actual definition (e.g., Map keyed by path vs name)
-
-**Verification rule**: Every CRITICAL/WARNING finding must be verified against the actual code before prioritizing. Budget ~35% false-positive rate for AI reviews.
-
----
-
-## Pre-Modification Rule (CRITICAL)
-
-> **Before changing ANY value, ALWAYS search first!**
+Before changing a string, status code, or column name:
 
 ```bash
-# Search for the value you're about to change
-grep -r "value_to_change" .
+rg "the_value" server web
 ```
 
-This single habit prevents most "forgot to update X" bugs.
-
----
-
-## How to Use This Directory
-
-1. **Before coding**: Skim the relevant thinking guide
-2. **During coding**: If something feels repetitive or complex, check the guides
-3. **After bugs**: Add new insights to the relevant guide (learn from mistakes)
-
----
-
-## Contributing
-
-Found a new "didn't think of that" moment? Add it to the relevant guide.
-
----
-
-**Core Principle**: 30 minutes of thinking saves 3 hours of debugging.
+Update every caller in the same change, including tests and `web/src/api.ts`.
