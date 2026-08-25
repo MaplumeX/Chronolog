@@ -3,7 +3,7 @@
   "name": "00-bootstrap-guidelines",
   "title": "Bootstrap Guidelines",
   "description": "Fill in project development guidelines for AI agents",
-  "status": "in_progress",
+  "status": "completed",
   "dev_type": "docs",
   "scope": null,
   "package": null,
@@ -11,7 +11,7 @@
   "creator": "Maplume",
   "assignee": "Maplume",
   "createdAt": "2026-08-25",
-  "completedAt": null,
+  "completedAt": "2026-08-26",
   "branch": null,
   "base_branch": null,
   "worktree_path": null,
@@ -22,8 +22,9 @@
   "parent": null,
   "relatedFiles": [
     ".trellis/spec/backend/",
-    ".trellis/spec/frontend/"
+    ".trellis/spec/frontend/",
+    ".trellis/spec/guides/"
   ],
-  "notes": "First-time setup task created by trellis init (fullstack project)",
+  "notes": "Refreshed 2026-08-26 from current server/ and web/ source. GitNexus/ABCoder unavailable; analysis is source-backed.",
   "meta": {}
 }
