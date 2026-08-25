@@ -1,54 +1,32 @@
 # Directory Structure
 
-> How backend code is organized in this project.
+Chronolog backend lives in `server/` (Fastify + TypeScript ESM).
 
----
-
-## Overview
-
-<!--
-Document your project's backend directory structure here.
-
-Questions to answer:
-- How are modules/packages organized?
-- Where does business logic live?
-- Where are API endpoints defined?
-- How are utilities and helpers organized?
--->
-
-(To be filled by the team)
-
----
-
-## Directory Layout
+## Layout
 
 ```
-<!-- Replace with your actual structure -->
-src/
-├── ...
-└── ...
+server/
+├── src/
+│   ├── index.ts          # listen; reads env
+│   ├── app.ts            # buildApp({ dbPath, cookieSecure, sessionTtlSeconds, webDist })
+│   ├── schema.ts         # drizzle tables + DEFAULT_CATEGORIES
+│   ├── db.ts             # sqlite open, pragmas, CREATE TABLE
+│   ├── errors.ts         # AppError, parseBody (zod)
+│   ├── auth.ts           # hash, sessions, requireUser
+│   ├── time.ts           # IANA tz, todayBounds, clipSeconds
+│   ├── entries.ts        # overlap query, stop-then-start
+│   └── routes/
+│       ├── auth.ts
+│       ├── categories.ts
+│       ├── timer.ts
+│       └── today.ts
+└── test/
 ```
 
----
+New HTTP surface goes in `routes/`. Shared domain (timer uniqueness, day clip) stays out of route files.
 
-## Module Organization
+## Naming
 
-<!-- How should new features/modules be organized? -->
-
-(To be filled by the team)
-
----
-
-## Naming Conventions
-
-<!-- File and folder naming rules -->
-
-(To be filled by the team)
-
----
-
-## Examples
-
-<!-- Link to well-organized modules as examples -->
-
-(To be filled by the team)
+- Route files: plural resource (`categories.ts`)
+- Instants: `startedAt` / `stoppedAt` in TS; `started_at` / `stopped_at` in SQLite
+- ESM imports use `.js` suffix (`./app.js`)

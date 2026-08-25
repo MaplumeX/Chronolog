@@ -14,12 +14,12 @@ This directory contains guidelines for frontend development. Fill in each file w
 
 | Guide | Description | Status |
 |-------|-------------|--------|
-| [Directory Structure](./directory-structure.md) | Module organization and file layout | To fill |
-| [Component Guidelines](./component-guidelines.md) | Component patterns, props, composition | To fill |
-| [Hook Guidelines](./hook-guidelines.md) | Custom hooks, data fetching patterns | To fill |
-| [State Management](./state-management.md) | Local state, global state, server state | To fill |
-| [Quality Guidelines](./quality-guidelines.md) | Code standards, forbidden patterns | To fill |
-| [Type Safety](./type-safety.md) | Type patterns, validation | To fill |
+| [Directory Structure](./directory-structure.md) | `web/src` pages + Shell | Filled |
+| [Component Guidelines](./component-guidelines.md) | Toggl desktop shell; stats not on timer | Filled |
+| [Hook Guidelines](./hook-guidelines.md) | Page state; interval elapsed | Filled |
+| [State Management](./state-management.md) | App session + fetch; cookie same-origin | Filled |
+| [Quality Guidelines](./quality-guidelines.md) | Chinese UI; no totals on timer page | Filled |
+| [Type Safety](./type-safety.md) | API types in `api.ts`; ISO-Z instants | Filled |
 
 ---
 

@@ -1,0 +1,10 @@
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "API, SQLite, and React share time entries and 'today'; keep UTC vs local timezone at the boundary."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Avoid duplicating overlap/clip duration math and auth checks in each route."}
+{"file": ".trellis/spec/backend/index.md", "reason": "Backend layer entry; conventions are still empty so follow design.md."}
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend layer entry; conventions are still empty so follow design.md."}
+{"file": ".trellis/tasks/08-25-chronolog-mvp/research/stack.md", "reason": "Locked stack: Fastify not Hono; Node 22; SQLite volume. Decision section overrides the old Hono rec."}
+{"file": ".trellis/tasks/08-25-chronolog-mvp/research/auth-self-hosted.md", "reason": "Opaque session cookie, Argon2id, cookie flags for HTTP Docker vs HTTPS."}
+{"file": ".trellis/tasks/08-25-chronolog-mvp/research/today-timezone.md", "reason": "Store UTC instants; IANA tz; overlap+clip for today list and totals."}
+{"file": ".trellis/tasks/08-25-chronolog-mvp/research/toggl-timer-ux.md", "reason": "Sticky start/stop bar, stop-then-start, no stop-on-unload."}
+{"file": ".trellis/tasks/08-25-chronolog-mvp/research/toggl-web-ui.md", "reason": "Copy Toggl Track desktop chrome: dark nav, full-width timer bar, day-grouped list, right stats cards."}
+{"file": ".trellis/tasks/08-25-chronolog-mvp/research/pi-agent-integration.md", "reason": "Do not add pi packages in this MVP; keep Node 22 ESM only as a future constraint."}

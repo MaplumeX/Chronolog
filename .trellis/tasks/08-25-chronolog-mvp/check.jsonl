@@ -1,0 +1,10 @@
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "Verify API instants, tz query, and UI local display stay consistent."}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "Flag copied duration/auth logic."}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "Backend quality checklist (scaffold; still apply tests and isolation)."}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "Frontend quality checklist (scaffold; Chinese UI and timer UX)."}
+{"file": ".trellis/tasks/08-25-chronolog-mvp/research/stack.md", "reason": "Reject Hono or extra DB/services; Fastify + SQLite + one container."}
+{"file": ".trellis/tasks/08-25-chronolog-mvp/research/auth-self-hosted.md", "reason": "Logout must drop the session row; no JWT in localStorage."}
+{"file": ".trellis/tasks/08-25-chronolog-mvp/research/today-timezone.md", "reason": "Reject UTC-midnight 'today' and unclipped cross-midnight totals."}
+{"file": ".trellis/tasks/08-25-chronolog-mvp/research/toggl-timer-ux.md", "reason": "One running timer; required category; no fill-the-day UX."}
+{"file": ".trellis/tasks/08-25-chronolog-mvp/research/toggl-web-ui.md", "reason": "UI must look like Toggl web (desktop shell), not a mobile card stack."}
+{"file": ".trellis/tasks/08-25-chronolog-mvp/research/pi-agent-integration.md", "reason": "Fail the check if pi/LLM agent landed in this MVP."}

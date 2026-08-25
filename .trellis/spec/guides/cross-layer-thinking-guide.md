@@ -59,6 +59,8 @@ For each boundary:
 
 **Good**: Explicit format conversion at boundaries
 
+Chronolog: store `started_at` / `stopped_at` as UTC ISO-Z. “Today” is `[dayStart, dayEnd)` in the request IANA zone (`server/src/time.ts`). The UI formats with the same zone; it must not treat the container clock as the calendar day.
+
 ### Mistake 2: Scattered Validation
 
 **Bad**: Validating the same thing in multiple layers

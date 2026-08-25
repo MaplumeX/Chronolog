@@ -1,51 +1,16 @@
 # Quality Guidelines
 
-> Code quality standards for backend development.
+## Required
 
----
+- `npm run typecheck` (server + web)
+- `npm test` in `server/` (node:test). Cover: user isolation, stop-then-start, occupied category delete 409, today clip with `Asia/Shanghai`
 
-## Overview
+## Forbidden
 
-<!--
-Document your project's quality standards here.
+- Hono, Postgres (MVP), JWT in localStorage, `@earendil-works/pi-*`
+- Client-supplied `started_at`
+- Treating another user’s id as 403 with a distinct body (use 404)
 
-Questions to answer:
-- What patterns are forbidden?
-- What linting rules do you enforce?
-- What are your testing requirements?
-- What code review standards apply?
--->
+## Tests
 
-(To be filled by the team)
-
----
-
-## Forbidden Patterns
-
-<!-- Patterns that should never be used and why -->
-
-(To be filled by the team)
-
----
-
-## Required Patterns
-
-<!-- Patterns that must always be used -->
-
-(To be filled by the team)
-
----
-
-## Testing Requirements
-
-<!-- What level of testing is expected -->
-
-(To be filled by the team)
-
----
-
-## Code Review Checklist
-
-<!-- What reviewers should check -->
-
-(To be filled by the team)
+Assert HTTP status **and** `error.code`. Isolation tests use two users.

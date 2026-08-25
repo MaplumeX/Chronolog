@@ -1,54 +1,20 @@
 # Directory Structure
 
-> How frontend code is organized in this project.
-
----
-
-## Overview
-
-<!--
-Document your project's frontend directory structure here.
-
-Questions to answer:
-- Where do components live?
-- How are features/modules organized?
-- Where are shared utilities?
-- How are assets organized?
--->
-
-(To be filled by the team)
-
----
-
-## Directory Layout
+SPA in `web/` (Vite + React + TypeScript).
 
 ```
-<!-- Replace with your actual structure -->
-src/
-├── ...
-└── ...
+web/src/
+├── main.tsx
+├── App.tsx              # auth gate + page switch
+├── api.ts               # fetch wrappers; 401 → setOnUnauthorized
+├── format.ts            # tz, duration, categoryColor, clipSeconds
+├── styles.css
+├── components/Shell.tsx # dark nav: 计时 / 统计 / 分类
+└── pages/
+    ├── AuthPage.tsx
+    ├── TimerPage.tsx    # timer bar + today list only
+    ├── StatsPage.tsx    # today category totals
+    └── CategoriesPage.tsx
 ```
 
----
-
-## Module Organization
-
-<!-- How should new features be organized? -->
-
-(To be filled by the team)
-
----
-
-## Naming Conventions
-
-<!-- File and folder naming rules -->
-
-(To be filled by the team)
-
----
-
-## Examples
-
-<!-- Link to well-organized modules as examples -->
-
-(To be filled by the team)
+New screens: a page file + a `PageId` on the shell. Shared HTTP stays in `api.ts`.

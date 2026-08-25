@@ -1,51 +1,61 @@
 # Database Guidelines
 
-> Database patterns and conventions for this project.
+SQLite file via `drizzle-orm` + `better-sqlite3`. Path: `DATABASE_PATH` (Docker: `/data/chronolog.db`).
 
----
+## Connection pragmas
 
-## Overview
+Set on open (`server/src/db.ts`):
 
-<!--
-Document your project's database conventions here.
+```
+PRAGMA journal_mode = WAL;
+PRAGMA busy_timeout = 5000;
+PRAGMA foreign_keys = ON;
+PRAGMA synchronous = NORMAL;
+```
 
-Questions to answer:
-- What ORM/query library do you use?
-- How are migrations managed?
-- What are the naming conventions for tables/columns?
-- How do you handle transactions?
--->
+Volume must be local (not NFS). WAL needs `-wal`/`-shm` writable beside the db file.
 
-(To be filled by the team)
+## Schema
 
----
+| Table | Notes |
+|---|---|
+| `users` | `username` unique; `password_hash` Argon2id PHC |
+| `sessions` | opaque id; cascade delete with user |
+| `categories` | unique `(user_id, name)` |
+| `time_entries` | `stopped_at` NULL = running; unique `(user_id) WHERE stopped_at IS NULL` |
 
-## Query Patterns
+All timestamps are UTC ISO-8601 text with `Z`. Never store local wall time.
 
-<!-- How should queries be written? Batch operations? -->
+This MVP uses `CREATE TABLE IF NOT EXISTS` on boot, not drizzle-kit migrations. Do not add destructive ALTERs in-place.
 
-(To be filled by the team)
+## Scenario: time_entries running uniqueness
 
----
+### 1. Scope / Trigger
+Start timer and “one running per user” (R3). Cross-layer: DB unique index + API transaction.
 
-## Migrations
+### 2. Signatures
+- `time_entries_one_running` unique on `user_id` where `stopped_at is null`
+- Start: stop existing running row then insert, same transaction (`server/src/entries.ts`)
 
-<!-- How to create and run migrations -->
+### 3. Contracts
+- `stopped_at` null means running
+- `started_at` generated server-side only
 
-(To be filled by the team)
+### 4. Validation & Error Matrix
+- Category missing / not owned → 404 `NOT_FOUND`
+- Stop with no running → 409
+- Unique race → retry stop-then-start once
 
----
+### 5. Good/Base/Bad Cases
+- Good: start while running → old row gets `stopped_at`, one new running
+- Base: start with no running → one insert
+- Bad: two running rows for one user
 
-## Naming Conventions
+### 6. Tests Required
+- `server/test/`: stop-then-start leaves exactly one `stopped_at IS NULL`
 
-<!-- Table names, column names, index names -->
-
-(To be filled by the team)
-
----
-
-## Common Mistakes
-
-<!-- Database-related mistakes your team has made -->
-
-(To be filled by the team)
+### 7. Wrong vs Correct
+#### Wrong
+Insert a second running row; rely on UI only.
+#### Correct
+Transaction + partial unique index.
