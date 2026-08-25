@@ -1,0 +1,160 @@
+import assert from "node:assert/strict";
+import { afterEach, describe, it } from "node:test";
+import { cookieHeader, createTestApp, json, registerUser, type TestApp } from "./helpers.js";
+
+describe("today clip and timezone", () => {
+  let t: TestApp;
+  afterEach(async () => {
+    await t?.close();
+  });
+
+  it("rejects missing or invalid tz", async () => {
+    t = await createTestApp();
+    const { sid } = await registerUser(t.app, "tz_user");
+    const missing = await t.app.inject({
+      method: "GET",
+      url: "/api/entries/today",
+      headers: cookieHeader(sid),
+    });
+    assert.equal(missing.statusCode, 400);
+    const bad = await t.app.inject({
+      method: "GET",
+      url: "/api/stats/today?tz=Not/AZone",
+      headers: cookieHeader(sid),
+    });
+    assert.equal(bad.statusCode, 400);
+  });
+
+  it("clips a Shanghai overnight entry to today only", async () => {
+    let now = new Date("2026-08-24T15:30:00.000Z");
+    t = await createTestApp({ now: () => now });
+    const { sid } = await registerUser(t.app, "clipper");
+    const catsRes = await t.app.inject({
+      method: "GET",
+      url: "/api/categories",
+      headers: cookieHeader(sid),
+    });
+    const work = (json(catsRes).categories as { id: string; name: string }[]).find(
+      (c) => c.name === "工作",
+    );
+    assert.ok(work);
+
+    const start = await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: work.id, description: "night" },
+    });
+    assert.equal(start.statusCode, 200);
+
+    now = new Date("2026-08-24T17:00:00.000Z");
+    const stop = await t.app.inject({
+      method: "POST",
+      url: "/api/timer/stop",
+      headers: cookieHeader(sid),
+    });
+    assert.equal(stop.statusCode, 200);
+
+    now = new Date("2026-08-25T02:00:00.000Z");
+    const stats = await t.app.inject({
+      method: "GET",
+      url: "/api/stats/today?tz=Asia/Shanghai",
+      headers: cookieHeader(sid),
+    });
+    assert.equal(stats.statusCode, 200);
+    const body = json(stats);
+    assert.equal(body.dayStart, "2026-08-24T16:00:00.000Z");
+    assert.equal(body.dayEnd, "2026-08-25T16:00:00.000Z");
+    const rows = body.categories as { categoryName: string; seconds: number }[];
+    const workRow = rows.find((r) => r.categoryName === "工作");
+    assert.equal(workRow?.seconds, 3600);
+
+    const list = await t.app.inject({
+      method: "GET",
+      url: "/api/entries/today?tz=Asia/Shanghai",
+      headers: cookieHeader(sid),
+    });
+    const entries = json(list).entries as { clippedSeconds: number }[];
+    assert.equal(entries.length, 1);
+    assert.equal(entries[0].clippedSeconds, 3600);
+  });
+
+  it("sums two segments of one category and one of another", async () => {
+    let now = new Date("2026-08-25T02:00:00.000Z");
+    t = await createTestApp({ now: () => now });
+    const { sid } = await registerUser(t.app, "summer");
+    const catsRes = await t.app.inject({
+      method: "GET",
+      url: "/api/categories",
+      headers: cookieHeader(sid),
+    });
+    const cats = json(catsRes).categories as { id: string; name: string }[];
+    const work = cats.find((c) => c.name === "工作");
+    const study = cats.find((c) => c.name === "学习");
+    assert.ok(work && study);
+
+    now = new Date("2026-08-25T02:00:00.000Z");
+    await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: work.id },
+    });
+    now = new Date("2026-08-25T02:10:00.000Z");
+    await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: work.id },
+    });
+    now = new Date("2026-08-25T02:25:00.000Z");
+    await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: study.id },
+    });
+    now = new Date("2026-08-25T02:40:00.000Z");
+
+    const stats = await t.app.inject({
+      method: "GET",
+      url: "/api/stats/today?tz=Asia/Shanghai",
+      headers: cookieHeader(sid),
+    });
+    const rows = json(stats).categories as { categoryName: string; seconds: number }[];
+    assert.equal(rows.find((r) => r.categoryName === "工作")?.seconds, 25 * 60);
+    assert.equal(rows.find((r) => r.categoryName === "学习")?.seconds, 15 * 60);
+  });
+
+  it("running timer started yesterday only counts today's slice", async () => {
+    let now = new Date("2026-08-24T15:00:00.000Z");
+    t = await createTestApp({ now: () => now });
+    const { sid } = await registerUser(t.app, "runner");
+    const catsRes = await t.app.inject({
+      method: "GET",
+      url: "/api/categories",
+      headers: cookieHeader(sid),
+    });
+    const study = (json(catsRes).categories as { id: string; name: string }[]).find(
+      (c) => c.name === "学习",
+    );
+    assert.ok(study);
+
+    await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: study.id },
+    });
+
+    now = new Date("2026-08-25T02:00:00.000Z");
+    const stats = await t.app.inject({
+      method: "GET",
+      url: "/api/stats/today?tz=Asia/Shanghai",
+      headers: cookieHeader(sid),
+    });
+    const rows = json(stats).categories as { categoryName: string; seconds: number }[];
+    const studyRow = rows.find((r) => r.categoryName === "学习");
+    assert.equal(studyRow?.seconds, 10 * 3600);
+  });
+});

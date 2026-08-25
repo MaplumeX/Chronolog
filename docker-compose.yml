@@ -1,0 +1,17 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_PATH: /data/chronolog.db
+      COOKIE_SECURE: "false"
+      SESSION_TTL_SECONDS: "604800"
+      WEB_DIST: /app/web/dist
+      PORT: "8080"
+    volumes:
+      - chronolog-data:/data
+    restart: unless-stopped
+
+volumes:
+  chronolog-data:

@@ -1,0 +1,16 @@
+node_modules
+.git
+.trellis
+.agents
+data
+**/*.db
+**/*.db-wal
+**/*.db-shm
+web/dist
+server/dist
+**/.vite
+**/*.log
+.env
+AGENTS.md
+.dockerignore
+.git
