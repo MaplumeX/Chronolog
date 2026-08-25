@@ -27,3 +27,24 @@ Planned and shipped Chronolog MVP: Docker self-hosted Fastify+React+SQLite track
 ### Status
 
 [OK] **Completed**
+
+
+## Session 2: Refresh Trellis specs from Chronolog codebase
+
+**Date**: 2026-08-26
+**Task**: Refresh Trellis specs from Chronolog codebase
+**Branch**: `main`
+
+### Summary
+
+Rewrote .trellis/spec from server/ and web/ source: added auth, timezone, HTTP routes, API client, and Docker ops guides; fixed 401 code to UNAUTHORIZED; stripped Trellis template leftover from thinking guides.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `30709a5` | (see git log) |
+
+### Status
+
+[OK] **Completed**
