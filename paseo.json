@@ -6,7 +6,7 @@
     "branchName": {
       "instructions": "使用约定式分支命名，新功能用feat/而不是feature/，bug修复用fix/而不是bugfix/"
     },
-    "commitMessage": {
+    "pullRequest": {
       "instructions": "使用英语"
     }
   }
