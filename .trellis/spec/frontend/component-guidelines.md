@@ -34,13 +34,19 @@ Screen-reader copy on Sidebar/Sheet is i18n-ized (`sidebar.nav`, `sidebar.toggle
 
 - `TimerBar` — description, category picker slot, elapsed, round play/stop (`aria-label` 开始 / 停止). Stacks vertically below `md`.
 - `CategoryPicker` — shadcn `DropdownMenu`.
-- `Timeline` — 0:00–24:00 ruler; one colored block per entry; running entry grows with `nowMs`; now-line; full/compact/mini tiers; day grand total in the header. Supports `mode: "day" | "week"`: day renders one column (today), week renders 7 side-by-side day columns (Mon–Sun, horizontal scroll) with a week-range header, per-day column headers (bold day number + weekday + day total, today's header highlighted with `bg-primary/10` + `text-primary`), and the now-line only in today's column. Single-day rendering is shared via an internal `DayColumn` component (`showRuler?: boolean` — week mode renders one shared ruler on the left and passes `showRuler={false}` so hour labels appear once and grid lines span all days; empty days show no hint in week mode).
+- `Timeline` — 0:00–24:00 ruler; one colored block per entry; running entry grows with `nowMs`; now-line; full/compact/mini tiers; day grand total in the header. Supports `mode: "day" | "week"`: day renders one column (today), week renders 7 side-by-side day columns (Mon–Sun, horizontal scroll) with a week-range header, per-day column headers (bold day number + weekday + day total, today's header highlighted with `bg-primary/10` + `text-primary`), and the now-line only in today's column. Single-day rendering is shared via an internal `DayColumn` component (`showRuler?: boolean` — week mode renders one shared ruler on the left and passes `showRuler={false}` so hour labels appear once and grid lines span all days; empty days show no hint in week mode). Stopped blocks are clickable and open an edit popover (`EntryEditor`); running blocks have no `onClick`. The popover is anchored to the block via `Popover.Anchor` (Root lives at `Timeline` top level, Anchor inside `DayColumn`); `EntryEditor` gets `key={entry.id}` so switching entries remounts the form.
 
 `TimerPage` must **not** show a per-category breakdown. That is `StatsPage` only (R15).
 
 `TagPicker` — shadcn `DropdownMenu` multi-select; checked items show a `Check` icon and `bg-accent`. `TimerBar` renders it as a slot; while running, read-only tag badges replace the picker.
 
 `Timeline` full tier shows a tag badge row (dot + name, `categoryColor(tag.name)`) under `block-meta`; compact/mini tiers skip badges, tooltip title appends tag names.
+
+`EntryEditor` (popover content): description / category / tags / start+end time (`datetime-local step=1` to keep seconds) / live duration / save / cancel. Time conversion is browser-local (`new Date(value).toISOString()`), matching `TimerBar`. Save calls `api.updateEntry` then refreshes today+week only (never resets the start-timer form) and closes the popover; 409 `OVERLAP` shows `entry.overlap` copy.
+
+## CSS Cascade Layers gotcha
+
+Un-layered CSS beats Tailwind v4 `@layer utilities` classes regardless of source order. Do not set `cursor: default` on a base class that also gets `cursor-pointer` from a utility — the base wins and the pointer never shows. Scope the base rule to the non-interactive state instead (e.g. `.timeline-block.running { cursor: default }`).
 
 `StatsPage` polls `/api/stats/today` every 5s. Rows + category-colored bars (not shadcn `Progress`). Empty copy: `今天还没有记录`. Optional tag filter dropdown (全部标签 + each tag) re-requests with `tagId`.
 
