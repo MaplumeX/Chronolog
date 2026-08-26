@@ -124,3 +124,26 @@ Replaced Chronolog beige card chrome with Tailwind v4 + shadcn: light neutral sh
 ### Status
 
 [OK] **Completed**
+
+
+## Session 6: 计时页当天/本周视图切换
+
+**Date**: 2026-08-26
+**Task**: 计时页当天/本周视图切换
+**Branch**: `feat/timer-timeline-view-toggle`
+
+### Summary
+
+计时页时间线支持当天/本周视图切换：后端新增 GET /api/entries/week?tz= 返回 ISO 周 7 天数据（weekBounds/weekDayBounds，DST 安全）；前端 Timeline 抽 DayColumn 复用单日渲染，week 模式 7 列并排 + 周头部 + 列头，TimerPage 加 shadcn Tabs 切换与按需加载；i18n zh/en 同步；新增 week.test.ts 6 个用例（含 DST 边界），23/23 测试通过。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0f9bb7f` | (see git log) |
+| `baf6833` | (see git log) |
+| `fbc4215` | (see git log) |
+
+### Status
+
+[OK] **Completed**
