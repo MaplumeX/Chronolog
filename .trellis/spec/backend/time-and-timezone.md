@@ -29,12 +29,27 @@ Proven fixture (`server/test/today.test.ts`): at `2026-08-25T02:00:00.000Z` with
 
 `durationSeconds` is the unclipped length (`stoppedAt ?? now - startedAt`). Stats and the timer-page day total use clipped values.
 
+## Week bounds and clip
+
+`GET /api/entries/week?tz=` returns the ISO week (Monday 00:00 local → next Monday 00:00 local) as 7 day buckets.
+
+`weekBounds(tz, now)` uses luxon `startOf("week")` (Monday start) and returns `{ weekStart, weekEnd }` as UTC ISO-Z. `weekDayBounds(tz, now)` returns the 7 `[dayStart_i, dayEnd_i)` windows.
+
+DST rules (both verified across 12 zones × full year):
+
+- Do **not** compute day windows as `weekStart + i * 86400000` — in DST zones the local midnight drifts by an hour. Derive each day from the local calendar (`weekStart.plus({ days: i })` / `plus({ days: i + 1 })`) so day 6's end equals `weekEnd` exactly.
+- Do **not** compute the Sunday label as `weekEnd - 24h` — in a fall-back week that lands on Saturday 23:00. Use `weekEnd - 1ms` (or `weekStart + 6 days` via luxon).
+
+`listWeek` runs one `overlap` query over the whole week window, then clips each entry per day window. Each day bucket keeps only entries with `clippedSeconds > 0` (same semantics as `listToday`); `durationSeconds` stays the unclipped full length. `days` is always 7 elements, Monday first.
+
 ## Dual implementation
 
 `web/src/format.ts` has its own `clipSeconds` / `elapsedSeconds` so the timer page can tick without refetching. Keep the two implementations numerically aligned. Do not import `server/src/time.ts` from `web/`.
 
 ## Anti-patterns
 
+- `weekStart + i * 86400000` for day windows (DST drift).
+- `weekEnd - 24h` for the Sunday label (fall-back week lands on Saturday 23:00).
 - `new Date().toISOString().slice(0, 10)` as “today”.
 - Hard-coded `+8` hours instead of luxon + IANA.
 - Using `durationSeconds` for category stats (that leaks yesterday’s slice into today).

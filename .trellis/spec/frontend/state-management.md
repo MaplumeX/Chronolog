@@ -23,6 +23,8 @@ Each page keeps its own list/error/form state. Do not lift today’s entries or 
 
 `TimerPage` recomputes the visible day total from `today.dayStart` / `dayEnd` plus `nowMs` (`clipSeconds` in `format.ts`). That is display state, not a store.
 
+`TimerPage` also owns a `view: "day" | "week"` state (default `"day"`, not persisted) and the week data (`WeekEntries | null`). Week data loads lazily on first switch to the week view; after start/stop, refresh the week data too if it was already loaded, so switching back shows fresh entries.
+
 ## Persistence
 
 The only persistence is the HttpOnly `sid` cookie. No JWT, no saved elapsed.

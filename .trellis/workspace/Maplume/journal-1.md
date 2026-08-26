@@ -126,6 +126,15 @@ Replaced Chronolog beige card chrome with Tailwind v4 + shadcn: light neutral sh
 [OK] **Completed**
 
 
+## Session 6: 计时页当天/本周视图切换
+
+**Date**: 2026-08-26
+**Task**: 计时页当天/本周视图切换
+**Branch**: `feat/timer-timeline-view-toggle`
+
+### Summary
+
+计时页时间线支持当天/本周视图切换：后端新增 GET /api/entries/week?tz= 返回 ISO 周 7 天数据（weekBounds/weekDayBounds，DST 安全）；前端 Timeline 抽 DayColumn 复用单日渲染，week 模式 7 列并排 + 周头部 + 列头，TimerPage 加 shadcn Tabs 切换与按需加载；i18n zh/en 同步；新增 week.test.ts 6 个用例（含 DST 边界），23/23 测试通过。
 ## Session 6: 标签功能：多标签支持（计时器输入/时间线展示/统计筛选/标签管理）
 
 **Date**: 2026-08-26
@@ -140,7 +149,74 @@ Replaced Chronolog beige card chrome with Tailwind v4 + shadcn: light neutral sh
 
 | Hash | Message |
 |------|---------|
+| `0f9bb7f` | (see git log) |
+| `baf6833` | (see git log) |
+| `fbc4215` | (see git log) |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 7: Polish week view: day-number headers, today highlight, shared ruler
+
+**Date**: 2026-08-26
+**Task**: Polish week view: day-number headers, today highlight, shared ruler
+**Branch**: `feat/timer-timeline-view-toggle`
+
+### Summary
+
+Week view column headers now show a bold day number + weekday with today highlighted (bg-primary/10 + text-primary); empty days no longer show a hint; the hour ruler renders once on the left with grid lines spanning all 7 days via DayColumn showRuler=false. Day mode unchanged. Build + typecheck pass.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c02b83e` | (see git log) |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 8: Week view border cleanup + ruler height fix
+
+**Date**: 2026-08-26
+**Task**: Week view border cleanup + ruler height fix
+**Branch**: `feat/timer-timeline-view-toggle`
+
+### Summary
+
+Fixed week view ruler collapse (height:auto override so flex stretch fills 960px) and removed redundant border-l on first header column that crossed the header border-b under the title. Verified with headless Chrome measurements and npm run build.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4a28fc0` | (see git log) |
+| `31f7a5f` | (see git log) |
 | `cb7c29a` | (see git log) |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 10: Merge main (tag feature #5) into timeline view toggle branch
+
+**Date**: 2026-08-26
+**Task**: Merge main (tag feature #5) into timeline view toggle branch
+**Branch**: `feat/timer-timeline-view-toggle`
+
+### Summary
+
+Resolved 6-file merge conflict with origin/main: kept refactored DayColumn + week view structure, ported tag display into Timeline blocks (title + full-tier block-tags), listWeek now attaches tags, api.ts keeps weekEntries + todayStats tagId filter. All 29 server tests pass, web build passes.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3e7f522` | (see git log) |
 
 ### Status
 

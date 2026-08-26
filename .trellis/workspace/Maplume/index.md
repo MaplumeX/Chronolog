@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 6
+- **Total Sessions**: 10
 - **Last Active**: 2026-08-26
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~147 | Active |
+| `journal-1.md` | ~223 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,10 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 10 | 2026-08-26 | Merge main (tag feature #5) into timeline view toggle branch | `3e7f522` | `feat/timer-timeline-view-toggle` |
+| 8 | 2026-08-26 | Week view border cleanup + ruler height fix | `4a28fc0`, `31f7a5f` | `feat/timer-timeline-view-toggle` |
+| 7 | 2026-08-26 | Polish week view: day-number headers, today highlight, shared ruler | `c02b83e` | `feat/timer-timeline-view-toggle` |
+| 6 | 2026-08-26 | 计时页当天/本周视图切换 | `0f9bb7f`, `baf6833`, `fbc4215` | `feat/timer-timeline-view-toggle` |
 | 6 | 2026-08-26 | 标签功能：多标签支持（计时器输入/时间线展示/统计筛选/标签管理） | `cb7c29a` | `feat/tag-feature` |
 | 5 | 2026-08-26 | 前端 i18n 国际化支持 | `879a200`, `252d6f3` | `feat/i18n-support` |
 | 5 | 2026-08-26 | 夜间模式：明/暗/跟随系统三态切换 | `1355f75`, `3c839ab` | `feat/night-mode` |
