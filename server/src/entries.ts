@@ -1,6 +1,6 @@
 import { and, desc, eq, gt, isNull, lt, or } from "drizzle-orm";
 import type { Db } from "./db.js";
-import { clipSeconds, durationSeconds, requireTz, todayBounds } from "./time.js";
+import { clipSeconds, durationSeconds, requireTz, todayBounds, weekBounds, weekDayBounds } from "./time.js";
 import { categories, timeEntries } from "./schema.js";
 
 export type EntryDto = {
@@ -81,6 +81,36 @@ export function listToday(db: Db, userId: string, tzRaw: unknown, now: Date) {
 
   const totalClippedSeconds = entries.reduce((sum, e) => sum + (e.clippedSeconds ?? 0), 0);
   return { tz, dayStart, dayEnd, entries, totalClippedSeconds };
+}
+
+export function listWeek(db: Db, userId: string, tzRaw: unknown, now: Date) {
+  const tz = requireTz(tzRaw);
+  const { weekStart, weekEnd } = weekBounds(tz, now);
+  const rows = db
+    .select(entrySelect)
+    .from(timeEntries)
+    .innerJoin(categories, eq(categories.id, timeEntries.categoryId))
+    .where(overlap(userId, weekStart, weekEnd))
+    .orderBy(desc(timeEntries.startedAt))
+    .all();
+
+  // 7 个 [dayStart_i, dayEnd_i) 窗口，周一至周日；每天只保留与当天窗口重叠（clipped > 0）的记录，与 listToday 语义一致
+  const days = weekDayBounds(tz, now).map(({ dayStart, dayEnd }) => {
+    const entries: EntryDto[] = rows
+      .map((row) => {
+        const clipped = clipSeconds(row.startedAt, row.stoppedAt, dayStart, dayEnd, now);
+        return {
+          ...row,
+          durationSeconds: durationSeconds(row.startedAt, row.stoppedAt, now),
+          clippedSeconds: clipped,
+        };
+      })
+      .filter((e) => (e.clippedSeconds ?? 0) > 0);
+    const totalClippedSeconds = entries.reduce((sum, e) => sum + (e.clippedSeconds ?? 0), 0);
+    return { tz, dayStart, dayEnd, entries, totalClippedSeconds };
+  });
+
+  return { tz, weekStart, weekEnd, days };
 }
 
 export function statsToday(db: Db, userId: string, tzRaw: unknown, now: Date) {
