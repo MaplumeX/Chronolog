@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ApiError, api, type Category, type TimeEntry, type TodayEntries } from "../api";
 import { CategoryPicker } from "../components/CategoryPicker";
 import { Timeline } from "../components/Timeline";
@@ -10,6 +11,7 @@ export function TimerPage(props: {
   current: TimeEntry | null;
   onCurrent: (entry: TimeEntry | null) => void;
 }) {
+  const { t } = useTranslation();
   const tz = browserTz();
   const [categories, setCategories] = useState<Category[]>([]);
   const [today, setToday] = useState<TodayEntries | null>(null);
@@ -31,7 +33,7 @@ export function TimerPage(props: {
   }
 
   useEffect(() => {
-    void refresh().catch((err) => setError(err instanceof ApiError ? err.message : "加载失败"));
+    void refresh().catch((err) => setError(err instanceof ApiError ? err.message : t("common.loadFailed")));
   }, []);
 
   const selected = categories.find((c) => c.id === categoryId);
@@ -63,11 +65,11 @@ export function TimerPage(props: {
       const entries = await api.todayEntries(tz);
       setToday(entries);
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "操作失败");
+      setError(err instanceof ApiError ? err.message : t("common.operationFailed"));
     }
   }
 
-  const pickerLabel = running?.categoryName ?? selected?.name ?? "选择分类";
+  const pickerLabel = running?.categoryName ?? selected?.name ?? t("timer.selectCategory");
   const pickerColor = running?.categoryName ?? selected?.name ?? "";
 
   return (

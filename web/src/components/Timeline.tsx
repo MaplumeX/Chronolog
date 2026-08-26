@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import type { TodayEntries } from "../api";
 import { categoryColor, clipSeconds, formatClock, formatDayLabel, formatDuration } from "../format";
 
@@ -10,6 +11,7 @@ export function Timeline(props: {
   tz: string;
   dayTotal: number;
 }) {
+  const { t } = useTranslation();
   const { today, nowMs, tz, dayTotal } = props;
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -54,7 +56,7 @@ export function Timeline(props: {
             ))}
 
             {today && today.entries.length === 0 ? (
-              <div className="timeline-empty-hint">今天还没有记录</div>
+              <div className="timeline-empty-hint">{t("timeline.empty")}</div>
             ) : null}
 
             {today
@@ -78,7 +80,7 @@ export function Timeline(props: {
                     e.stoppedAt ? formatClock(e.stoppedAt, tz) : "…"
                   }`;
                   const color = categoryColor(e.categoryName);
-                  const desc = e.description || "无说明";
+                  const desc = e.description || t("timeline.noDescription");
 
                   let tier: "full" | "compact" | "mini";
                   if (heightPct >= 2.5) tier = "full";

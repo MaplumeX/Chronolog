@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ApiError, api, type Category } from "../api";
 import { categoryColor } from "../format";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import {
 } from "@/components/ui/table";
 
 export function CategoriesPage() {
+  const { t } = useTranslation();
   const [categories, setCategories] = useState<Category[]>([]);
   const [name, setName] = useState("");
   const [editing, setEditing] = useState<string | null>(null);
@@ -25,7 +27,7 @@ export function CategoriesPage() {
   }
 
   useEffect(() => {
-    reload().catch((err) => setError(err instanceof ApiError ? err.message : "加载失败"));
+    reload().catch((err) => setError(err instanceof ApiError ? err.message : t("common.loadFailed")));
   }, []);
 
   async function create() {
@@ -35,7 +37,7 @@ export function CategoriesPage() {
       setName("");
       await reload();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "创建失败");
+      setError(err instanceof ApiError ? err.message : t("categories.createFailed"));
     }
   }
 
@@ -46,7 +48,7 @@ export function CategoriesPage() {
       setEditing(null);
       await reload();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "重命名失败");
+      setError(err instanceof ApiError ? err.message : t("categories.renameFailed"));
     }
   }
 
@@ -56,32 +58,32 @@ export function CategoriesPage() {
       await api.deleteCategory(c.id);
       await reload();
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "删除失败");
+      setError(err instanceof ApiError ? err.message : t("categories.deleteFailed"));
     }
   }
 
   return (
     <div className="px-6 py-6">
-      <h1 className="mb-4 text-xl font-semibold">分类</h1>
+      <h1 className="mb-4 text-xl font-semibold">{t("nav.categories")}</h1>
       <div className="mb-4 flex gap-2">
         <Input
           value={name}
-          placeholder="新分类名称"
+          placeholder={t("categories.newNamePlaceholder")}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") void create();
           }}
         />
         <Button type="button" variant="outline" onClick={() => void create()} disabled={!name.trim()}>
-          添加
+          {t("categories.add")}
         </Button>
       </div>
       {error ? <p className="mb-3 text-sm text-destructive">{error}</p> : null}
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>名称</TableHead>
-            <TableHead>记录数</TableHead>
+            <TableHead>{t("categories.name")}</TableHead>
+            <TableHead>{t("categories.entryCount")}</TableHead>
             <TableHead />
           </TableRow>
         </TableHeader>
@@ -98,10 +100,10 @@ export function CategoriesPage() {
                       onClick={() => void save(c.id)}
                       disabled={!editName.trim()}
                     >
-                      保存
+                      {t("categories.save")}
                     </Button>
                     <Button type="button" variant="outline" onClick={() => setEditing(null)}>
-                      取消
+                      {t("categories.cancel")}
                     </Button>
                   </div>
                 ) : (
@@ -126,7 +128,7 @@ export function CategoriesPage() {
                       setEditName(c.name);
                     }}
                   >
-                    重命名
+                    {t("categories.rename")}
                   </Button>
                   <Button
                     type="button"
@@ -135,9 +137,9 @@ export function CategoriesPage() {
                     className="text-destructive hover:text-destructive"
                     onClick={() => void remove(c)}
                     disabled={c.entryCount > 0}
-                    title={c.entryCount > 0 ? "该分类仍有时间记录，无法删除" : "删除"}
+                    title={c.entryCount > 0 ? t("categories.deleteBlockedTitle") : t("categories.delete")}
                   >
-                    删除
+                    {t("categories.delete")}
                   </Button>
                 </div>
               </TableCell>

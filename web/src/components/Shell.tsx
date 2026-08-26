@@ -1,6 +1,9 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { ChartNoAxesColumn, LogOut, Tags, Timer } from "lucide-react";
 import { formatDuration } from "../format";
+import { LanguageSwitcher } from "../i18n/LanguageSwitcher";
+import type { zh } from "../i18n/locales/zh";
 import {
   Sidebar,
   SidebarContent,
@@ -21,10 +24,10 @@ import {
 
 export type PageId = "timer" | "stats" | "categories";
 
-const ITEMS: { id: PageId; label: string; icon: typeof Timer }[] = [
-  { id: "timer", label: "计时", icon: Timer },
-  { id: "stats", label: "统计", icon: ChartNoAxesColumn },
-  { id: "categories", label: "分类", icon: Tags },
+const ITEMS: { id: PageId; labelKey: keyof typeof zh; icon: typeof Timer }[] = [
+  { id: "timer", labelKey: "nav.timer", icon: Timer },
+  { id: "stats", labelKey: "nav.stats", icon: ChartNoAxesColumn },
+  { id: "categories", labelKey: "nav.categories", icon: Tags },
 ];
 
 function ShellNav(props: {
@@ -32,6 +35,7 @@ function ShellNav(props: {
   elapsedSeconds?: number;
   onPage: (page: PageId) => void;
 }) {
+  const { t } = useTranslation();
   const { isMobile, setOpenMobile } = useSidebar();
 
   function go(id: PageId) {
@@ -44,10 +48,11 @@ function ShellNav(props: {
       <SidebarGroupContent>
         <SidebarMenu>
           {ITEMS.map((item) => {
+            const label = t(item.labelKey);
             const runningLabel =
               item.id === "timer" && props.elapsedSeconds != null
-                ? `${item.label} ${formatDuration(props.elapsedSeconds)}`
-                : item.label;
+                ? `${label} ${formatDuration(props.elapsedSeconds)}`
+                : label;
             return (
               <SidebarMenuItem key={item.id}>
                 <SidebarMenuButton
@@ -57,7 +62,7 @@ function ShellNav(props: {
                   onClick={() => go(item.id)}
                 >
                   <item.icon />
-                  <span>{item.label}</span>
+                  <span>{label}</span>
                   {item.id === "timer" && props.elapsedSeconds != null ? (
                     <SidebarMenuBadge className="tabular-nums">
                       {formatDuration(props.elapsedSeconds)}
@@ -81,6 +86,7 @@ export function Shell(props: {
   onLogout: () => void;
   children: ReactNode;
 }) {
+  const { t } = useTranslation();
   return (
     <SidebarProvider className="h-dvh min-h-dvh">
       <Sidebar collapsible="icon">
@@ -110,9 +116,12 @@ export function Shell(props: {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton type="button" tooltip="退出" onClick={props.onLogout}>
+              <LanguageSwitcher />
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton type="button" tooltip={t("shell.logout")} onClick={props.onLogout}>
                 <LogOut />
-                <span>退出</span>
+                <span>{t("shell.logout")}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
