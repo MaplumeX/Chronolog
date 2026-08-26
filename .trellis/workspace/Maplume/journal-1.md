@@ -48,3 +48,24 @@ Rewrote .trellis/spec from server/ and web/ source: added auth, timezone, HTTP r
 ### Status
 
 [OK] **Completed**
+
+
+## Session 3: 计时界面时间线改造
+
+**Date**: 2026-08-26
+**Task**: 计时界面时间线改造
+**Branch**: `feat/timer-timeline-ui`
+
+### Summary
+
+将 TimerPage 当日记录从逐行列表改为纵向时间线视图：0:00-24:00 时间轴、按起止时间定位的彩色时间块、运行中条目实时增长、当前时间指示线、块内分档显示。更新 frontend spec。参考 Toggl Calendar view 设计。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `253382e` | (see git log) |
+
+### Status
+
+[OK] **Completed**

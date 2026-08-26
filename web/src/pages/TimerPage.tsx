@@ -10,6 +10,8 @@ import {
   formatDuration,
 } from "../format";
 
+const HOURS = Array.from({ length: 25 }, (_, i) => i);
+
 export function TimerPage(props: {
   nowMs: number;
   current: TimeEntry | null;
@@ -23,6 +25,7 @@ export function TimerPage(props: {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   async function refresh() {
     const [cats, entries, cur] = await Promise.all([
@@ -147,38 +150,153 @@ export function TimerPage(props: {
       </div>
       {error ? <p className="error">{error}</p> : null}
 
-      <section className="day-card">
-        <div className="day-head">
-          <span>{formatDayLabel(tz)}</span>
-          <span className="sum">{formatDuration(dayTotal)}</span>
-        </div>
-        {!today || today.entries.length === 0 ? (
-          <div className="empty">今天还没有记录</div>
-        ) : (
-          today.entries.map((e) => {
-            const secs = clipSeconds(
-              e.startedAt,
-              e.stoppedAt,
-              today.dayStart,
-              today.dayEnd,
-              props.nowMs,
-            );
-            return (
-              <div className="row" key={e.id}>
-                <span>{e.description || <span className="muted">无说明</span>}</span>
-                <span className="pill">
-                  <span className="dot" style={{ background: categoryColor(e.categoryName) }} />
-                  {e.categoryName}
-                </span>
-                <span className="when">
-                  {formatClock(e.startedAt, tz)} – {e.stoppedAt ? formatClock(e.stoppedAt, tz) : "…"}
-                </span>
-                <span className="dur">{formatDuration(secs)}</span>
-              </div>
-            );
-          })
-        )}
-      </section>
+      <TimelineSection
+        today={today}
+        nowMs={props.nowMs}
+        tz={tz}
+        dayTotal={dayTotal}
+        scrollRef={scrollRef}
+      />
     </>
+  );
+}
+
+function TimelineSection(props: {
+  today: TodayEntries | null;
+  nowMs: number;
+  tz: string;
+  dayTotal: number;
+  scrollRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  const { today, nowMs, tz, dayTotal, scrollRef } = props;
+
+  const dayStartMs = today ? Date.parse(today.dayStart) : 0;
+  const dayEndMs = today ? Date.parse(today.dayEnd) : 0;
+  const dayMs = dayEndMs - dayStartMs || 1;
+
+  const posPercent = (t: number) =>
+    Math.max(0, Math.min(100, ((t - dayStartMs) / dayMs) * 100));
+
+  const nowTop = posPercent(nowMs);
+
+  // 初始滚动到"现在"附近
+  useEffect(() => {
+    if (!today || !scrollRef.current) return;
+    const el = scrollRef.current;
+    const inner = el.scrollHeight;
+    const target = (nowTop / 100) * inner - el.clientHeight / 2;
+    el.scrollTop = Math.max(0, target);
+    // 仅在 today 首次加载后滚动
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [today != null]);
+
+  return (
+    <section className="timeline-card">
+      <div className="day-head">
+        <span>{formatDayLabel(tz)}</span>
+        <span className="sum">{formatDuration(dayTotal)}</span>
+      </div>
+      <div className="timeline-scroll" ref={scrollRef}>
+        <div className="timeline-inner">
+          {/* 小时刻度 */}
+          <div className="timeline-ruler">
+            {HOURS.map((h) => (
+              <div
+                key={h}
+                className="hour"
+                style={{ top: `${(h / 24) * 100}%` }}
+              >
+                {String(h).padStart(2, "0")}:00
+              </div>
+            ))}
+          </div>
+
+          {/* 色块轨道 */}
+          <div className="timeline-track">
+            {/* 小时网格线 */}
+            {HOURS.map((h) => (
+              <div
+                key={h}
+                className="timeline-grid"
+                style={{ top: `${(h / 24) * 100}%` }}
+              />
+            ))}
+
+            {today && today.entries.length === 0 ? (
+              <div className="timeline-empty-hint">今天还没有记录</div>
+            ) : null}
+
+            {today
+              ? today.entries.map((e) => {
+                  const start = Date.parse(e.startedAt);
+                  const end = e.stoppedAt ? Date.parse(e.stoppedAt) : nowMs;
+                  const top = posPercent(start);
+                  const heightPct = Math.max(
+                    0,
+                    Math.min(100 - top, ((end - start) / dayMs) * 100),
+                  );
+                  const isRunning = !e.stoppedAt;
+                  const secs = clipSeconds(
+                    e.startedAt,
+                    e.stoppedAt,
+                    today.dayStart,
+                    today.dayEnd,
+                    nowMs,
+                  );
+                  const timeRange = `${formatClock(e.startedAt, tz)} – ${
+                    e.stoppedAt ? formatClock(e.stoppedAt, tz) : "…"
+                  }`;
+                  const color = categoryColor(e.categoryName);
+                  const desc = e.description || "无说明";
+
+                  let tier: "full" | "compact" | "mini";
+                  if (heightPct >= 2.5) tier = "full";
+                  else if (heightPct >= 1) tier = "compact";
+                  else tier = "mini";
+
+                  const title = `${desc} · ${e.categoryName} · ${timeRange} · ${formatDuration(secs)}`;
+
+                  return (
+                    <div
+                      key={e.id}
+                      className={`timeline-block ${tier}${isRunning ? " running" : ""}`}
+                      style={{
+                        top: `${top}%`,
+                        height: `${heightPct}%`,
+                        background: color,
+                      }}
+                      title={title}
+                    >
+                      {tier === "full" ? (
+                        <>
+                          <div className="block-desc">{desc}</div>
+                          <div className="block-meta">{e.categoryName}</div>
+                          <div className="block-time">{timeRange}</div>
+                          <div className="block-dur">{formatDuration(secs)}</div>
+                        </>
+                      ) : tier === "compact" ? (
+                        <>
+                          <span className="block-desc">{desc}</span>
+                          <span className="block-dur">{formatDuration(secs)}</span>
+                        </>
+                      ) : (
+                        <span className="block-desc">{desc}</span>
+                      )}
+                    </div>
+                  );
+                })
+              : null}
+
+            {/* 当前时间指示线 */}
+            <div
+              className="now-line"
+              style={{ top: `${nowTop}%` }}
+            >
+              <span className="now-label">{formatClock(new Date(nowMs).toISOString(), tz)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
