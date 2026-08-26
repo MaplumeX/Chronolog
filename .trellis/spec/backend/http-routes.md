@@ -46,6 +46,7 @@ New endpoints belong in an existing file if they share the resource, or a new `r
 | POST | `/api/timer/start` | yes | `{ categoryId, description? }` |
 | POST | `/api/timer/stop` | yes | no running → 409 |
 | GET | `/api/entries/today?tz=` | yes | overlapping entries + `clippedSeconds` |
+| GET | `/api/entries/week?tz=` | yes | ISO week (Mon–Sun) as 7 day buckets: `{ tz, weekStart, weekEnd, days: TodayEntries[] }` |
 | GET | `/api/stats/today?tz=` | yes | per-category clipped seconds |
 
 `EntryDto` (`server/src/entries.ts`) is the timer/today payload: `id`, `categoryId`, `categoryName`, `description`, `startedAt`, `stoppedAt`, `durationSeconds`, optional `clippedSeconds`. Keep `web/src/api.ts` `TimeEntry` in sync.

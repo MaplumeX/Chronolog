@@ -33,7 +33,7 @@ Screen-reader copy on Sidebar/Sheet is i18n-ized (`sidebar.nav`, `sidebar.toggle
 
 - `TimerBar` — description, category picker slot, elapsed, round play/stop (`aria-label` 开始 / 停止). Stacks vertically below `md`.
 - `CategoryPicker` — shadcn `DropdownMenu`.
-- `Timeline` — 0:00–24:00 ruler; one colored block per entry; running entry grows with `nowMs`; now-line; full/compact/mini tiers; day grand total in the header.
+- `Timeline` — 0:00–24:00 ruler; one colored block per entry; running entry grows with `nowMs`; now-line; full/compact/mini tiers; day grand total in the header. Supports `mode: "day" | "week"`: day renders one column (today), week renders 7 side-by-side day columns (Mon–Sun, horizontal scroll) with a week-range header, per-day column headers (weekday + day total), and the now-line only in today's column. Single-day rendering is shared via an internal `DayColumn` component.
 
 `TimerPage` must **not** show a per-category breakdown. That is `StatsPage` only (R15).
 
