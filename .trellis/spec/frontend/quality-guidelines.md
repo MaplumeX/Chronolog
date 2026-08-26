@@ -11,8 +11,11 @@ Root `npm run typecheck` includes web. There is no frontend unit-test runner.
 
 ## Product constraints
 
-- UI language: Chinese.
-- `html lang="zh-CN"`.
+- UI language: i18n via `i18next` + `react-i18next` (`web/src/i18n/`). Default `zh`, optional `en`. All UI copy goes through `t()` keys in `web/src/i18n/locales/zh.ts` / `en.ts` (keys must stay in sync — `en` is typed as `Record<keyof typeof zh, string>`).
+- Language persistence: `localStorage` key `chronolog.lang` (values `zh` | `en`), read/write wrapped in try/catch (storage may be unavailable). First visit defaults to `zh` — do not add `i18next-browser-languagedetector` (it would override the default).
+- `html lang` is synced at runtime by `i18n/index.ts` (`languageChanged` → `document.documentElement.lang`); `index.html` keeps `lang="zh-CN"` as the static default.
+- Do not translate: brand `Chronolog`, user-generated content (category names, descriptions), and backend `ApiError.message` (shown verbatim). Frontend-owned fallback copy (`errors.network`, `common.requestFailed`, etc.) is translated.
+- Date/time formatting in `format.ts` uses `localeFor(i18n.language)` (`zh` → `zh-CN`); `formatDuration` (`h:mm:ss`) and `categoryColor` are language-independent.
 - Per-category totals: `StatsPage` only. Timer page may show a day grand total and a vertical timeline of entries (not a per-category breakdown).
 - Do not call `api.stop()` on `beforeunload`.
 - Do not store JWT or `sid` in `localStorage`. Sidebar may use its own UI cookie for collapsed state; that is not auth.
