@@ -41,4 +41,7 @@ export const en: Record<keyof typeof zh, string> = {
   "sidebar.close": "Close",
   "language.zh": "中文",
   "language.en": "English",
+  "theme.light": "Light",
+  "theme.dark": "Dark",
+  "theme.system": "System",
 };

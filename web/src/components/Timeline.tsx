@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import type { TodayEntries } from "../api";
-import { categoryColor, clipSeconds, formatClock, formatDayLabel, formatDuration } from "../format";
+import { categoryColor, clipSeconds, contrastText, formatClock, formatDayLabel, formatDuration } from "../format";
 
 const HOURS = Array.from({ length: 25 }, (_, i) => i);
 
@@ -80,6 +80,7 @@ export function Timeline(props: {
                     e.stoppedAt ? formatClock(e.stoppedAt, tz) : "…"
                   }`;
                   const color = categoryColor(e.categoryName);
+                  const textColor = contrastText(color);
                   const desc = e.description || t("timeline.noDescription");
 
                   let tier: "full" | "compact" | "mini";
@@ -97,6 +98,7 @@ export function Timeline(props: {
                         top: `${top}%`,
                         height: `${heightPct}%`,
                         background: color,
+                        color: textColor,
                       }}
                       title={title}
                     >

@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { api, setOnUnauthorized, type TimeEntry, type User } from "./api";
 import { Shell, type PageId } from "./components/Shell";
 import { elapsedSeconds } from "./format";
+import { useTheme } from "./hooks/use-theme";
 import { AuthPage } from "./pages/AuthPage";
 import { CategoriesPage } from "./pages/CategoriesPage";
 import { StatsPage } from "./pages/StatsPage";
@@ -10,6 +11,7 @@ import { TimerPage } from "./pages/TimerPage";
 
 export function App() {
   const { t } = useTranslation();
+  const { mode: themeMode, setMode: setThemeMode } = useTheme();
   const [user, setUser] = useState<User | null | undefined>(undefined);
   const [page, setPage] = useState<PageId>("timer");
   const [current, setCurrent] = useState<TimeEntry | null>(null);
@@ -66,6 +68,8 @@ export function App() {
       onLogout={() => {
         void logout();
       }}
+      themeMode={themeMode}
+      onThemeMode={setThemeMode}
     >
       {page === "timer" ? (
         <TimerPage nowMs={nowMs} current={current} onCurrent={setCurrent} />

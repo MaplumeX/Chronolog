@@ -25,7 +25,9 @@ Each page keeps its own list/error/form state. Do not lift today’s entries or 
 
 ## Persistence
 
-The only persistence is the HttpOnly `sid` cookie. No `localStorage`, no JWT, no saved elapsed.
+The only persistence is the HttpOnly `sid` cookie. No JWT, no saved elapsed.
+
+One exception: theme preference is persisted in `localStorage["chronolog-theme"]` (`"light" | "dark" | "system"`, missing = `"system"`) by `use-theme.ts`. The inline script in `index.html` applies the `.dark` class before React mounts to avoid flash; `useTheme()` in `App.tsx` owns the state and the `matchMedia` listener (registered only in `system` mode). Wrap all `localStorage` access in `try/catch` — privacy mode throws `SecurityError`.
 
 Dev: Vite proxy keeps `/api` on the same origin as the page so `credentials: "same-origin"` sends the cookie. Production: Fastify serves both.
 

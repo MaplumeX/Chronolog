@@ -64,3 +64,24 @@ export function categoryColor(name: string): string {
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
   return COLORS[h % COLORS.length];
 }
+
+/** WCAG 相对亮度（0–1），按 sRGB 线性化。 */
+function relativeLuminance(hex: string): number {
+  const m = /^#([0-9a-f]{6})$/i.exec(hex);
+  if (!m) return 0;
+  const channels = [0, 2, 4].map((i) => parseInt(m[1].slice(i, i + 2), 16) / 255);
+  const linear = channels.map((c) =>
+    c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4),
+  );
+  return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+}
+
+const DARK_TEXT_LUMINANCE = relativeLuminance("#111111");
+
+/** 按 WCAG 对比度选择色块文字颜色：深色底用白字，浅色底用深字。 */
+export function contrastText(hex: string): "#fff" | "#111" {
+  const l = relativeLuminance(hex);
+  const contrastWhite = 1.05 / (l + 0.05);
+  const contrastDark = (l + 0.05) / (DARK_TEXT_LUMINANCE + 0.05);
+  return contrastWhite >= contrastDark ? "#fff" : "#111";
+}

@@ -4,6 +4,8 @@ import { ChartNoAxesColumn, LogOut, Tags, Timer } from "lucide-react";
 import { formatDuration } from "../format";
 import { LanguageSwitcher } from "../i18n/LanguageSwitcher";
 import type { zh } from "../i18n/locales/zh";
+import type { ThemeMode } from "@/hooks/use-theme";
+import { ThemeSwitcher } from "./ThemeSwitcher";
 import {
   Sidebar,
   SidebarContent,
@@ -84,6 +86,8 @@ export function Shell(props: {
   elapsedSeconds?: number;
   onPage: (page: PageId) => void;
   onLogout: () => void;
+  themeMode: ThemeMode;
+  onThemeMode: (mode: ThemeMode) => void;
   children: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -123,6 +127,9 @@ export function Shell(props: {
                 <LogOut />
                 <span>{t("shell.logout")}</span>
               </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <ThemeSwitcher mode={props.themeMode} onMode={props.onThemeMode} />
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>

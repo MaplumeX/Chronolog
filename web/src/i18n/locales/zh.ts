@@ -39,4 +39,7 @@ export const zh = {
   "sidebar.close": "关闭",
   "language.zh": "中文",
   "language.en": "English",
+  "theme.light": "明亮",
+  "theme.dark": "暗色",
+  "theme.system": "跟随系统",
 } as const;

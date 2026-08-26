@@ -102,6 +102,15 @@ Replaced Chronolog beige card chrome with Tailwind v4 + shadcn: light neutral sh
 ### Summary
 
 为 web/ 前端引入 i18next + react-i18next：新增 web/src/i18n/（zh/en 语言资源、初始化、LanguageSwitcher），全部 UI 文案改为 t() key，format.ts locale 随语言切换，localStorage 持久化（chronolog.lang），首次默认中文；更新 frontend spec 的 UI 语言约束
+## Session 5: 夜间模式：明/暗/跟随系统三态切换
+
+**Date**: 2026-08-26
+**Task**: 夜间模式：明/暗/跟随系统三态切换
+**Branch**: `feat/night-mode`
+
+### Summary
+
+为 Chronolog 前端添加夜间模式：.dark 变量集（shadcn 标准 oklch）、useTheme hook（localStorage 持久化 + system 模式 matchMedia 监听）、index.html 内联防闪烁脚本、Sidebar 底部三态 dropdown 切换入口、分类色块 WCAG 对比度文字（contrastText）。check 阶段修复对比度公式分母 bug、localStorage 隐私模式异常保护、折叠侧栏 label 溢出。spec 更新：state-management 与 hook-guidelines 记录主题持久化约定。
 
 ### Git Commits
 
@@ -109,6 +118,8 @@ Replaced Chronolog beige card chrome with Tailwind v4 + shadcn: light neutral sh
 |------|---------|
 | `879a200` | (see git log) |
 | `252d6f3` | (see git log) |
+| `1355f75` | (see git log) |
+| `3c839ab` | (see git log) |
 
 ### Status
 
