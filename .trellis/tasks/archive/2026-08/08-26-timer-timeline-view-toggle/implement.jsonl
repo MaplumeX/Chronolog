@@ -1,0 +1,10 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "backend 规范索引：改动 server/ 前需读"}
+{"file": ".trellis/spec/backend/http-routes.md", "reason": "新增 /api/entries/week 路由的注册方式与 DTO 约定"}
+{"file": ".trellis/spec/backend/time-and-timezone.md", "reason": "weekBounds 与 todayBounds 同构；clip 语义、tz 校验、UTC ISO-Z 约定"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "node:test + inject 测试模式、冻结时间、隔离测试要求"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "frontend 规范索引：改动 web/ 前需读"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Timeline 组件约束、TimerPage 布局、i18n 文案要求"}
+{"file": ".trellis/spec/frontend/api-client.md", "reason": "api.ts 新增 WeekEntries 类型与 weekEntries 方法的约定"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "视图状态为页面级 state，不持久化；TimerPage 数据刷新模式"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "DTO 类型放 api.ts；ISO-Z 字符串处理；props 内联对象"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "i18n zh/en 键同步、format.ts 使用 localeFor、构建命令"}

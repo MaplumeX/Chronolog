@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "backend 质量检查清单：typecheck、测试、requireUser、AppError"}
+{"file": ".trellis/spec/backend/time-and-timezone.md", "reason": "检查 weekBounds 边界、clip 语义、tz 校验是否与 today 一致"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "检查测试覆盖：周边界、跨天裁剪、运行中条目、用户隔离"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "检查 Timeline 改造是否符合组件约束、TimerPage 布局"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "检查 i18n zh/en 键同步、构建通过、当天视图零回归"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "检查视图状态为页面级 state、无多余 store"}
