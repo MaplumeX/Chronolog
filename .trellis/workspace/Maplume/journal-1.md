@@ -200,3 +200,24 @@ Fixed week view ruler collapse (height:auto override so flex stretch fills 960px
 ### Status
 
 [OK] **Completed**
+
+
+## Session 10: Merge main (tag feature #5) into timeline view toggle branch
+
+**Date**: 2026-08-26
+**Task**: Merge main (tag feature #5) into timeline view toggle branch
+**Branch**: `feat/timer-timeline-view-toggle`
+
+### Summary
+
+Resolved 6-file merge conflict with origin/main: kept refactored DayColumn + week view structure, ported tag display into Timeline blocks (title + full-tier block-tags), listWeek now attaches tags, api.ts keeps weekEntries + todayStats tagId filter. All 29 server tests pass, web build passes.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3e7f522` | (see git log) |
+
+### Status
+
+[OK] **Completed**
