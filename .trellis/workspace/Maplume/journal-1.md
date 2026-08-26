@@ -147,3 +147,24 @@ Replaced Chronolog beige card chrome with Tailwind v4 + shadcn: light neutral sh
 ### Status
 
 [OK] **Completed**
+
+
+## Session 7: Polish week view: day-number headers, today highlight, shared ruler
+
+**Date**: 2026-08-26
+**Task**: Polish week view: day-number headers, today highlight, shared ruler
+**Branch**: `feat/timer-timeline-view-toggle`
+
+### Summary
+
+Week view column headers now show a bold day number + weekday with today highlighted (bg-primary/10 + text-primary); empty days no longer show a hint; the hour ruler renders once on the left with grid lines spanning all 7 days via DayColumn showRuler=false. Day mode unchanged. Build + typecheck pass.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c02b83e` | (see git log) |
+
+### Status
+
+[OK] **Completed**

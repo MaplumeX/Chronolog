@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 6
+- **Total Sessions**: 7
 - **Last Active**: 2026-08-26
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~149 | Active |
+| `journal-1.md` | ~170 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 7 | 2026-08-26 | Polish week view: day-number headers, today highlight, shared ruler | `c02b83e` | `feat/timer-timeline-view-toggle` |
 | 6 | 2026-08-26 | 计时页当天/本周视图切换 | `0f9bb7f`, `baf6833`, `fbc4215` | `feat/timer-timeline-view-toggle` |
 | 5 | 2026-08-26 | 前端 i18n 国际化支持 | `879a200`, `252d6f3` | `feat/i18n-support` |
 | 5 | 2026-08-26 | 夜间模式：明/暗/跟随系统三态切换 | `1355f75`, `3c839ab` | `feat/night-mode` |
