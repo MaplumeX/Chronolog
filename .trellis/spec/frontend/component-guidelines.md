@@ -10,7 +10,7 @@ Nav items (fixed product IA):
 
 | `PageId` | Label | Main |
 |----------|--------|------|
-| `timer` | 计时 | Timer bar + today’s entry list |
+| `timer` | 计时 | Timer bar + today’s entry timeline |
 | `stats` | 统计 | Today’s **per-category** totals |
 | `categories` | 分类 | Category table |
 
@@ -23,8 +23,8 @@ Unauthenticated users see only `AuthPage` (login/register tabs). No shell.
 `TimerPage` may show:
 
 - Description input, required category pill, elapsed, round play/stop
-- Today’s list (description, category, clock range, clipped duration)
-- A **day grand total** in the day-card header (`dayTotal`)
+- Today’s **vertical timeline** (0:00–24:00 hour ruler; one colored block per entry, positioned by start time, height by duration; running entry grows with `nowMs`; a current-time indicator line; block detail tiered by height — full/compact/mini)
+- A **day grand total** in the timeline header (`dayTotal`)
 
 `TimerPage` must **not** show a per-category breakdown (bars or a “工作 / 学习 / …” sum list). That is `StatsPage` only (R15).
 

@@ -470,3 +470,177 @@ button {
   color: var(--muted);
   text-align: center;
 }
+
+/* ── 计时页时间线 ────────────────────────────── */
+
+.timeline-card {
+  margin-top: 16px;
+  background: var(--card);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.timeline-scroll {
+  height: calc(100vh - 220px);
+  min-height: 280px;
+  overflow-y: auto;
+}
+
+.timeline-inner {
+  position: relative;
+  /* 24h × 40px/h 给出足够可滚动的高度 */
+  height: 960px;
+}
+
+.timeline-ruler {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 56px;
+  height: 100%;
+}
+
+.timeline-ruler .hour {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, "SF Mono", "Cascadia Mono", monospace;
+  color: var(--muted);
+  padding-left: 10px;
+}
+
+.timeline-track {
+  position: absolute;
+  left: 56px;
+  right: 8px;
+  top: 0;
+  height: 100%;
+}
+
+/* 小时网格线，与刻度对齐 */
+.timeline-grid {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--line);
+}
+
+.timeline-block {
+  position: absolute;
+  left: 0;
+  right: 0;
+  min-height: 2px;
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: #fff;
+  overflow: hidden;
+  cursor: default;
+}
+
+.timeline-block .block-desc {
+  font-weight: 600;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.timeline-block .block-meta {
+  font-size: 12px;
+  opacity: 0.9;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.timeline-block .block-time {
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, "SF Mono", "Cascadia Mono", monospace;
+}
+
+.timeline-block .block-dur {
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, "SF Mono", "Cascadia Mono", monospace;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.timeline-block.compact {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+}
+
+.timeline-block.compact .block-dur {
+  margin-top: 0;
+  margin-left: auto;
+}
+
+.timeline-block.mini {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+}
+
+.timeline-block.mini .block-desc {
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.timeline-block.running {
+  outline: 2px solid rgba(255, 255, 255, 0.85);
+  outline-offset: -2px;
+  animation: timeline-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes timeline-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.15);
+  }
+}
+
+/* 当前时间指示线 */
+.now-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: 2px solid var(--stop);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.now-line .now-label {
+  position: absolute;
+  left: 4px;
+  top: -10px;
+  background: var(--stop);
+  color: #fff;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, "SF Mono", "Cascadia Mono", monospace;
+  padding: 1px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+
+.timeline-empty-hint {
+  position: absolute;
+  left: 56px;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  text-align: center;
+  color: var(--muted);
+}
