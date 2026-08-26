@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "frontend layer overview: structure, quality check commands"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Shell/pages copy conventions that must be i18n-ized"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "UI language constraint (Chinese) being replaced by i18n"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "no Redux/Zustand; i18n state via i18next instance"}
