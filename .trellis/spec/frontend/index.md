@@ -30,7 +30,7 @@ Read these before changing `web/`:
 | [State Management](./state-management.md) | Session, running timer, page id |
 | [API Client](./api-client.md) | `web/src/api.ts`, errors, credentials |
 | [Type Safety](./type-safety.md) | DTO types vs ISO-Z instants |
-| [Quality Guidelines](./quality-guidelines.md) | Chinese UI, typecheck, Tailwind tokens |
+| [Quality Guidelines](./quality-guidelines.md) | i18n copy, typecheck, Tailwind tokens |
 
 ---
 
@@ -45,7 +45,7 @@ There is no `web` test script. Verify UI by running the app (`npm run dev` or Do
 
 Also confirm:
 
-- [ ] UI copy is Chinese (`index.html` is `lang="zh-CN"`)
+- [ ] UI copy goes through i18n `t()` keys (`web/src/i18n/locales/`), zh/en keys in sync
 - [ ] Per-category totals stay on `StatsPage` only
 - [ ] All `fetch` goes through `api.ts` with `credentials: "same-origin"`
 - [ ] Instants are formatted with `format.ts` + browser IANA zone

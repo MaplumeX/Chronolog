@@ -1,3 +1,5 @@
+import i18n, { localeFor } from "./i18n";
+
 export function browserTz(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 }
@@ -11,7 +13,7 @@ export function formatDuration(totalSeconds: number): string {
 }
 
 export function formatClock(iso: string, tz: string): string {
-  return new Date(iso).toLocaleTimeString("zh-CN", {
+  return new Date(iso).toLocaleTimeString(localeFor(i18n.language), {
     timeZone: tz,
     hour: "2-digit",
     minute: "2-digit",
@@ -20,13 +22,13 @@ export function formatClock(iso: string, tz: string): string {
 }
 
 export function formatDayLabel(tz: string): string {
-  const date = new Date().toLocaleDateString("zh-CN", {
+  const date = new Date().toLocaleDateString(localeFor(i18n.language), {
     timeZone: tz,
     month: "long",
     day: "numeric",
     weekday: "long",
   });
-  return `今天 · ${date}`;
+  return `${i18n.t("timeline.todayPrefix")}${date}`;
 }
 
 export function elapsedSeconds(startedAt: string, nowMs: number): number {

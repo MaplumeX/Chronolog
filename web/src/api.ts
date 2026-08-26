@@ -1,3 +1,5 @@
+import i18n from "./i18n";
+
 export type User = { id: string; username: string };
 
 export type Category = { id: string; name: string; entryCount: number };
@@ -59,14 +61,14 @@ async function request<T>(
   try {
     res = await fetch(path, { ...init, headers, credentials: "same-origin" });
   } catch {
-    throw new ApiError(0, "NETWORK", "无法连接服务器");
+    throw new ApiError(0, "NETWORK", i18n.t("errors.network"));
   }
   const text = await res.text();
   const data = text ? (JSON.parse(text) as Record<string, unknown>) : {};
   if (!res.ok) {
     const err = data.error as { code?: string; message?: string } | undefined;
     if (res.status === 401 && opts.authFail !== false) onUnauthorized?.();
-    throw new ApiError(res.status, err?.code ?? "ERROR", err?.message ?? "请求失败");
+    throw new ApiError(res.status, err?.code ?? "ERROR", err?.message ?? i18n.t("common.requestFailed"));
   }
   return data as T;
 }

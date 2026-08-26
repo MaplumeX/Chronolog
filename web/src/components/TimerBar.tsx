@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Play, Square } from "lucide-react";
 import { formatDuration } from "../format";
 import { Button } from "@/components/ui/button";
@@ -14,12 +15,13 @@ export function TimerBar(props: {
   onToggle: () => void;
   error: string;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="shrink-0 border-b px-4 py-3">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-3">
         <input
           className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
-          placeholder="你在做什么？"
+          placeholder={t("timer.placeholder")}
           value={props.description}
           onChange={(e) => {
             if (!props.descriptionReadOnly) props.onDescriptionChange(e.target.value);
@@ -38,7 +40,7 @@ export function TimerBar(props: {
             className="size-11 shrink-0 rounded-full"
             onClick={props.onToggle}
             disabled={!props.running && !props.canStart}
-            aria-label={props.running ? "停止" : "开始"}
+            aria-label={props.running ? t("timer.stop") : t("timer.start")}
           >
             {props.running ? (
               <Square className="size-3.5 fill-current" />

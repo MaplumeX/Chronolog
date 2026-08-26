@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ApiError, api, type TodayStats } from "../api";
 import { browserTz, categoryColor, formatDayLabel, formatDuration } from "../format";
 
 export function StatsPage() {
+  const { t } = useTranslation();
   const tz = browserTz();
   const [stats, setStats] = useState<TodayStats | null>(null);
   const [error, setError] = useState("");
@@ -14,7 +16,7 @@ export function StatsPage() {
         const next = await api.todayStats(tz);
         if (!cancelled) setStats(next);
       } catch (err) {
-        if (!cancelled) setError(err instanceof ApiError ? err.message : "加载失败");
+        if (!cancelled) setError(err instanceof ApiError ? err.message : t("common.loadFailed"));
       }
     }
     void load();
@@ -29,11 +31,13 @@ export function StatsPage() {
 
   return (
     <div className="px-6 py-6">
-      <h1 className="text-xl font-semibold">统计</h1>
-      <p className="mt-1 mb-4 text-sm text-muted-foreground">{formatDayLabel(tz)} · 按分类合计</p>
+      <h1 className="text-xl font-semibold">{t("nav.stats")}</h1>
+      <p className="mt-1 mb-4 text-sm text-muted-foreground">
+        {formatDayLabel(tz)} · {t("stats.byCategory")}
+      </p>
       {error ? <p className="mb-3 text-sm text-destructive">{error}</p> : null}
       {!stats || stats.categories.length === 0 ? (
-        <p className="py-8 text-center text-muted-foreground">今天还没有记录</p>
+        <p className="py-8 text-center text-muted-foreground">{t("timeline.empty")}</p>
       ) : (
         <div className="divide-y">
           {stats.categories.map((c) => (

@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 5 | 2026-08-26 | 前端 i18n 国际化支持 | `879a200`, `252d6f3` | `feat/i18n-support` |
 | 5 | 2026-08-26 | 夜间模式：明/暗/跟随系统三态切换 | `1355f75`, `3c839ab` | `feat/night-mode` |
 | 4 | 2026-08-26 | Restructure components and layout | `0733e27`, `b3969f4` | `feat/restructure-components-layout` |
 | 3 | 2026-08-26 | 计时界面时间线改造 | `253382e` | `feat/timer-timeline-ui` |

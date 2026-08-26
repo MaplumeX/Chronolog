@@ -21,9 +21,9 @@ Nav items (fixed product IA):
 | `stats` | 统计 | Today’s **per-category** totals |
 | `categories` | 分类 | Category table |
 
-Footer: username + `退出`. While a timer runs, the 计时 item shows elapsed (`formatDuration`) via `SidebarMenuBadge`. Do not add Calendar, Timesheet, week pickers, or a marketing landing page.
+Footer: username + language switcher (`LanguageSwitcher`, shadcn `DropdownMenu` with 中文 / English) + `退出`. While a timer runs, the 计时 item shows elapsed (`formatDuration`) via `SidebarMenuBadge`. Do not add Calendar, Timesheet, week pickers, or a marketing landing page.
 
-Screen-reader copy on Sidebar/Sheet is Chinese (`切换侧栏`, `导航`, `关闭`).
+Screen-reader copy on Sidebar/Sheet is i18n-ized (`sidebar.nav`, `sidebar.toggle`, `sidebar.close` keys).
 
 ## Pages
 
@@ -45,7 +45,7 @@ Do not `shadcn add card` to wrap these pages.
 
 ## Copy and controls
 
-- UI language is Chinese. Placeholders too (`你在做什么？`, `选择分类`).
+- UI copy is i18n-ized: all strings come from `t()` keys in `web/src/i18n/locales/` (zh default, en). Placeholders too (`timer.placeholder`, `timer.selectCategory`). Never hardcode UI copy in components.
 - Buttons: `type="button"` unless they submit a form (`AuthPage`).
 - Icons: Lucide only (`Timer`, `ChartNoAxesColumn`, `Tags`, `LogOut`, `Play`, `Square`).
 - Category color is `categoryColor(name)` in `format.ts` (hash → palette). Do not store colors in the database.

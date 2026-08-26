@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { api, setOnUnauthorized, type TimeEntry, type User } from "./api";
 import { Shell, type PageId } from "./components/Shell";
 import { elapsedSeconds } from "./format";
@@ -9,6 +10,7 @@ import { StatsPage } from "./pages/StatsPage";
 import { TimerPage } from "./pages/TimerPage";
 
 export function App() {
+  const { t } = useTranslation();
   const { mode: themeMode, setMode: setThemeMode } = useTheme();
   const [user, setUser] = useState<User | null | undefined>(undefined);
   const [page, setPage] = useState<PageId>("timer");
@@ -44,7 +46,9 @@ export function App() {
 
   if (user === undefined) {
     return (
-      <div className="grid min-h-dvh place-items-center text-muted-foreground">加载中…</div>
+      <div className="grid min-h-dvh place-items-center text-muted-foreground">
+        {t("app.loading")}
+      </div>
     );
   }
   if (!user) return <AuthPage onAuthed={setUser} />;
