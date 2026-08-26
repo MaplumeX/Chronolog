@@ -91,3 +91,25 @@ Replaced Chronolog beige card chrome with Tailwind v4 + shadcn: light neutral sh
 ### Status
 
 [OK] **Completed**
+
+
+## Session 5: 前端 i18n 国际化支持
+
+**Date**: 2026-08-26
+**Task**: 前端 i18n 国际化支持
+**Branch**: `feat/i18n-support`
+
+### Summary
+
+为 web/ 前端引入 i18next + react-i18next：新增 web/src/i18n/（zh/en 语言资源、初始化、LanguageSwitcher），全部 UI 文案改为 t() key，format.ts locale 随语言切换，localStorage 持久化（chronolog.lang），首次默认中文；更新 frontend spec 的 UI 语言约束
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `879a200` | (see git log) |
+| `252d6f3` | (see git log) |
+
+### Status
+
+[OK] **Completed**
