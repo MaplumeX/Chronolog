@@ -207,13 +207,13 @@ export function Timeline(props: {
           <div className="flex min-w-full flex-col">
             <div className="flex">
               <div className="w-14 flex-shrink-0" />
-              {week.days.map((d) => {
+              {week.days.map((d, i) => {
                 const isToday = isDayAt(d, nowMs);
                 const header = formatWeekdayHeader(d.dayStart, tz);
                 return (
                   <div
                     key={d.dayStart}
-                    className="flex min-w-[180px] flex-1 flex-col border-l"
+                    className={`flex min-w-[180px] flex-1 flex-col${i === 0 ? "" : " border-l"}`}
                   >
                     <div
                       className={`border-b px-2 py-2 text-center${isToday ? " bg-primary/10" : ""}`}
