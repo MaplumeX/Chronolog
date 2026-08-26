@@ -23,6 +23,13 @@ export type TodayEntries = {
   totalClippedSeconds: number;
 };
 
+export type WeekEntries = {
+  tz: string;
+  weekStart: string;
+  weekEnd: string;
+  days: TodayEntries[];
+};
+
 export type TodayStats = {
   tz: string;
   dayStart: string;
@@ -105,6 +112,8 @@ export const api = {
   stop: () => request<{ entry: TimeEntry }>("/api/timer/stop", { method: "POST" }),
   todayEntries: (tz: string) =>
     request<TodayEntries>(`/api/entries/today?tz=${encodeURIComponent(tz)}`),
+  weekEntries: (tz: string) =>
+    request<WeekEntries>(`/api/entries/week?tz=${encodeURIComponent(tz)}`),
   todayStats: (tz: string) =>
     request<TodayStats>(`/api/stats/today?tz=${encodeURIComponent(tz)}`),
 };

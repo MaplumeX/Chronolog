@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ApiError, api, type Category, type TimeEntry, type TodayEntries } from "../api";
+import {
+  ApiError,
+  api,
+  type Category,
+  type TimeEntry,
+  type TodayEntries,
+  type WeekEntries,
+} from "../api";
 import { CategoryPicker } from "../components/CategoryPicker";
 import { Timeline } from "../components/Timeline";
 import { TimerBar } from "../components/TimerBar";
@@ -15,6 +22,8 @@ export function TimerPage(props: {
   const tz = browserTz();
   const [categories, setCategories] = useState<Category[]>([]);
   const [today, setToday] = useState<TodayEntries | null>(null);
+  const [week, setWeek] = useState<WeekEntries | null>(null);
+  const [view, setView] = useState<"day" | "week">("day");
   const [categoryId, setCategoryId] = useState("");
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
@@ -50,6 +59,8 @@ export function TimerPage(props: {
         (s, e) => s + clipSeconds(e.startedAt, e.stoppedAt, today.dayStart, today.dayEnd, props.nowMs),
         0,
       ) ?? 0) + runningClipped;
+  const weekTotal =
+    week?.days.reduce((s, d) => s + d.totalClippedSeconds, 0) ?? 0;
 
   async function onToggle() {
     setError("");
@@ -64,8 +75,25 @@ export function TimerPage(props: {
       }
       const entries = await api.todayEntries(tz);
       setToday(entries);
+      // 已加载过周数据则一并刷新，避免切回本周视图时看到过期数据
+      if (week) {
+        const w = await api.weekEntries(tz);
+        setWeek(w);
+      }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("common.operationFailed"));
+    }
+  }
+
+  async function onModeChange(mode: "day" | "week") {
+    setView(mode);
+    if (mode === "week" && !week) {
+      try {
+        const w = await api.weekEntries(tz);
+        setWeek(w);
+      } catch (err) {
+        setError(err instanceof ApiError ? err.message : t("common.loadFailed"));
+      }
     }
   }
 
@@ -96,7 +124,18 @@ export function TimerPage(props: {
         }}
         error={error}
       />
-      <Timeline today={today} nowMs={props.nowMs} tz={tz} dayTotal={dayTotal} />
+      <Timeline
+        today={today}
+        week={week}
+        mode={view}
+        onModeChange={(m) => {
+          void onModeChange(m);
+        }}
+        nowMs={props.nowMs}
+        tz={tz}
+        dayTotal={dayTotal}
+        weekTotal={weekTotal}
+      />
     </>
   );
 }

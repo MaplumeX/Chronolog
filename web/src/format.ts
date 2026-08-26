@@ -31,6 +31,30 @@ export function formatDayLabel(tz: string): string {
   return `${i18n.t("timeline.todayPrefix")}${date}`;
 }
 
+/** 周范围文案，如 `8月24日 – 8月30日`。周日 = weekEnd 前一刻（DST 回拨周 weekStart+6*24h 会落到周六 23:00）。 */
+export function formatWeekLabel(weekStart: string, weekEnd: string, tz: string): string {
+  const locale = localeFor(i18n.language);
+  const start = new Date(weekStart).toLocaleDateString(locale, {
+    timeZone: tz,
+    month: "long",
+    day: "numeric",
+  });
+  const end = new Date(Date.parse(weekEnd) - 1).toLocaleDateString(locale, {
+    timeZone: tz,
+    month: "long",
+    day: "numeric",
+  });
+  return `${start} – ${end}`;
+}
+
+/** 列头星期文案（周一…周日），iso 为该天 00:00 的 UTC ISO-Z 字符串。 */
+export function formatWeekdayLabel(iso: string, tz: string): string {
+  return new Date(iso).toLocaleDateString(localeFor(i18n.language), {
+    timeZone: tz,
+    weekday: "long",
+  });
+}
+
 export function elapsedSeconds(startedAt: string, nowMs: number): number {
   return Math.max(0, Math.floor((nowMs - Date.parse(startedAt)) / 1000));
 }
