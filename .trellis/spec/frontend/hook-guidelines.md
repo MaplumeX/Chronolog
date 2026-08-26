@@ -2,6 +2,8 @@
 
 Do not grow `src/hooks/` with business hooks. `use-mobile.ts` is generated for shadcn Sidebar. Data fetching and clocks stay in `App` or the page that owns the screen.
 
+Infrastructure hooks are allowed: `use-theme.ts` (theme mode state + `matchMedia` listener + `localStorage` persistence) is called once at the top of `App.tsx` and passed down as props — do not call it again in child components.
+
 ## Patterns in use
 
 **Session boot** (`App.tsx`): `useEffect` calls `api.me()` with `authFail: false` (see [API Client](./api-client.md)). `user === undefined` is the loading gate (`加载中…`); `user === null` is `AuthPage`.
