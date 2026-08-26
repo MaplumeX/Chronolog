@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 5
+- **Total Sessions**: 6
 - **Last Active**: 2026-08-26
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~115 | Active |
+| `journal-1.md` | ~147 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 6 | 2026-08-26 | 标签功能：多标签支持（计时器输入/时间线展示/统计筛选/标签管理） | `cb7c29a` | `feat/tag-feature` |
 | 5 | 2026-08-26 | 前端 i18n 国际化支持 | `879a200`, `252d6f3` | `feat/i18n-support` |
 | 5 | 2026-08-26 | 夜间模式：明/暗/跟随系统三态切换 | `1355f75`, `3c839ab` | `feat/night-mode` |
 | 4 | 2026-08-26 | Restructure components and layout | `0733e27`, `b3969f4` | `feat/restructure-components-layout` |
