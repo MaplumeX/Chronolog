@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { TodayEntries, WeekEntries } from "../api";
+import type { Category, Tag, TimeEntry, TodayEntries, WeekEntries } from "../api";
 import {
   categoryColor,
   clipSeconds,
@@ -11,6 +11,8 @@ import {
   formatWeekLabel,
   formatWeekdayHeader,
 } from "../format";
+import { EntryEditor } from "./EntryEditor";
+import { Popover, PopoverAnchor, PopoverContent } from "./ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 
 const HOURS = Array.from({ length: 25 }, (_, i) => i);
@@ -27,9 +29,11 @@ function DayColumn(props: {
   isToday: boolean;
   emptyHint?: string;
   showRuler?: boolean;
+  selectedId: string | null;
+  onSelect: (id: string) => void;
 }) {
   const { t } = useTranslation();
-  const { day, nowMs, tz, isToday, emptyHint, showRuler = true } = props;
+  const { day, nowMs, tz, isToday, emptyHint, showRuler = true, selectedId, onSelect } = props;
 
   const dayStartMs = day ? Date.parse(day.dayStart) : 0;
   const dayEndMs = day ? Date.parse(day.dayEnd) : 0;
@@ -94,18 +98,8 @@ function DayColumn(props: {
                 e.tags.length > 0 ? ` · ${e.tags.map((x) => x.name).join(t("timer.tagSeparator"))}` : ""
               }`;
 
-              return (
-                <div
-                  key={e.id}
-                  className={`timeline-block ${tier}${isRunning ? " running" : ""}`}
-                  style={{
-                    top: `${top}%`,
-                    height: `${heightPct}%`,
-                    background: color,
-                    color: textColor,
-                  }}
-                  title={title}
-                >
+              const blockContent = (
+                <>
                   {tier === "full" ? (
                     <>
                       <div className="block-desc">{desc}</div>
@@ -134,6 +128,40 @@ function DayColumn(props: {
                   ) : (
                     <span className="block-desc">{desc}</span>
                   )}
+                </>
+              );
+
+              const blockStyle = {
+                top: `${top}%`,
+                height: `${heightPct}%`,
+                background: color,
+                color: textColor,
+              };
+
+              // 选中的已停止条目用 Popover.Anchor 包裹（Anchor 自带 timeline-block 定位样式，
+              // 使 popover 锚定到色块本身），作为 popover 的定位锚点
+              if (selectedId === e.id) {
+                return (
+                  <PopoverAnchor
+                    key={e.id}
+                    className={`timeline-block ${tier} cursor-pointer`}
+                    style={blockStyle}
+                    title={title}
+                    onClick={() => onSelect(e.id)}
+                  >
+                    {blockContent}
+                  </PopoverAnchor>
+                );
+              }
+              return (
+                <div
+                  key={e.id}
+                  className={`timeline-block ${tier}${isRunning ? " running" : " cursor-pointer"}`}
+                  style={blockStyle}
+                  title={title}
+                  onClick={isRunning ? undefined : () => onSelect(e.id)}
+                >
+                  {blockContent}
                 </div>
               );
             })
@@ -158,11 +186,35 @@ export function Timeline(props: {
   tz: string;
   dayTotal: number;
   weekTotal: number;
+  categories: Category[];
+  tags: Tag[];
+  onEntryUpdated: () => void;
 }) {
   const { t } = useTranslation();
-  const { today, week, mode, onModeChange, nowMs, tz, dayTotal, weekTotal } = props;
+  const {
+    today,
+    week,
+    mode,
+    onModeChange,
+    nowMs,
+    tz,
+    dayTotal,
+    weekTotal,
+    categories,
+    tags,
+    onEntryUpdated,
+  } = props;
   const scrollRef = useRef<HTMLDivElement>(null);
   const isDay = mode === "day";
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // 选中条目：从当前视图数据中查找；编辑后条目移出视图（或刷新后消失）时自动关闭 popover
+  const selectedEntry: TimeEntry | null = selectedId
+    ? (isDay
+        ? (today?.entries ?? [])
+        : (week?.days.flatMap((d) => d.entries) ?? [])
+      ).find((e) => e.id === selectedId) ?? null
+    : null;
 
   // 滚动锚点：day 模式为当天；week 模式为 nowMs 所在的那一列
   const anchorDay = isDay
@@ -192,7 +244,13 @@ export function Timeline(props: {
   const total = isDay ? dayTotal : weekTotal;
 
   return (
-    <section className="flex min-h-0 flex-1 flex-col">
+    <Popover
+      open={selectedEntry != null}
+      onOpenChange={(open) => {
+        if (!open) setSelectedId(null);
+      }}
+    >
+      <section className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
         <div className="flex min-w-0 items-center gap-3">
           <Tabs
@@ -217,6 +275,8 @@ export function Timeline(props: {
             tz={tz}
             isToday
             emptyHint={t("timeline.empty")}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
           />
         ) : week ? (
           <div className="flex min-w-full flex-col">
@@ -266,6 +326,8 @@ export function Timeline(props: {
                     tz={tz}
                     isToday={isDayAt(d, nowMs)}
                     showRuler={false}
+                    selectedId={selectedId}
+                    onSelect={setSelectedId}
                   />
                 </div>
               ))}
@@ -273,6 +335,23 @@ export function Timeline(props: {
           </div>
         ) : null}
       </div>
+      {selectedEntry ? (
+        <PopoverContent side="right" align="start" sideOffset={8} className="w-80">
+          <EntryEditor
+            key={selectedEntry.id}
+            entry={selectedEntry}
+            categories={categories}
+            tags={tags}
+            onSaved={() => {
+              // 保存成功：关闭 popover 并刷新时间线数据（R5）
+              setSelectedId(null);
+              onEntryUpdated();
+            }}
+            onClose={() => setSelectedId(null)}
+          />
+        </PopoverContent>
+      ) : null}
     </section>
+    </Popover>
   );
 }

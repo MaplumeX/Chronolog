@@ -103,6 +103,20 @@ export function TimerPage(props: {
     }
   }
 
+  /** 条目编辑保存后刷新 today/week；不重置开始计时表单（categoryId/description/tagIds）。 */
+  async function refreshEntries() {
+    try {
+      const [entries, w] = await Promise.all([
+        api.todayEntries(tz),
+        week ? api.weekEntries(tz) : Promise.resolve(null),
+      ]);
+      setToday(entries);
+      if (w) setWeek(w);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : t("common.loadFailed"));
+    }
+  }
+
   const pickerLabel = running?.categoryName ?? selected?.name ?? t("timer.selectCategory");
   const pickerColor = running?.categoryName ?? selected?.name ?? "";
   const tagPickerLabel =
@@ -158,6 +172,11 @@ export function TimerPage(props: {
         tz={tz}
         dayTotal={dayTotal}
         weekTotal={weekTotal}
+        categories={categories}
+        tags={tags}
+        onEntryUpdated={() => {
+          void refreshEntries();
+        }}
       />
     </>
   );

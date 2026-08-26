@@ -127,6 +127,17 @@ export const api = {
     request<TodayEntries>(`/api/entries/today?tz=${encodeURIComponent(tz)}`),
   weekEntries: (tz: string) =>
     request<WeekEntries>(`/api/entries/week?tz=${encodeURIComponent(tz)}`),
+  updateEntry: (id: string, body: {
+    description: string;
+    categoryId: string;
+    tagIds: string[];
+    startedAt: string;
+    stoppedAt: string;
+  }) =>
+    request<{ entry: TimeEntry }>(`/api/entries/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
   todayStats: (tz: string, tagId?: string) =>
     request<TodayStats>(
       `/api/stats/today?tz=${encodeURIComponent(tz)}${tagId ? `&tagId=${encodeURIComponent(tagId)}` : ""}`,
