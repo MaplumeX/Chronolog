@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { ChartNoAxesColumn, LogOut, Tags, Timer } from "lucide-react";
+import { ChartNoAxesColumn, LogOut, Tag, Tags, Timer } from "lucide-react";
 import { formatDuration } from "../format";
 import { LanguageSwitcher } from "../i18n/LanguageSwitcher";
 import type { zh } from "../i18n/locales/zh";
@@ -24,12 +24,13 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-export type PageId = "timer" | "stats" | "categories";
+export type PageId = "timer" | "stats" | "categories" | "tags";
 
 const ITEMS: { id: PageId; labelKey: keyof typeof zh; icon: typeof Timer }[] = [
   { id: "timer", labelKey: "nav.timer", icon: Timer },
   { id: "stats", labelKey: "nav.stats", icon: ChartNoAxesColumn },
   { id: "categories", labelKey: "nav.categories", icon: Tags },
+  { id: "tags", labelKey: "nav.tags", icon: Tag },
 ];
 
 function ShellNav(props: {

@@ -1,18 +1,26 @@
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { newId, requireUser } from "../auth.js";
 import type { Deps } from "../db.js";
 import { getEntry, getRunningEntry } from "../entries.js";
 import { AppError, isUniqueViolation, parseBody } from "../errors.js";
-import { categories, timeEntries } from "../schema.js";
+import { categories, entryTags, tags, timeEntries } from "../schema.js";
 
 const startBody = z.object({
   categoryId: z.string().min(1, "请选择分类"),
   description: z.string().max(200, "说明过长").optional(),
+  tagIds: z.array(z.string().min(1)).optional(),
 });
 
-function startOnce(deps: Deps, userId: string, categoryId: string, description: string, nowIso: string) {
+function startOnce(
+  deps: Deps,
+  userId: string,
+  categoryId: string,
+  description: string,
+  tagIds: string[],
+  nowIso: string,
+) {
   let createdId = "";
   deps.db.transaction((tx) => {
     const cat = tx
@@ -21,6 +29,17 @@ function startOnce(deps: Deps, userId: string, categoryId: string, description: 
       .where(and(eq(categories.id, categoryId), eq(categories.userId, userId)))
       .get();
     if (!cat) throw new AppError(404, "NOT_FOUND", "分类不存在");
+
+    if (tagIds.length > 0) {
+      const owned = tx
+        .select({ id: tags.id })
+        .from(tags)
+        .where(and(eq(tags.userId, userId), inArray(tags.id, tagIds)))
+        .all();
+      if (owned.length !== tagIds.length) {
+        throw new AppError(404, "NOT_FOUND", "标签不存在");
+      }
+    }
 
     const running = tx
       .select()
@@ -44,6 +63,11 @@ function startOnce(deps: Deps, userId: string, categoryId: string, description: 
         stoppedAt: null,
       })
       .run();
+    if (tagIds.length > 0) {
+      tx.insert(entryTags)
+        .values(tagIds.map((tagId) => ({ entryId: createdId, tagId })))
+        .run();
+    }
   });
   return createdId;
 }
@@ -58,14 +82,15 @@ export function registerTimerRoutes(app: FastifyInstance, deps: Deps) {
     const user = requireUser(req, deps);
     const body = parseBody(startBody, req.body);
     const description = (body.description ?? "").trim();
+    const tagIds = [...new Set(body.tagIds ?? [])];
     const nowIso = deps.now().toISOString();
 
     let createdId: string;
     try {
-      createdId = startOnce(deps, user.id, body.categoryId, description, nowIso);
+      createdId = startOnce(deps, user.id, body.categoryId, description, tagIds, nowIso);
     } catch (err) {
       if (!isUniqueViolation(err)) throw err;
-      createdId = startOnce(deps, user.id, body.categoryId, description, nowIso);
+      createdId = startOnce(deps, user.id, body.categoryId, description, tagIds, nowIso);
     }
 
     const entry = getEntry(deps.db, user.id, createdId, deps.now());

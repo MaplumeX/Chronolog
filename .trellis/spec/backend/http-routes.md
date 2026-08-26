@@ -25,6 +25,7 @@ One `registerXRoutes(app, deps)` per file. `app.ts` calls:
 
 - `registerAuthRoutes`
 - `registerCategoryRoutes`
+- `registerTagRoutes`
 - `registerTimerRoutes`
 - `registerTodayRoutes`
 
@@ -42,14 +43,18 @@ New endpoints belong in an existing file if they share the resource, or a new `r
 | POST | `/api/categories` | yes | `{ name }` |
 | PATCH | `/api/categories/:id` | yes | `{ name }` |
 | DELETE | `/api/categories/:id` | yes | occupied → 409 |
+| GET | `/api/tags` | yes | includes `entryCount` |
+| POST | `/api/tags` | yes | `{ name }`; duplicate → 409 |
+| PATCH | `/api/tags/:id` | yes | `{ name }`; duplicate → 409 |
+| DELETE | `/api/tags/:id` | yes | direct delete; cascade unlinks entries |
 | GET | `/api/timer/current` | yes | `{ entry: EntryDto \| null }` |
-| POST | `/api/timer/start` | yes | `{ categoryId, description? }` |
+| POST | `/api/timer/start` | yes | `{ categoryId, description?, tagIds? }` |
 | POST | `/api/timer/stop` | yes | no running → 409 |
 | GET | `/api/entries/today?tz=` | yes | overlapping entries + `clippedSeconds` |
 | GET | `/api/entries/week?tz=` | yes | ISO week (Mon–Sun) as 7 day buckets: `{ tz, weekStart, weekEnd, days: TodayEntries[] }` |
-| GET | `/api/stats/today?tz=` | yes | per-category clipped seconds |
+| GET | `/api/stats/today?tz=&tagId=` | yes | per-category clipped seconds; optional `tagId` filter |
 
-`EntryDto` (`server/src/entries.ts`) is the timer/today payload: `id`, `categoryId`, `categoryName`, `description`, `startedAt`, `stoppedAt`, `durationSeconds`, optional `clippedSeconds`. Keep `web/src/api.ts` `TimeEntry` in sync.
+`EntryDto` (`server/src/entries.ts`) is the timer/today payload: `id`, `categoryId`, `categoryName`, `description`, `startedAt`, `stoppedAt`, `durationSeconds`, optional `clippedSeconds`, `tags: { id, name }[]` (ordered by name). Keep `web/src/api.ts` `TimeEntry` in sync.
 
 ## SPA fallback
 

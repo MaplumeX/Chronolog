@@ -135,6 +135,15 @@ Replaced Chronolog beige card chrome with Tailwind v4 + shadcn: light neutral sh
 ### Summary
 
 计时页时间线支持当天/本周视图切换：后端新增 GET /api/entries/week?tz= 返回 ISO 周 7 天数据（weekBounds/weekDayBounds，DST 安全）；前端 Timeline 抽 DayColumn 复用单日渲染，week 模式 7 列并排 + 周头部 + 列头，TimerPage 加 shadcn Tabs 切换与按需加载；i18n zh/en 同步；新增 week.test.ts 6 个用例（含 DST 边界），23/23 测试通过。
+## Session 6: 标签功能：多标签支持（计时器输入/时间线展示/统计筛选/标签管理）
+
+**Date**: 2026-08-26
+**Task**: 标签功能：多标签支持（计时器输入/时间线展示/统计筛选/标签管理）
+**Branch**: `feat/tag-feature`
+
+### Summary
+
+实现多标签（多对多）功能：tags/entry_tags 表（级联删除）、标签 CRUD API、timer start 接受 tagIds、EntryDto 返回 tags、stats 按 tagId 筛选；前端 TagPicker 多选、时间线标签徽章、统计页标签筛选、TagsPage 管理页、zh/en i18n；23 测试全绿，typecheck/build 通过，spec 已更新。
 
 ### Git Commits
 
@@ -186,6 +195,7 @@ Fixed week view ruler collapse (height:auto override so flex stretch fills 960px
 |------|---------|
 | `4a28fc0` | (see git log) |
 | `31f7a5f` | (see git log) |
+| `cb7c29a` | (see git log) |
 
 ### Status
 

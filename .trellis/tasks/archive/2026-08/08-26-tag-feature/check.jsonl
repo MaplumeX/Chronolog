@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "验证 SCHEMA_SQL 与 schema.ts 一致性、级联删除行为、唯一索引"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "验证 409/404 状态码与 error.code 契约、跨用户隔离"}
+{"file": ".trellis/spec/backend/http-routes.md", "reason": "验证 API 表面与 EntryDto 契约、新端点注册"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "验证导航 IA、i18n 键同步、组件规范"}
+{"file": ".trellis/spec/frontend/api-client.md", "reason": "验证 TimeEntry/Tag 类型与后端 DTO 同步"}

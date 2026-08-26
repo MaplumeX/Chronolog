@@ -90,7 +90,9 @@ function DayColumn(props: {
               else if (heightPct >= 1) tier = "compact";
               else tier = "mini";
 
-              const title = `${desc} · ${e.categoryName} · ${timeRange} · ${formatDuration(secs)}`;
+              const title = `${desc} · ${e.categoryName} · ${timeRange} · ${formatDuration(secs)}${
+                e.tags.length > 0 ? ` · ${e.tags.map((x) => x.name).join(t("timer.tagSeparator"))}` : ""
+              }`;
 
               return (
                 <div
@@ -108,6 +110,19 @@ function DayColumn(props: {
                     <>
                       <div className="block-desc">{desc}</div>
                       <div className="block-meta">{e.categoryName}</div>
+                      {e.tags.length > 0 ? (
+                        <div className="block-tags">
+                          {e.tags.map((tag) => (
+                            <span key={tag.id} className="block-tag">
+                              <span
+                                className="size-1.5 shrink-0 rounded-full"
+                                style={{ background: categoryColor(tag.name) }}
+                              />
+                              {tag.name}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
                       <div className="block-time">{timeRange}</div>
                       <div className="block-dur">{formatDuration(secs)}</div>
                     </>
