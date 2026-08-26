@@ -29,7 +29,7 @@ Ask these questions before coding. Most Chronolog bugs so far sit on boundaries 
 - [ ] Second copy of duration or clip math
 - [ ] New DTO type in a page file
 - [ ] New default category name
-- [ ] Same CSS pattern as an existing card/table
+- [ ] Same surface/table pattern as an existing page (do not wrap in `Card`)
 
 → [Code Reuse Thinking](./code-reuse-thinking-guide.md)
 

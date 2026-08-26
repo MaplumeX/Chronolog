@@ -69,3 +69,25 @@ Rewrote .trellis/spec from server/ and web/ source: added auth, timezone, HTTP r
 ### Status
 
 [OK] **Completed**
+
+
+## Session 4: Restructure components and layout
+
+**Date**: 2026-08-26
+**Task**: Restructure components and layout
+**Branch**: `feat/restructure-components-layout`
+
+### Summary
+
+Replaced Chronolog beige card chrome with Tailwind v4 + shadcn: light neutral shell, collapsible icon sidebar, mobile drawer, extracted TimerBar/CategoryPicker/Timeline. Frontend specs updated. No API/behavior change.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0733e27` | (see git log) |
+| `b3969f4` | (see git log) |
+
+### Status
+
+[OK] **Completed**

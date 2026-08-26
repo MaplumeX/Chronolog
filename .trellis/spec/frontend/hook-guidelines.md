@@ -1,6 +1,6 @@
 # Hook Guidelines
 
-There is no `src/hooks/` library. Data fetching and clocks stay in `App` or the page that owns the screen.
+Do not grow `src/hooks/` with business hooks. `use-mobile.ts` is generated for shadcn Sidebar. Data fetching and clocks stay in `App` or the page that owns the screen.
 
 ## Patterns in use
 
@@ -10,7 +10,7 @@ There is no `src/hooks/` library. Data fetching and clocks stay in `App` or the 
 
 **Page fetch on mount**: `TimerPage` / `CategoriesPage` load in `useEffect` with `[]` and write into `useState`. `StatsPage` also polls every 5 seconds and uses a `cancelled` flag.
 
-**Outside click**: `TimerPage` category menu uses `useRef` + document `mousedown`.
+**Category menu**: `CategoryPicker` uses shadcn `DropdownMenu`, not a document `mousedown` listener.
 
 ## When to extract a hook
 

@@ -40,7 +40,11 @@ export function App() {
     return () => clearInterval(id);
   }, [current]);
 
-  if (user === undefined) return <div className="boot">加载中…</div>;
+  if (user === undefined) {
+    return (
+      <div className="grid min-h-dvh place-items-center text-muted-foreground">加载中…</div>
+    );
+  }
   if (!user) return <AuthPage onAuthed={setUser} />;
 
   async function logout() {

@@ -28,35 +28,40 @@ export function StatsPage() {
   const max = Math.max(1, ...(stats?.categories.map((c) => c.seconds) ?? [1]));
 
   return (
-    <>
-      <h1 className="page-title">统计</h1>
-      <p className="muted" style={{ marginTop: -8, marginBottom: 16 }}>
-        {formatDayLabel(tz)} · 按分类合计
-      </p>
-      {error ? <p className="error">{error}</p> : null}
-      <div className="stats-card">
-        {!stats || stats.categories.length === 0 ? (
-          <div className="empty">今天还没有记录</div>
-        ) : (
-          stats.categories.map((c) => (
-            <div className="stat-row" key={c.categoryId}>
-              <span className="inline">
-                <span className="dot" style={{ background: categoryColor(c.categoryName) }} />
+    <div className="px-6 py-6">
+      <h1 className="text-xl font-semibold">统计</h1>
+      <p className="mt-1 mb-4 text-sm text-muted-foreground">{formatDayLabel(tz)} · 按分类合计</p>
+      {error ? <p className="mb-3 text-sm text-destructive">{error}</p> : null}
+      {!stats || stats.categories.length === 0 ? (
+        <p className="py-8 text-center text-muted-foreground">今天还没有记录</p>
+      ) : (
+        <div className="divide-y">
+          {stats.categories.map((c) => (
+            <div
+              className="grid grid-cols-[minmax(0,7rem)_1fr_auto] items-center gap-3 py-3 md:grid-cols-[160px_1fr_88px]"
+              key={c.categoryId}
+            >
+              <span className="flex items-center gap-2">
+                <span
+                  className="size-2 shrink-0 rounded-full"
+                  style={{ background: categoryColor(c.categoryName) }}
+                />
                 {c.categoryName}
               </span>
-              <div className="bar">
+              <div className="h-2.5 overflow-hidden rounded-full bg-muted">
                 <span
+                  className="block h-full rounded-full"
                   style={{
                     width: `${(c.seconds / max) * 100}%`,
                     background: categoryColor(c.categoryName),
                   }}
                 />
               </div>
-              <span className="stat-secs">{formatDuration(c.seconds)}</span>
+              <span className="text-right font-mono tabular-nums">{formatDuration(c.seconds)}</span>
             </div>
-          ))
-        )}
-      </div>
-    </>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
