@@ -124,3 +124,24 @@ Replaced Chronolog beige card chrome with Tailwind v4 + shadcn: light neutral sh
 ### Status
 
 [OK] **Completed**
+
+
+## Session 6: 标签功能：多标签支持（计时器输入/时间线展示/统计筛选/标签管理）
+
+**Date**: 2026-08-26
+**Task**: 标签功能：多标签支持（计时器输入/时间线展示/统计筛选/标签管理）
+**Branch**: `feat/tag-feature`
+
+### Summary
+
+实现多标签（多对多）功能：tags/entry_tags 表（级联删除）、标签 CRUD API、timer start 接受 tagIds、EntryDto 返回 tags、stats 按 tagId 筛选；前端 TagPicker 多选、时间线标签徽章、统计页标签筛选、TagsPage 管理页、zh/en i18n；23 测试全绿，typecheck/build 通过，spec 已更新。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `cb7c29a` | (see git log) |
+
+### Status
+
+[OK] **Completed**

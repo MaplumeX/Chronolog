@@ -22,7 +22,7 @@ Login/register 401 (bad password) still fires `onUnauthorized`; that is harmless
 
 Keep these next to the client, not in a separate `types.ts`:
 
-- `User`, `Category` (`entryCount`), `TimeEntry`, `TodayEntries`, `TodayStats`
+- `User`, `Category` (`entryCount`), `Tag` (`entryCount`), `TimeEntry` (`tags: { id, name }[]`), `TodayEntries`, `TodayStats`
 
 They must match `EntryDto` / route return values on the server. Instants are `string` (ISO-Z). `stoppedAt: string | null`.
 
@@ -30,9 +30,10 @@ Today endpoints take `tz` and encode it:
 
 ```ts
 `/api/entries/today?tz=${encodeURIComponent(tz)}`
+`/api/stats/today?tz=${encodeURIComponent(tz)}&tagId=${encodeURIComponent(tagId)}`
 ```
 
-`tz` comes from `browserTz()` in `format.ts`.
+`tz` comes from `browserTz()` in `format.ts`. `tagId` is optional; omit it for unfiltered stats.
 
 ## Error display
 

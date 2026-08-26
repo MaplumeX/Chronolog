@@ -26,6 +26,8 @@ When adding a column or index, update **both** files in the same change. Do not 
 | `users` | `username` unique with `COLLATE NOCASE`; `password_hash` Argon2id PHC |
 | `sessions` | opaque id; `ON DELETE CASCADE` with user |
 | `categories` | unique `(user_id, name)` |
+| `tags` | unique `(user_id, name)`; `ON DELETE CASCADE` with user |
+| `entry_tags` | composite PK `(entry_id, tag_id)`; both FKs `ON DELETE CASCADE` |
 | `time_entries` | `stopped_at` NULL = running; unique `(user_id) WHERE stopped_at IS NULL` |
 
 Default categories on register: `DEFAULT_CATEGORIES` in `schema.ts` — `工作`, `学习`, `休息`, `事务`. Seeded in the same transaction as the user insert (`server/src/routes/auth.ts`).
@@ -65,3 +67,9 @@ Correct: one transaction + partial unique index + one unique-violation retry.
 ## Category occupancy
 
 `DELETE /api/categories/:id` counts `time_entries` for that category (running or stopped). Count > 0 → 409 `CONFLICT`. `time_entries.category_id` has no `ON DELETE CASCADE`; occupancy is an application rule (`server/src/routes/categories.ts`, `server/test/categories.test.ts`).
+
+## Tag occupancy
+
+`DELETE /api/tags/:id` deletes the tag directly; `entry_tags` rows are removed by `ON DELETE CASCADE` (application does not count occupancy). This differs from categories: tags are lightweight markers, deletion is always allowed (`server/src/routes/tags.ts`, `server/test/tags.test.ts`).
+
+`POST /api/timer/start` accepts optional `tagIds`; each id must belong to the user (404 inside the transaction). `EntryDto.tags` is ordered by tag name (`attachTags` in `server/src/entries.ts`).

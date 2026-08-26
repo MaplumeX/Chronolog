@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Schema 变更规范：SCHEMA_SQL 与 schema.ts 双文件同步、无迁移、级联外键、唯一索引模式"}
+{"file": ".trellis/spec/backend/http-routes.md", "reason": "路由注册方式、Deps、EntryDto 契约、新端点归属规则"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "AppError 状态码矩阵、zod 校验、唯一约束 409 映射、跨用户 404"}
+{"file": ".trellis/spec/backend/time-and-timezone.md", "reason": "today 边界、clip 逻辑、statsToday 聚合语义（tagId 过滤需保持）"}
+{"file": ".trellis/spec/frontend/api-client.md", "reason": "api.ts 客户端模式、DTO 类型同步、tz 编码"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Shell 导航 IA、页面组件规范、i18n 文案、图标集、无 Card 包裹"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "页面级状态边界、TimerPage 编排职责、轮询模式"}
