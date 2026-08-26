@@ -168,3 +168,25 @@ Week view column headers now show a bold day number + weekday with today highlig
 ### Status
 
 [OK] **Completed**
+
+
+## Session 8: Week view border cleanup + ruler height fix
+
+**Date**: 2026-08-26
+**Task**: Week view border cleanup + ruler height fix
+**Branch**: `feat/timer-timeline-view-toggle`
+
+### Summary
+
+Fixed week view ruler collapse (height:auto override so flex stretch fills 960px) and removed redundant border-l on first header column that crossed the header border-b under the title. Verified with headless Chrome measurements and npm run build.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4a28fc0` | (see git log) |
+| `31f7a5f` | (see git log) |
+
+### Status
+
+[OK] **Completed**
