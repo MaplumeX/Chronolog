@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Quality Check：typecheck/build、中文、分类合计只在统计页"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "核对 IA、计时页不得出现分类合计、play/stop 可访问性"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "新文件是否落在 pages/ 与 components/ 约定位置"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "构建命令、中文、手动路径、不要把 sid 存 localStorage"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "确认未引入 Router/store，session 仍在 App"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "确认没有复制 clip/duration 或绕过 api.ts"}
+{"file": ".trellis/tasks/08-26-restructure-components-layout/research/shadcn-sidebar.md", "reason": "桌面图标轨 + 窄屏抽屉是否按设计组成"}

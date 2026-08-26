@@ -17,7 +17,7 @@ Search before adding a helper. Chronolog is small; a second copy of clip math or
 | Test app | `server/test/helpers.ts` `createTestApp` |
 | Default categories | `DEFAULT_CATEGORIES` in `schema.ts` |
 
-Do not invent `utils.ts` or `hooks/useFetch.ts` that re-wrap these.
+Do not invent a second `utils.ts` or `hooks/useFetch.ts` that re-wrap these. `web/src/lib/utils.ts` exists only for shadcn `cn()`.
 
 ## Dual `clipSeconds`
 
@@ -36,8 +36,8 @@ Category seed names, cookie name `sid`, error codes (`VALIDATION`, `UNAUTHORIZED
 ## When not to abstract
 
 - A one-off `cancelled` flag in `StatsPage` polling
-- A document click listener used only by the category menu
-- Inline SVG for play/stop
+- A one-off className string on a page
+- Lucide icons already imported in `Shell` / `TimerBar` (do not add a second icon pack)
 
 Do not build a generic `useInterval` or `Select` until a third call site exists.
 

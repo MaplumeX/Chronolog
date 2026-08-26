@@ -1,0 +1,9 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "frontend 入口与 pre-dev 清单"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "组件落点；本任务会新增 ui/ 与拆出的 Shell/TimerBar/Timeline"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "壳层 IA、计时 vs 统计、中文文案；布局约束将被本任务改写但行为约束仍有效"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "App 持有 session/page/current/nowMs，不要引入 Router 或 store"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "不要为这一次抽取 useTimer；nowMs 仍只在 App 打 tick"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "中文 UI、typecheck/build、窄窗检查"}
+{"file": ".trellis/spec/guides/code-reuse-thinking-guide.md", "reason": "cn/utils 是 shadcn 破例；format.ts 与 api.ts 不要重包"}
+{"file": ".trellis/tasks/08-26-restructure-components-layout/research/tailwind-v4-shadcn-vite.md", "reason": "Vite + Tailwind v4 + shadcn 安装路径"}
+{"file": ".trellis/tasks/08-26-restructure-components-layout/research/shadcn-sidebar.md", "reason": "可折叠左栏与窄屏抽屉的组成"}
