@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ApiError, api, type Category, type TimeEntry, type TodayEntries } from "../api";
+import { ApiError, api, type Category, type Tag, type TimeEntry, type TodayEntries } from "../api";
 import { CategoryPicker } from "../components/CategoryPicker";
+import { TagPicker } from "../components/TagPicker";
 import { Timeline } from "../components/Timeline";
 import { TimerBar } from "../components/TimerBar";
 import { browserTz, clipSeconds, elapsedSeconds } from "../format";
@@ -14,18 +15,22 @@ export function TimerPage(props: {
   const { t } = useTranslation();
   const tz = browserTz();
   const [categories, setCategories] = useState<Category[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [today, setToday] = useState<TodayEntries | null>(null);
   const [categoryId, setCategoryId] = useState("");
+  const [tagIds, setTagIds] = useState<string[]>([]);
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
 
   async function refresh() {
-    const [cats, entries, cur] = await Promise.all([
+    const [cats, tagRes, entries, cur] = await Promise.all([
       api.categories(),
+      api.tags(),
       api.todayEntries(tz),
       api.current(),
     ]);
     setCategories(cats.categories);
+    setTags(tagRes.tags);
     setToday(entries);
     props.onCurrent(cur.entry);
     if (!categoryId && cur.entry) setCategoryId(cur.entry.categoryId);
@@ -59,7 +64,7 @@ export function TimerPage(props: {
         props.onCurrent(null);
       } else {
         if (!categoryId) return;
-        const { entry } = await api.start(categoryId, description);
+        const { entry } = await api.start(categoryId, description, tagIds);
         props.onCurrent(entry);
       }
       const entries = await api.todayEntries(tz);
@@ -71,6 +76,13 @@ export function TimerPage(props: {
 
   const pickerLabel = running?.categoryName ?? selected?.name ?? t("timer.selectCategory");
   const pickerColor = running?.categoryName ?? selected?.name ?? "";
+  const tagPickerLabel =
+    tagIds.length > 0
+      ? tagIds
+          .map((id) => tags.find((x) => x.id === id)?.name)
+          .filter(Boolean)
+          .join(t("timer.tagSeparator"))
+      : t("timer.selectTags");
 
   return (
     <>
@@ -88,6 +100,16 @@ export function TimerPage(props: {
             onChange={setCategoryId}
           />
         }
+        tagPicker={
+          <TagPicker
+            tags={tags}
+            value={tagIds}
+            label={tagPickerLabel}
+            disabled={Boolean(running)}
+            onChange={setTagIds}
+          />
+        }
+        runningTags={running?.tags ?? []}
         elapsed={elapsed}
         running={Boolean(running)}
         canStart={Boolean(categoryId)}

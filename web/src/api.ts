@@ -4,6 +4,8 @@ export type User = { id: string; username: string };
 
 export type Category = { id: string; name: string; entryCount: number };
 
+export type Tag = { id: string; name: string; entryCount: number };
+
 export type TimeEntry = {
   id: string;
   categoryId: string;
@@ -13,6 +15,7 @@ export type TimeEntry = {
   stoppedAt: string | null;
   durationSeconds: number;
   clippedSeconds?: number;
+  tags: { id: string; name: string }[];
 };
 
 export type TodayEntries = {
@@ -96,15 +99,27 @@ export const api = {
     }),
   deleteCategory: (id: string) =>
     request<{ ok: boolean }>(`/api/categories/${id}`, { method: "DELETE" }),
+  tags: () => request<{ tags: Tag[] }>("/api/tags"),
+  createTag: (name: string) =>
+    request<Tag>("/api/tags", { method: "POST", body: JSON.stringify({ name }) }),
+  renameTag: (id: string, name: string) =>
+    request<{ id: string; name: string }>(`/api/tags/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ name }),
+    }),
+  deleteTag: (id: string) =>
+    request<{ ok: boolean }>(`/api/tags/${id}`, { method: "DELETE" }),
   current: () => request<{ entry: TimeEntry | null }>("/api/timer/current"),
-  start: (categoryId: string, description?: string) =>
+  start: (categoryId: string, description?: string, tagIds?: string[]) =>
     request<{ entry: TimeEntry }>("/api/timer/start", {
       method: "POST",
-      body: JSON.stringify({ categoryId, description }),
+      body: JSON.stringify({ categoryId, description, tagIds }),
     }),
   stop: () => request<{ entry: TimeEntry }>("/api/timer/stop", { method: "POST" }),
   todayEntries: (tz: string) =>
     request<TodayEntries>(`/api/entries/today?tz=${encodeURIComponent(tz)}`),
-  todayStats: (tz: string) =>
-    request<TodayStats>(`/api/stats/today?tz=${encodeURIComponent(tz)}`),
+  todayStats: (tz: string, tagId?: string) =>
+    request<TodayStats>(
+      `/api/stats/today?tz=${encodeURIComponent(tz)}${tagId ? `&tagId=${encodeURIComponent(tagId)}` : ""}`,
+    ),
 };

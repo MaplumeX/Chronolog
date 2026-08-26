@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Play, Square } from "lucide-react";
-import { formatDuration } from "../format";
+import { categoryColor, formatDuration } from "../format";
 import { Button } from "@/components/ui/button";
 
 export function TimerBar(props: {
@@ -9,6 +9,8 @@ export function TimerBar(props: {
   descriptionReadOnly: boolean;
   onDescriptionChange: (value: string) => void;
   categoryPicker: ReactNode;
+  tagPicker: ReactNode;
+  runningTags: { id: string; name: string }[];
   elapsed: number;
   running: boolean;
   canStart: boolean;
@@ -29,6 +31,25 @@ export function TimerBar(props: {
           readOnly={props.descriptionReadOnly}
         />
         {props.categoryPicker}
+        {props.running && props.runningTags.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {props.runningTags.map((tag) => (
+              <span
+                key={tag.id}
+                className="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs"
+                title={tag.name}
+              >
+                <span
+                  className="size-1.5 shrink-0 rounded-full"
+                  style={{ background: categoryColor(tag.name) }}
+                />
+                {tag.name}
+              </span>
+            ))}
+          </div>
+        ) : (
+          props.tagPicker
+        )}
         <div className="flex items-center justify-end gap-3">
           <div className="min-w-[88px] text-right font-mono text-lg tabular-nums">
             {formatDuration(props.elapsed)}

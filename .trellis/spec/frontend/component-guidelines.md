@@ -18,8 +18,9 @@ Nav items (fixed product IA):
 | `PageId` | Label | Main |
 |----------|--------|------|
 | `timer` | 计时 | Timer bar + today’s entry timeline |
-| `stats` | 统计 | Today’s **per-category** totals |
+| `stats` | 统计 | Today’s **per-category** totals + tag filter |
 | `categories` | 分类 | Category table |
+| `tags` | 标签 | Tag table (create / rename / delete) |
 
 Footer: username + language switcher (`LanguageSwitcher`, shadcn `DropdownMenu` with 中文 / English) + `退出`. While a timer runs, the 计时 item shows elapsed (`formatDuration`) via `SidebarMenuBadge`. Do not add Calendar, Timesheet, week pickers, or a marketing landing page.
 
@@ -37,7 +38,13 @@ Screen-reader copy on Sidebar/Sheet is i18n-ized (`sidebar.nav`, `sidebar.toggle
 
 `TimerPage` must **not** show a per-category breakdown. That is `StatsPage` only (R15).
 
-`StatsPage` polls `/api/stats/today` every 5s. Rows + category-colored bars (not shadcn `Progress`). Empty copy: `今天还没有记录`.
+`TagPicker` — shadcn `DropdownMenu` multi-select; checked items show a `Check` icon and `bg-accent`. `TimerBar` renders it as a slot; while running, read-only tag badges replace the picker.
+
+`Timeline` full tier shows a tag badge row (dot + name, `categoryColor(tag.name)`) under `block-meta`; compact/mini tiers skip badges, tooltip title appends tag names.
+
+`StatsPage` polls `/api/stats/today` every 5s. Rows + category-colored bars (not shadcn `Progress`). Empty copy: `今天还没有记录`. Optional tag filter dropdown (全部标签 + each tag) re-requests with `tagId`.
+
+`TagsPage`: shadcn `Table` like `CategoriesPage`; delete uses an inline two-click confirm (删除 → 确认删除？), no alert-dialog component.
 
 `CategoriesPage`: shadcn `Table`. Occupied categories: disable delete; keep the 409 explanation as `title`.
 
@@ -47,7 +54,7 @@ Do not `shadcn add card` to wrap these pages.
 
 - UI copy is i18n-ized: all strings come from `t()` keys in `web/src/i18n/locales/` (zh default, en). Placeholders too (`timer.placeholder`, `timer.selectCategory`). Never hardcode UI copy in components.
 - Buttons: `type="button"` unless they submit a form (`AuthPage`).
-- Icons: Lucide only (`Timer`, `ChartNoAxesColumn`, `Tags`, `LogOut`, `Play`, `Square`).
+- Icons: Lucide only (`Timer`, `ChartNoAxesColumn`, `Tags`, `Tag`, `LogOut`, `Play`, `Square`).
 - Category color is `categoryColor(name)` in `format.ts` (hash → palette). Do not store colors in the database.
 
 ## Anti-patterns

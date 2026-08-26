@@ -9,6 +9,7 @@ import { registerAuthRoutes } from "./routes/auth.js";
 import { registerCategoryRoutes } from "./routes/categories.js";
 import { registerTimerRoutes } from "./routes/timer.js";
 import { registerTodayRoutes } from "./routes/today.js";
+import { registerTagRoutes } from "./routes/tags.js";
 
 export type AppConfig = {
   dbPath: string;
@@ -48,6 +49,7 @@ export async function buildApp(opts: AppConfig) {
   registerCategoryRoutes(app, deps);
   registerTimerRoutes(app, deps);
   registerTodayRoutes(app, deps);
+  registerTagRoutes(app, deps);
 
   const webDist = opts.webDist ? path.resolve(opts.webDist) : undefined;
   if (webDist && fs.existsSync(webDist)) {

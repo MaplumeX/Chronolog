@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { index, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const users = sqliteTable(
   "users",
@@ -60,6 +60,35 @@ export const timeEntries = sqliteTable(
     uniqueIndex("time_entries_one_running")
       .on(t.userId)
       .where(sql`${t.stoppedAt} is null`),
+  ],
+);
+
+export const tags = sqliteTable(
+  "tags",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    createdAt: text("created_at").notNull(),
+  },
+  (t) => [uniqueIndex("tags_user_id_name").on(t.userId, t.name)],
+);
+
+export const entryTags = sqliteTable(
+  "entry_tags",
+  {
+    entryId: text("entry_id")
+      .notNull()
+      .references(() => timeEntries.id, { onDelete: "cascade" }),
+    tagId: text("tag_id")
+      .notNull()
+      .references(() => tags.id, { onDelete: "cascade" }),
+  },
+  (t) => [
+    primaryKey({ columns: [t.entryId, t.tagId] }),
+    index("entry_tags_tag_id").on(t.tagId),
   ],
 );
 

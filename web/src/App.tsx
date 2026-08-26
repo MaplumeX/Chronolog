@@ -7,6 +7,7 @@ import { useTheme } from "./hooks/use-theme";
 import { AuthPage } from "./pages/AuthPage";
 import { CategoriesPage } from "./pages/CategoriesPage";
 import { StatsPage } from "./pages/StatsPage";
+import { TagsPage } from "./pages/TagsPage";
 import { TimerPage } from "./pages/TimerPage";
 
 export function App() {
@@ -76,6 +77,7 @@ export function App() {
       ) : null}
       {page === "stats" ? <StatsPage /> : null}
       {page === "categories" ? <CategoriesPage /> : null}
+      {page === "tags" ? <TagsPage /> : null}
     </Shell>
   );
 }

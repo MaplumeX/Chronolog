@@ -51,6 +51,21 @@ CREATE TABLE IF NOT EXISTS time_entries (
 CREATE INDEX IF NOT EXISTS time_entries_user_started ON time_entries(user_id, started_at);
 CREATE UNIQUE INDEX IF NOT EXISTS time_entries_one_running
   ON time_entries(user_id) WHERE stopped_at IS NULL;
+
+CREATE TABLE IF NOT EXISTS tags (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS tags_user_id_name ON tags(user_id, name);
+
+CREATE TABLE IF NOT EXISTS entry_tags (
+  entry_id TEXT NOT NULL REFERENCES time_entries(id) ON DELETE CASCADE,
+  tag_id TEXT NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+  PRIMARY KEY (entry_id, tag_id)
+);
+CREATE INDEX IF NOT EXISTS entry_tags_tag_id ON entry_tags(tag_id);
 `;
 
 export function openDb(dbPath: string): { sqlite: InstanceType<typeof Database>; db: Db } {

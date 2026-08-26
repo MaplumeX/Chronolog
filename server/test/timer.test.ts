@@ -86,6 +86,62 @@ describe("timer", () => {
     assert.equal(stopped?.stoppedAt && stopped.stoppedAt >= firstStarted, true);
   });
 
+  it("start with tagIds attaches tags; current returns them", async () => {
+    t = await createTestApp();
+    const { sid } = await registerUser(t.app, "tagged");
+    const cats = await firstCategory(t.app, sid);
+
+    const tagA = await t.app.inject({
+      method: "POST",
+      url: "/api/tags",
+      headers: cookieHeader(sid),
+      payload: { name: "深度" },
+    });
+    const tagB = await t.app.inject({
+      method: "POST",
+      url: "/api/tags",
+      headers: cookieHeader(sid),
+      payload: { name: "专注" },
+    });
+    const tagAId = json(tagA).id as string;
+    const tagBId = json(tagB).id as string;
+
+    const start = await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: cats[0].id, tagIds: [tagAId, tagBId, tagAId] },
+    });
+    assert.equal(start.statusCode, 200);
+    const entry = json(start).entry as { id: string; tags: { id: string; name: string }[] };
+    assert.equal(entry.tags.length, 2);
+    assert.deepEqual(
+      entry.tags.map((x) => x.id).sort(),
+      [tagAId, tagBId].sort(),
+    );
+
+    const current = await t.app.inject({
+      method: "GET",
+      url: "/api/timer/current",
+      headers: cookieHeader(sid),
+    });
+    const running = json(current).entry as { tags: { id: string; name: string }[] };
+    assert.equal(running.tags.length, 2);
+  });
+
+  it("start with a foreign tag id is 404", async () => {
+    t = await createTestApp();
+    const { sid } = await registerUser(t.app, "tag_foreign");
+    const cats = await firstCategory(t.app, sid);
+    const res = await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: cats[0].id, tagIds: ["no-such-tag"] },
+    });
+    assert.equal(res.statusCode, 404);
+  });
+
   it("reopening the database keeps a running timer", async () => {
     t = await createTestApp({ keepDir: true });
     const { sid } = await registerUser(t.app, "persist");
