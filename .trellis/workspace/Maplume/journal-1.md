@@ -221,3 +221,26 @@ Resolved 6-file merge conflict with origin/main: kept refactored DayColumn + wee
 ### Status
 
 [OK] **Completed**
+
+
+## Session 11: 时间线条目可点击编辑（popover）
+
+**Date**: 2026-08-26
+**Task**: 时间线条目可点击编辑（popover）
+**Branch**: `feat/clickable-entries-editable-popup`
+
+### Summary
+
+新增 PATCH /api/entries/:id 编辑接口（本人校验/运行中409/时间校验400/重叠409 OVERLAP）；前端时间线色块可点击，popover 显示并编辑描述/分类/标签/起止时间（Radix Popover+Anchor 锚定）；check 修复 cursor 级联与表单状态残留；更新 backend/frontend spec
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `6703408` | (see git log) |
+| `d615c63` | (see git log) |
+| `9a8b831` | (see git log) |
+
+### Status
+
+[OK] **Completed**

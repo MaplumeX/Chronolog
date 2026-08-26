@@ -193,7 +193,6 @@
   border-radius: var(--radius-sm);
   padding: 6px 10px;
   overflow: hidden;
-  cursor: default;
 }
 
 .timeline-block .block-desc {
@@ -268,6 +267,7 @@
 }
 
 .timeline-block.running {
+  cursor: default;
   outline: 2px solid rgba(255, 255, 255, 0.85);
   outline-offset: -2px;
   animation: timeline-pulse 1.6s ease-in-out infinite;

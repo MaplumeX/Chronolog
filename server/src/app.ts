@@ -7,6 +7,7 @@ import { AppError } from "./errors.js";
 import { openDb, type Deps } from "./db.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerCategoryRoutes } from "./routes/categories.js";
+import { registerEntryRoutes } from "./routes/entries.js";
 import { registerTimerRoutes } from "./routes/timer.js";
 import { registerTodayRoutes } from "./routes/today.js";
 import { registerTagRoutes } from "./routes/tags.js";
@@ -47,6 +48,7 @@ export async function buildApp(opts: AppConfig) {
 
   registerAuthRoutes(app, deps);
   registerCategoryRoutes(app, deps);
+  registerEntryRoutes(app, deps);
   registerTimerRoutes(app, deps);
   registerTodayRoutes(app, deps);
   registerTagRoutes(app, deps);

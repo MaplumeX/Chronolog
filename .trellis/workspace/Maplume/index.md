@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 10
+- **Total Sessions**: 11
 - **Last Active**: 2026-08-26
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~223 | Active |
+| `journal-1.md` | ~246 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 11 | 2026-08-26 | 时间线条目可点击编辑（popover） | `6703408`, `d615c63`, `9a8b831` | `feat/clickable-entries-editable-popup` |
 | 10 | 2026-08-26 | Merge main (tag feature #5) into timeline view toggle branch | `3e7f522` | `feat/timer-timeline-view-toggle` |
 | 8 | 2026-08-26 | Week view border cleanup + ruler height fix | `4a28fc0`, `31f7a5f` | `feat/timer-timeline-view-toggle` |
 | 7 | 2026-08-26 | Polish week view: day-number headers, today highlight, shared ruler | `c02b83e` | `feat/timer-timeline-view-toggle` |

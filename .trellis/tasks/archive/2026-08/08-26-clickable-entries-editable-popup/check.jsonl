@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "后端质量与测试约定"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "前端质量约定"}
+{"file": ".trellis/spec/backend/http-routes.md", "reason": "路由与错误码核对"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "组件与 i18n 核对"}

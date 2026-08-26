@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/backend/http-routes.md", "reason": "PATCH 路由与错误码约定"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "AppError/parseBody 模式"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "drizzle 事务与查询约定"}
+{"file": ".trellis/spec/backend/time-and-timezone.md", "reason": "时间处理约定"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "组件与 i18n 约定"}
+{"file": ".trellis/spec/frontend/api-client.md", "reason": "api.ts 客户端约定"}

@@ -53,8 +53,11 @@ New endpoints belong in an existing file if they share the resource, or a new `r
 | GET | `/api/entries/today?tz=` | yes | overlapping entries + `clippedSeconds` |
 | GET | `/api/entries/week?tz=` | yes | ISO week (Mon–Sun) as 7 day buckets: `{ tz, weekStart, weekEnd, days: TodayEntries[] }` |
 | GET | `/api/stats/today?tz=&tagId=` | yes | per-category clipped seconds; optional `tagId` filter |
+| PATCH | `/api/entries/:id` | yes | full update: `{ description, categoryId, tagIds, startedAt, stoppedAt }`; stopped entries only; overlap → 409 `OVERLAP` |
 
 `EntryDto` (`server/src/entries.ts`) is the timer/today payload: `id`, `categoryId`, `categoryName`, `description`, `startedAt`, `stoppedAt`, `durationSeconds`, optional `clippedSeconds`, `tags: { id, name }[]` (ordered by name). Keep `web/src/api.ts` `TimeEntry` in sync.
+
+`PATCH /api/entries/:id` (`server/src/routes/entries.ts`) is the only endpoint that accepts client-sent `startedAt` / `stoppedAt` (full update, stopped entries only). Validation order inside the transaction: entry owned (404) → stopped (409 `CONFLICT`) → category owned (404) → tags owned (404) → `stoppedAt > startedAt` (400) → overlap check (409 `OVERLAP`). Overlap is half-open `[start, end)`: `other.startedAt < newStoppedAt AND (other.stoppedAt IS NULL OR other.stoppedAt > newStartedAt)`, excluding self; running entries (`stoppedAt IS NULL`) extend to infinity and participate; touching boundaries (`==`) do not conflict. Tags are replaced wholesale (delete + insert).
 
 ## SPA fallback
 
