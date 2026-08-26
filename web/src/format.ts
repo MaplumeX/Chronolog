@@ -47,12 +47,14 @@ export function formatWeekLabel(weekStart: string, weekEnd: string, tz: string):
   return `${start} – ${end}`;
 }
 
-/** 列头星期文案（周一…周日），iso 为该天 00:00 的 UTC ISO-Z 字符串。 */
-export function formatWeekdayLabel(iso: string, tz: string): string {
-  return new Date(iso).toLocaleDateString(localeFor(i18n.language), {
-    timeZone: tz,
-    weekday: "long",
-  });
+/** 周视图列头：日期数字 + 星期文案。iso 为该天 00:00 的 UTC ISO-Z 字符串。 */
+export function formatWeekdayHeader(iso: string, tz: string): { day: string; weekday: string } {
+  const locale = localeFor(i18n.language);
+  const date = new Date(iso);
+  return {
+    day: date.toLocaleDateString(locale, { timeZone: tz, day: "numeric" }),
+    weekday: date.toLocaleDateString(locale, { timeZone: tz, weekday: "long" }),
+  };
 }
 
 export function elapsedSeconds(startedAt: string, nowMs: number): number {

@@ -9,7 +9,7 @@ import {
   formatDayLabel,
   formatDuration,
   formatWeekLabel,
-  formatWeekdayLabel,
+  formatWeekdayHeader,
 } from "../format";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 
@@ -25,10 +25,11 @@ function DayColumn(props: {
   nowMs: number;
   tz: string;
   isToday: boolean;
-  emptyHint: string;
+  emptyHint?: string;
+  showRuler?: boolean;
 }) {
   const { t } = useTranslation();
-  const { day, nowMs, tz, isToday, emptyHint } = props;
+  const { day, nowMs, tz, isToday, emptyHint, showRuler = true } = props;
 
   const dayStartMs = day ? Date.parse(day.dayStart) : 0;
   const dayEndMs = day ? Date.parse(day.dayEnd) : 0;
@@ -41,20 +42,22 @@ function DayColumn(props: {
 
   return (
     <div className="timeline-inner">
-      <div className="timeline-ruler">
-        {HOURS.map((h) => (
-          <div key={h} className="hour" style={{ top: `${(h / 24) * 100}%` }}>
-            {String(h).padStart(2, "0")}:00
-          </div>
-        ))}
-      </div>
+      {showRuler ? (
+        <div className="timeline-ruler">
+          {HOURS.map((h) => (
+            <div key={h} className="hour" style={{ top: `${(h / 24) * 100}%` }}>
+              {String(h).padStart(2, "0")}:00
+            </div>
+          ))}
+        </div>
+      ) : null}
 
-      <div className="timeline-track">
+      <div className={`timeline-track${showRuler ? "" : " timeline-track--full"}`}>
         {HOURS.map((h) => (
           <div key={h} className="timeline-grid" style={{ top: `${(h / 24) * 100}%` }} />
         ))}
 
-        {day && day.entries.length === 0 ? (
+        {day && day.entries.length === 0 && emptyHint ? (
           <div className="timeline-empty-hint">{emptyHint}</div>
         ) : null}
 
@@ -201,27 +204,57 @@ export function Timeline(props: {
             emptyHint={t("timeline.empty")}
           />
         ) : week ? (
-          <div className="flex min-w-full">
-            {week.days.map((d) => (
-              <div
-                key={d.dayStart}
-                className="flex min-w-[180px] flex-1 flex-col border-l first:border-l-0"
-              >
-                <div className="border-b px-2 py-2 text-center">
-                  <div className="text-sm font-medium">{formatWeekdayLabel(d.dayStart, tz)}</div>
-                  <div className="font-mono text-xs tabular-nums text-muted-foreground">
-                    {formatDuration(d.totalClippedSeconds)}
+          <div className="flex min-w-full flex-col">
+            <div className="flex">
+              <div className="w-14 flex-shrink-0" />
+              {week.days.map((d) => {
+                const isToday = isDayAt(d, nowMs);
+                const header = formatWeekdayHeader(d.dayStart, tz);
+                return (
+                  <div
+                    key={d.dayStart}
+                    className="flex min-w-[180px] flex-1 flex-col border-l"
+                  >
+                    <div
+                      className={`border-b px-2 py-2 text-center${isToday ? " bg-primary/10" : ""}`}
+                    >
+                      <div
+                        className={`text-2xl font-bold leading-tight${isToday ? " text-primary" : ""}`}
+                      >
+                        {header.day}
+                      </div>
+                      <div className="text-xs text-muted-foreground">{header.weekday}</div>
+                      <div className="font-mono text-xs tabular-nums text-muted-foreground">
+                        {formatDuration(d.totalClippedSeconds)}
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <DayColumn
-                  day={d}
-                  nowMs={nowMs}
-                  tz={tz}
-                  isToday={isDayAt(d, nowMs)}
-                  emptyHint={t("timeline.weekEmpty")}
-                />
+                );
+              })}
+            </div>
+            <div className="flex">
+              <div className="timeline-ruler timeline-ruler--static">
+                {HOURS.map((h) => (
+                  <div key={h} className="hour" style={{ top: `${(h / 24) * 100}%` }}>
+                    {String(h).padStart(2, "0")}:00
+                  </div>
+                ))}
               </div>
-            ))}
+              {week.days.map((d) => (
+                <div
+                  key={d.dayStart}
+                  className="flex min-w-[180px] flex-1 flex-col border-l"
+                >
+                  <DayColumn
+                    day={d}
+                    nowMs={nowMs}
+                    tz={tz}
+                    isToday={isDayAt(d, nowMs)}
+                    showRuler={false}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         ) : null}
       </div>

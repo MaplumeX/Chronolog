@@ -157,12 +157,23 @@
   padding-left: 10px;
 }
 
+/* week 模式共享 ruler：作为 flex 子项占位，而非绝对定位覆盖 */
+.timeline-ruler--static {
+  position: relative;
+  flex-shrink: 0;
+}
+
 .timeline-track {
   position: absolute;
   left: 56px;
   right: 8px;
   top: 0;
   height: 100%;
+}
+
+/* 无 ruler 时（week 模式共享 ruler），track 占满整列 */
+.timeline-track--full {
+  left: 0;
 }
 
 .timeline-grid {
