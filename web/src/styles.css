@@ -161,6 +161,7 @@
 .timeline-ruler--static {
   position: relative;
   flex-shrink: 0;
+  height: auto; /* 覆盖 height: 100%，让 align-items: stretch 拉伸到与列同高 */
 }
 
 .timeline-track {
