@@ -130,11 +130,10 @@
   }
 }
 
-/* 时间线几何：绝对定位刻度 / 色块 / 当前时刻线 */
+/* 时间线几何：绝对定位刻度 / 色块 / 当前时刻线；总高由档位内联设置 */
 
 .timeline-inner {
   position: relative;
-  height: 960px;
 }
 
 .timeline-ruler {
