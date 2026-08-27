@@ -255,12 +255,22 @@ Resolved 6-file merge conflict with origin/main: kept refactored DayColumn + wee
 ### Summary
 
 Added Toggl-style date navigation to the timer timeline: backend /api/entries/today and /week accept optional date=YYYY-MM-DD anchor (tz-interpreted, DST-safe shared bounds helpers, 400 VALIDATION on bad dates); frontend DateNav ([<-] label [->] Today) with react-day-picker calendar popover, date persisted in chronolog-date-view, day<->week switch re-fetches same date; timer bar unaffected; zh/en i18n. Spec updated: time-and-timezone.md (date anchor contract), state-management.md (date state + persistence). All typecheck/tests/build pass; 4 new server tests.
+## Session 12: Timeline tick density switcher (60/30/15/5)
+
+**Date**: 2026-08-27
+**Task**: Timeline tick density switcher (60/30/15/5)
+**Branch**: `feat/timeline-scale-switch`
+
+### Summary
+
+Added scale density switching to the timeline: 60/30/15/5-minute ticks via -/+ buttons, fixed 40px per tick with timeline height scaling to (1440/scale)*40px, all labels shown, pixel-based block tier thresholds, scroll anchor on scale change, applies to day and week views. Updated frontend component spec with the new geometry contract. Typecheck/build passed.
 
 ### Git Commits
 
 | Hash | Message |
 |------|---------|
 | `a9986b3` | (see git log) |
+| `09c9aaf` | (see git log) |
 
 ### Status
 

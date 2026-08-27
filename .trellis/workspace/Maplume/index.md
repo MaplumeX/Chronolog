@@ -30,6 +30,7 @@
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
 | 12 | 2026-08-27 | Toggl-style date switcher for timer timeline | `a9986b3` | `feat/date-switcher` |
+| 12 | 2026-08-27 | Timeline tick density switcher (60/30/15/5) | `09c9aaf` | `feat/timeline-scale-switch` |
 | 11 | 2026-08-26 | 时间线条目可点击编辑（popover） | `6703408`, `d615c63`, `9a8b831` | `feat/clickable-entries-editable-popup` |
 | 10 | 2026-08-26 | Merge main (tag feature #5) into timeline view toggle branch | `3e7f522` | `feat/timer-timeline-view-toggle` |
 | 8 | 2026-08-26 | Week view border cleanup + ruler height fix | `4a28fc0`, `31f7a5f` | `feat/timer-timeline-view-toggle` |
