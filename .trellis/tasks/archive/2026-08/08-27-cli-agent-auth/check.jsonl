@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "后端质量检查基线"}
+{"file": ".trellis/spec/backend/auth.md", "reason": "校验 Bearer 认证实现与现有会话逻辑的兼容性"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "前端质量检查基线"}
+{"file": ".trellis/spec/backend/http-routes.md", "reason": "校验 tokens 路由契约与错误处理是否符合规范"}

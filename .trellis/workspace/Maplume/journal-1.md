@@ -306,3 +306,24 @@ Restyle UI to Toggl 2.0 layout: timer bar moved into Shell top bar via new heade
 ### Status
 
 [OK] **Completed**
+
+
+## Session 14: CLI/Agent PAT 认证（Bearer token + Web 管理页）
+
+**Date**: 2026-08-27
+**Task**: CLI/Agent PAT 认证（Bearer token + Web 管理页）
+**Branch**: `feat/cli-agent-auth`
+
+### Summary
+
+新增 api_tokens 表与 Bearer 认证分支（loadUser 仅在有 Authorization 头时查表，cookie 零影响）、GET/POST/DELETE /api/tokens 管理路由、Web TokensPage（创建一次性明文展示/列表/两步确认撤销）、7 个新测试；同步更新 backend/auth.md 与 frontend/api-client.md spec。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `134a04c` | (see git log) |
+
+### Status
+
+[OK] **Completed**

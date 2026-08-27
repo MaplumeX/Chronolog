@@ -92,4 +92,22 @@ export const entryTags = sqliteTable(
   ],
 );
 
+export const apiTokens = sqliteTable(
+  "api_tokens",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    tokenHash: text("token_hash").notNull(),
+    createdAt: text("created_at").notNull(),
+    lastUsedAt: text("last_used_at"),
+  },
+  (t) => [
+    uniqueIndex("api_tokens_token_hash").on(t.tokenHash),
+    index("api_tokens_user_id").on(t.userId),
+  ],
+);
+
 export const DEFAULT_CATEGORIES = ["工作", "学习", "休息", "事务"] as const;

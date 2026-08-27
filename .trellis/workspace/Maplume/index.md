@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 13
+- **Total Sessions**: 14
 - **Last Active**: 2026-08-27
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~298 | Active |
+| `journal-1.md` | ~329 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 14 | 2026-08-27 | CLI/Agent PAT 认证（Bearer token + Web 管理页） | `134a04c` | `feat/cli-agent-auth` |
 | 13 | 2026-08-27 | Fix zoom +/- semantics and remove scale label | `c500f00` | `fix/inverted-zoom-semantics-remove-ticks` |
 | 13 | 2026-08-27 | Adopt Toggl 2.0 layout/form style | `abafeed` | `thankful-frog` |
 | 12 | 2026-08-27 | Toggl-style date switcher for timer timeline | `a9986b3` | `feat/date-switcher` |

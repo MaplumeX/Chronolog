@@ -1,0 +1,6 @@
+{"file": ".trellis/spec/backend/auth.md", "reason": "认证/会话规范，loadUser Bearer 分支必须遵循现有认证模式"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "新增 api_tokens 表的建表/索引规范（schema.ts + SCHEMA_SQL 双写）"}
+{"file": ".trellis/spec/backend/http-routes.md", "reason": "tokens 管理路由需遵循现有路由/校验/错误响应约定"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "AppError 错误格式与 401/400/404 语义"}
+{"file": ".trellis/spec/frontend/api-client.md", "reason": "api.ts 新增 token 管理方法需遵循现有 request<T> 模式"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "TokensPage 页面组件与 Shell 导航项需遵循组件规范"}
