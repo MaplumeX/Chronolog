@@ -262,11 +262,11 @@ function DayColumn(props: {
                 color: textColor,
               };
 
-              // 选中的已停止条目用 Popover.Anchor 包裹（Anchor 自带 timeline-block 定位样式，
-              // 使 popover 锚定到色块本身），作为 popover 的定位锚点
+              // 选中的已停止条目：色块内嵌一个钉在色块中心的零尺寸 Anchor 作为 popover 定位锚点，
+              // 使编辑面板从条目中部向右弹出（空间不足时由 Radix 自动翻转，仍遮住当前条目）
               if (selectedId === e.id) {
                 return (
-                  <PopoverAnchor
+                  <div
                     key={e.id}
                     className={`timeline-block ${tier} cursor-pointer`}
                     style={blockStyle}
@@ -274,7 +274,8 @@ function DayColumn(props: {
                     onClick={() => onSelect(e.id)}
                   >
                     {blockContent}
-                  </PopoverAnchor>
+                    <PopoverAnchor className="absolute top-1/2 left-1/2 h-0 w-0" />
+                  </div>
                 );
               }
               return (
@@ -526,7 +527,7 @@ export function Timeline(props: {
         ) : null}
       </div>
       {selectedEntry ? (
-        <PopoverContent side="right" align="start" sideOffset={8} className="w-80">
+        <PopoverContent side="right" align="center" sideOffset={0} className="w-80">
           <EntryEditor
             key={selectedEntry.id}
             entry={selectedEntry}
