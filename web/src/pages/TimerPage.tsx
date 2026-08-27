@@ -15,6 +15,27 @@ import { Timeline } from "../components/Timeline";
 import { TimerBar } from "../components/TimerBar";
 import { browserTz, clipSeconds, elapsedSeconds } from "../format";
 
+const DATE_VIEW_KEY = "chronolog-date-view";
+
+/** localStorage 读取查看的日期（"YYYY-MM-DD" | null = 今天），隐私模式下静默降级；垃圾值视为今天。 */
+function loadDateView(): string | null {
+  try {
+    const v = window.localStorage.getItem(DATE_VIEW_KEY);
+    return v !== null && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveDateView(date: string | null): void {
+  try {
+    if (date === null) window.localStorage.removeItem(DATE_VIEW_KEY);
+    else window.localStorage.setItem(DATE_VIEW_KEY, date);
+  } catch {
+    // ignore
+  }
+}
+
 export function TimerPage(props: {
   nowMs: number;
   current: TimeEntry | null;
@@ -27,6 +48,8 @@ export function TimerPage(props: {
   const [today, setToday] = useState<TodayEntries | null>(null);
   const [week, setWeek] = useState<WeekEntries | null>(null);
   const [view, setView] = useState<"day" | "week">("day");
+  // "YYYY-MM-DD" | null；null = 今天（默认）。查看的日期，day/week 视图共用
+  const [date, setDate] = useState<string | null>(loadDateView);
   const [categoryId, setCategoryId] = useState("");
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [description, setDescription] = useState("");
@@ -36,7 +59,7 @@ export function TimerPage(props: {
     const [cats, tagRes, entries, cur] = await Promise.all([
       api.categories(),
       api.tags(),
-      api.todayEntries(tz),
+      api.todayEntries(tz, date ?? undefined),
       api.current(),
     ]);
     setCategories(cats.categories);
@@ -50,6 +73,24 @@ export function TimerPage(props: {
   useEffect(() => {
     void refresh().catch((err) => setError(err instanceof ApiError ? err.message : t("common.loadFailed")));
   }, []);
+
+  /** 条目切换查看的日期后重新拉取当前视图的数据；回今天（null）时清除持久化。Step 3 DateNav 接入。 */
+  function onDateChange(next: string | null) {
+    setDate(next);
+    saveDateView(next);
+    setError("");
+    if (view === "day") {
+      void api
+        .todayEntries(tz, next ?? undefined)
+        .then(setToday)
+        .catch((err) => setError(err instanceof ApiError ? err.message : t("common.loadFailed")));
+    } else {
+      void api
+        .weekEntries(tz, next ?? undefined)
+        .then(setWeek)
+        .catch((err) => setError(err instanceof ApiError ? err.message : t("common.loadFailed")));
+    }
+  }
 
   const selected = categories.find((c) => c.id === categoryId);
   const running = props.current;
@@ -79,11 +120,11 @@ export function TimerPage(props: {
         const { entry } = await api.start(categoryId, description, tagIds);
         props.onCurrent(entry);
       }
-      const entries = await api.todayEntries(tz);
+      const entries = await api.todayEntries(tz, date ?? undefined);
       setToday(entries);
-      // 已加载过周数据则一并刷新，避免切回本周视图时看到过期数据
+      // 已加载过周数据则一并刷新，避免切回周视图时看到过期数据
       if (week) {
-        const w = await api.weekEntries(tz);
+        const w = await api.weekEntries(tz, date ?? undefined);
         setWeek(w);
       }
     } catch (err) {
@@ -93,13 +134,16 @@ export function TimerPage(props: {
 
   async function onModeChange(mode: "day" | "week") {
     setView(mode);
-    if (mode === "week" && !week) {
-      try {
-        const w = await api.weekEntries(tz);
-        setWeek(w);
-      } catch (err) {
-        setError(err instanceof ApiError ? err.message : t("common.loadFailed"));
+    // 切换视图时始终按当前 date 重新拉取目标视图数据：另一视图的数据可能是
+    // 在其他日期下拉取的（如先看本周再导航到上周），直接复用会展示错位的周/日
+    try {
+      if (mode === "week") {
+        setWeek(await api.weekEntries(tz, date ?? undefined));
+      } else {
+        setToday(await api.todayEntries(tz, date ?? undefined));
       }
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : t("common.loadFailed"));
     }
   }
 
@@ -107,8 +151,8 @@ export function TimerPage(props: {
   async function refreshEntries() {
     try {
       const [entries, w] = await Promise.all([
-        api.todayEntries(tz),
-        week ? api.weekEntries(tz) : Promise.resolve(null),
+        api.todayEntries(tz, date ?? undefined),
+        week ? api.weekEntries(tz, date ?? undefined) : Promise.resolve(null),
       ]);
       setToday(entries);
       if (w) setWeek(w);
@@ -168,6 +212,8 @@ export function TimerPage(props: {
         onModeChange={(m) => {
           void onModeChange(m);
         }}
+        date={date}
+        onDateChange={onDateChange}
         nowMs={props.nowMs}
         tz={tz}
         dayTotal={dayTotal}

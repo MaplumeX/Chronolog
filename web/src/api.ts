@@ -123,10 +123,14 @@ export const api = {
       body: JSON.stringify({ categoryId, description, tagIds }),
     }),
   stop: () => request<{ entry: TimeEntry }>("/api/timer/stop", { method: "POST" }),
-  todayEntries: (tz: string) =>
-    request<TodayEntries>(`/api/entries/today?tz=${encodeURIComponent(tz)}`),
-  weekEntries: (tz: string) =>
-    request<WeekEntries>(`/api/entries/week?tz=${encodeURIComponent(tz)}`),
+  todayEntries: (tz: string, date?: string) =>
+    request<TodayEntries>(
+      `/api/entries/today?tz=${encodeURIComponent(tz)}${date ? `&date=${encodeURIComponent(date)}` : ""}`,
+    ),
+  weekEntries: (tz: string, date?: string) =>
+    request<WeekEntries>(
+      `/api/entries/week?tz=${encodeURIComponent(tz)}${date ? `&date=${encodeURIComponent(date)}` : ""}`,
+    ),
   updateEntry: (id: string, body: {
     description: string;
     categoryId: string;
