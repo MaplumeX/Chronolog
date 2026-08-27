@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "后端质量检查标准"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "前端质量检查标准"}
+{"file": ".trellis/spec/backend/time-and-timezone.md", "reason": "校验 DST/tz 规则未被破坏"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "类型安全检查"}

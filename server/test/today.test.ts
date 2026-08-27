@@ -242,4 +242,74 @@ describe("today clip and timezone", () => {
     const studyRow = rows.find((r) => r.categoryName === "学习");
     assert.equal(studyRow?.seconds, 10 * 3600);
   });
+
+  it("date param anchors the day window (cross-midnight tz)", async () => {
+    // 8月24日（周一）23:00–8月25日 01:00 +08:00 的一条跨午夜记录
+    let now = new Date("2026-08-24T15:00:00.000Z");
+    t = await createTestApp({ now: () => now });
+    const { sid } = await registerUser(t.app, "dater");
+    const catsRes = await t.app.inject({
+      method: "GET",
+      url: "/api/categories",
+      headers: cookieHeader(sid),
+    });
+    const work = (json(catsRes).categories as { id: string; name: string }[]).find(
+      (c) => c.name === "工作",
+    );
+    assert.ok(work);
+
+    await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: work.id, description: "overnight" },
+    });
+    now = new Date("2026-08-24T17:00:00.000Z");
+    await t.app.inject({
+      method: "POST",
+      url: "/api/timer/stop",
+      headers: cookieHeader(sid),
+    });
+
+    // 查看 8月24日：窗口为 +08:00 的 00:00–24:00，跨午夜条目只保留周一的 1 小时切片
+    now = new Date("2026-08-30T02:00:00.000Z"); // 已到下周，date 仍应锚定 8月24日
+    const res = await t.app.inject({
+      method: "GET",
+      url: "/api/entries/today?tz=Asia/Shanghai&date=2026-08-24",
+      headers: cookieHeader(sid),
+    });
+    assert.equal(res.statusCode, 200);
+    const body = json(res);
+    assert.equal(body.dayStart, "2026-08-23T16:00:00.000Z");
+    assert.equal(body.dayEnd, "2026-08-24T16:00:00.000Z");
+    const entries = body.entries as { clippedSeconds: number; durationSeconds: number }[];
+    assert.equal(entries.length, 1);
+    assert.equal(entries[0].clippedSeconds, 3600);
+    assert.equal(entries[0].durationSeconds, 7200); // 未裁剪全长
+
+    // 未来日期也可用
+    const future = await t.app.inject({
+      method: "GET",
+      url: "/api/entries/today?tz=Asia/Shanghai&date=2026-09-01",
+      headers: cookieHeader(sid),
+    });
+    assert.equal(future.statusCode, 200);
+    assert.equal((json(future).entries as unknown[]).length, 0);
+  });
+
+  it("rejects invalid date param with 400 VALIDATION", async () => {
+    t = await createTestApp();
+    const { sid } = await registerUser(t.app, "dater_bad");
+    for (const url of [
+      "/api/entries/today?tz=Asia/Shanghai&date=not-a-date",
+      "/api/entries/today?tz=Asia/Shanghai&date=2025-02-30",
+      "/api/entries/week?tz=Asia/Shanghai&date=not-a-date",
+      "/api/entries/week?tz=Asia/Shanghai&date=2025-02-30",
+    ]) {
+      const res = await t.app.inject({ method: "GET", url, headers: cookieHeader(sid) });
+      assert.equal(res.statusCode, 400, url);
+      const err = json(res).error as { code: string };
+      assert.equal(err.code, "VALIDATION", url);
+    }
+  });
 });

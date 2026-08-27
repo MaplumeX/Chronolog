@@ -1,7 +1,17 @@
 import { and, desc, eq, exists, gt, inArray, isNull, lt, or } from "drizzle-orm";
 import type { Db } from "./db.js";
 import { AppError } from "./errors.js";
-import { clipSeconds, durationSeconds, requireTz, todayBounds, weekBounds, weekDayBounds } from "./time.js";
+import {
+  clipSeconds,
+  dateDayBounds,
+  dateWeekBounds,
+  dateWeekDayBounds,
+  durationSeconds,
+  requireTz,
+  todayBounds,
+  weekBounds,
+  weekDayBounds,
+} from "./time.js";
 import { categories, entryTags, tags, timeEntries } from "./schema.js";
 
 export type EntryDto = {
@@ -86,9 +96,17 @@ export function getEntry(db: Db, userId: string, id: string, now: Date): EntryDt
   return entry;
 }
 
-export function listToday(db: Db, userId: string, tzRaw: unknown, now: Date, tagId?: string) {
+export function listToday(
+  db: Db,
+  userId: string,
+  tzRaw: unknown,
+  now: Date,
+  tagId?: string,
+  date?: string,
+) {
   const tz = requireTz(tzRaw);
-  const { dayStart, dayEnd } = todayBounds(tz, now);
+  // date 存在时锚定该日（tz 本地），否则以 now 所在日为锚；clipSeconds 的 now 不变（运行中条目按真实当前时间裁剪）
+  const { dayStart, dayEnd } = (date ? dateDayBounds(tz, date) : null) ?? todayBounds(tz, now);
   const tagFilter =
     tagId !== undefined
       ? exists(
@@ -126,9 +144,10 @@ export function listToday(db: Db, userId: string, tzRaw: unknown, now: Date, tag
   return { tz, dayStart, dayEnd, entries, totalClippedSeconds };
 }
 
-export function listWeek(db: Db, userId: string, tzRaw: unknown, now: Date) {
+export function listWeek(db: Db, userId: string, tzRaw: unknown, now: Date, date?: string) {
   const tz = requireTz(tzRaw);
-  const { weekStart, weekEnd } = weekBounds(tz, now);
+  // date 存在时锚定该日所在 ISO 周；date 是周内任意一天都会归一化到同一周
+  const { weekStart, weekEnd } = (date ? dateWeekBounds(tz, date) : null) ?? weekBounds(tz, now);
   const rows = db
     .select(entrySelect)
     .from(timeEntries)
@@ -138,22 +157,24 @@ export function listWeek(db: Db, userId: string, tzRaw: unknown, now: Date) {
     .all();
 
   // 7 个 [dayStart_i, dayEnd_i) 窗口，周一至周日；每天只保留与当天窗口重叠（clipped > 0）的记录，与 listToday 语义一致
-  const days = weekDayBounds(tz, now).map(({ dayStart, dayEnd }) => {
-    const entries: EntryDto[] = rows
-      .map((row) => {
-        const clipped = clipSeconds(row.startedAt, row.stoppedAt, dayStart, dayEnd, now);
-        return {
-          ...row,
-          durationSeconds: durationSeconds(row.startedAt, row.stoppedAt, now),
-          clippedSeconds: clipped,
-          tags: [],
-        };
-      })
-      .filter((e) => (e.clippedSeconds ?? 0) > 0);
-    attachTags(db, entries);
-    const totalClippedSeconds = entries.reduce((sum, e) => sum + (e.clippedSeconds ?? 0), 0);
-    return { tz, dayStart, dayEnd, entries, totalClippedSeconds };
-  });
+  const days = ((date ? dateWeekDayBounds(tz, date) : null) ?? weekDayBounds(tz, now)).map(
+    ({ dayStart, dayEnd }) => {
+      const entries: EntryDto[] = rows
+        .map((row) => {
+          const clipped = clipSeconds(row.startedAt, row.stoppedAt, dayStart, dayEnd, now);
+          return {
+            ...row,
+            durationSeconds: durationSeconds(row.startedAt, row.stoppedAt, now),
+            clippedSeconds: clipped,
+            tags: [],
+          };
+        })
+        .filter((e) => (e.clippedSeconds ?? 0) > 0);
+      attachTags(db, entries);
+      const totalClippedSeconds = entries.reduce((sum, e) => sum + (e.clippedSeconds ?? 0), 0);
+      return { tz, dayStart, dayEnd, entries, totalClippedSeconds };
+    },
+  );
 
   return { tz, weekStart, weekEnd, days };
 }

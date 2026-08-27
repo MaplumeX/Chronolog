@@ -11,6 +11,7 @@ import {
   formatWeekLabel,
   formatWeekdayHeader,
 } from "../format";
+import { DateNav } from "./DateNav";
 import { EntryEditor } from "./EntryEditor";
 import { Popover, PopoverAnchor, PopoverContent } from "./ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
@@ -182,6 +183,9 @@ export function Timeline(props: {
   week: WeekEntries | null;
   mode: "day" | "week";
   onModeChange: (mode: "day" | "week") => void;
+  /** 当前查看的日期（"YYYY-MM-DD" | null = 今天）；Step 3 DateNav 接入 */
+  date?: string | null;
+  onDateChange?: (date: string | null) => void;
   nowMs: number;
   tz: string;
   dayTotal: number;
@@ -196,6 +200,8 @@ export function Timeline(props: {
     week,
     mode,
     onModeChange,
+    date,
+    onDateChange,
     nowMs,
     tz,
     dayTotal,
@@ -216,31 +222,28 @@ export function Timeline(props: {
       ).find((e) => e.id === selectedId) ?? null
     : null;
 
-  // 滚动锚点：day 模式为当天；week 模式为 nowMs 所在的那一列
+  // 滚动锚点：day 模式为当天（查看过去日期时锚定所查看的日期）；week 模式为 nowMs 所在的那一列
   const anchorDay = isDay
     ? today
-    : (week?.days.find((d) => isDayAt(d, nowMs)) ?? null);
+    : (week?.days.find((d) => isDayAt(d, nowMs) || d.dayStart === today?.dayStart) ?? null);
 
   const dayStartMs = anchorDay ? Date.parse(anchorDay.dayStart) : 0;
   const dayEndMs = anchorDay ? Date.parse(anchorDay.dayEnd) : 0;
   const dayMs = dayEndMs - dayStartMs || 1;
-  const nowTop = Math.max(0, Math.min(100, ((nowMs - dayStartMs) / dayMs) * 100));
 
   useEffect(() => {
     if (!anchorDay || !scrollRef.current) return;
     const el = scrollRef.current;
     const inner = el.scrollHeight;
-    const target = (nowTop / 100) * inner - el.clientHeight / 2;
+    // 查看过去/未来日期时锚定所查看日的正午，否则锚定 now（nowMs 落在窗口内）
+    const anchorMs = Math.min(Math.max(nowMs, dayStartMs), dayEndMs - 1);
+    const anchorTop = Math.max(0, Math.min(100, ((anchorMs - dayStartMs) / dayMs) * 100));
+    const target = (anchorTop / 100) * inner - el.clientHeight / 2;
     el.scrollTop = Math.max(0, target);
-    // 仅在视图数据首次加载或切换视图后滚动
+    // 仅在视图数据首次加载、切换视图或切换日期后滚动
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [anchorDay != null, mode]);
+  }, [anchorDay != null, mode, anchorDay?.dayStart]);
 
-  const headerLabel = isDay
-    ? formatDayLabel(tz)
-    : week
-      ? formatWeekLabel(week.weekStart, week.weekEnd, tz)
-      : "";
   const total = isDay ? dayTotal : weekTotal;
 
   return (
@@ -263,7 +266,17 @@ export function Timeline(props: {
               <TabsTrigger value="week">{t("timeline.viewWeek")}</TabsTrigger>
             </TabsList>
           </Tabs>
-          <span className="truncate font-semibold">{headerLabel}</span>
+          {onDateChange ? (
+            <DateNav view={mode} date={date ?? null} tz={tz} onChange={onDateChange} />
+          ) : (
+            <span className="truncate font-semibold">
+              {isDay
+                ? formatDayLabel(tz)
+                : week
+                  ? formatWeekLabel(week.weekStart, week.weekEnd, tz)
+                  : ""}
+            </span>
+          )}
         </div>
         <span className="font-mono text-sm font-medium tabular-nums">{formatDuration(total)}</span>
       </div>
@@ -273,7 +286,7 @@ export function Timeline(props: {
             day={today}
             nowMs={nowMs}
             tz={tz}
-            isToday
+            isToday={date == null || (today ? isDayAt(today, nowMs) : true)}
             emptyHint={t("timeline.empty")}
             selectedId={selectedId}
             onSelect={setSelectedId}

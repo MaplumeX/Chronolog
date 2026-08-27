@@ -42,6 +42,17 @@ DST rules (both verified across 12 zones × full year):
 
 `listWeek` runs one `overlap` query over the whole week window, then clips each entry per day window. Each day bucket keeps only entries with `clippedSeconds > 0` (same semantics as `listToday`); `durationSeconds` stays the unclipped full length. `days` is always 7 elements, Monday first.
 
+## Date anchor (`date` query)
+
+`GET /api/entries/today?tz=&date=YYYY-MM-DD` and `GET /api/entries/week?tz=&date=YYYY-MM-DD` accept an optional anchor date interpreted in `tz` (future dates allowed; the frontend owns that policy).
+
+- Omitted → behavior identical to pre-`date` builds (`todayBounds`/`weekBounds` from `now`).
+- `requireDate(date, tz)` in `server/src/time.ts` validates the format and real-calendar existence (`DateTime.fromISO` + `toISODate() === date` to reject rollover like `2025-02-30`); failure → 400 `VALIDATION` `"日期无效"`. Validate `tz` first — `date` interpretation needs it.
+- `dateDayBounds` / `dateWeekBounds` / `dateWeekDayBounds` derive windows from the anchor; `todayBounds`/`weekBounds`/`weekDayBounds` share the same internal helpers (`dayBoundsFrom`/`weekBoundsFrom`/`weekDayBoundsFrom`) and keep their old signatures. `listWeek` anchors **all 7 day buckets** to the date's week, not just `weekStart/weekEnd` — otherwise day buckets and the week window diverge when `date` is in another week.
+- `listToday(db, userId, tz, now, tagId?, date?)` / `listWeek(db, userId, tz, now, date?)`: when `date` is set, bounds come from the anchor; `clipSeconds`'s `now` stays `deps.now()` (safe: no running entries overlap a non-today window).
+
+Proven fixture (`server/test/today.test.ts`): `date=2026-08-20` with `Asia/Shanghai` anchors the window to that local calendar day, independent of `now`.
+
 ## Dual implementation
 
 `web/src/format.ts` has its own `clipSeconds` / `elapsedSeconds` so the timer page can tick without refetching. Keep the two implementations numerically aligned. Do not import `server/src/time.ts` from `web/`.
@@ -54,3 +65,4 @@ DST rules (both verified across 12 zones × full year):
 - Hard-coded `+8` hours instead of luxon + IANA.
 - Using `durationSeconds` for category stats (that leaks yesterday’s slice into today).
 - Defaulting missing `tz` to `UTC` instead of 400.
+- Anchoring only `weekStart/weekEnd` from `date` while leaving `weekDayBounds` on `now` — day buckets and the week window must come from the same anchor.

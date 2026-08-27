@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/backend/time-and-timezone.md", "reason": "day/week边界、tz与DST规则、clip语义，date参数必须沿用"}
+{"file": ".trellis/spec/backend/http-routes.md", "reason": "路由与错误返回约定，新增date参数需遵循"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "400 VALIDATION 错误风格"}
+{"file": ".trellis/spec/frontend/api-client.md", "reason": "api.ts 扩展 todayEntries/weekEntries 的规范"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "shadcn/ui + tailwind 组件规范，DateNav/Calendar 需遵循"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "TimerPage 状态归属、localStorage 持久化模式（use-theme 先例）"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "frontend spec 总览"}
+{"file": ".trellis/spec/backend/index.md", "reason": "backend spec 总览"}
