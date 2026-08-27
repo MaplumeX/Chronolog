@@ -52,9 +52,11 @@ function DayColumn(props: {
   selectedId: string | null;
   onSelect: (id: string) => void;
   onDragCreate?: (draft: { startedAt: string; stoppedAt: string }) => void;
+  /** 草稿锚点：拖拽结束后固化的预览块，同时作为 popover 的定位 anchor（仅归属列传入） */
+  draftAnchor?: { startMs: number; endMs: number } | null;
 }) {
   const { t } = useTranslation();
-  const { day, nowMs, tz, isToday, showRuler = true, scale, selectedId, onSelect, onDragCreate } = props;
+  const { day, nowMs, tz, isToday, showRuler = true, scale, selectedId, onSelect, onDragCreate, draftAnchor } = props;
 
   const trackRef = useRef<HTMLDivElement>(null);
   const [dragPreview, setDragPreview] = useState<DragPreview | null>(null);
@@ -167,6 +169,22 @@ function DayColumn(props: {
               {`${formatClock(new Date(dragPreview.startMs).toISOString(), tz)} – ${formatClock(new Date(dragPreview.endMs).toISOString(), tz)}`}
             </span>
           </div>
+        ) : null}
+
+        {draftAnchor ? (
+          // 拖拽结束后的固化预览块：既是视觉残留也是 popover 的定位 anchor。
+          // 无 anchor 时 Radix 会把 popover 定位到屏幕外（translate(0,-200%)），编辑器看起来没打开。
+          <PopoverAnchor
+            className="timeline-block drag-preview"
+            style={{
+              top: `${((draftAnchor.startMs - dayStartMs) / dayMs) * 100}%`,
+              height: `${((draftAnchor.endMs - draftAnchor.startMs) / dayMs) * 100}%`,
+            }}
+          >
+            <span className="block-time">
+              {`${formatClock(new Date(draftAnchor.startMs).toISOString(), tz)} – ${formatClock(new Date(draftAnchor.endMs).toISOString(), tz)}`}
+            </span>
+          </PopoverAnchor>
         ) : null}
 
         {day
@@ -318,7 +336,13 @@ export function Timeline(props: {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isDay = mode === "day";
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [draft, setDraft] = useState<{ dayStart: string; startedAt: string; stoppedAt: string } | null>(null);
+  const [draft, setDraft] = useState<{
+    dayStart: string;
+    startedAt: string;
+    stoppedAt: string;
+  } | null>(null);
+  // 拖拽结束后的固化预览块（仅渲染在发起拖拽的那一列），同时作为 draft popover 的 anchor
+  const [draftAnchor, setDraftAnchor] = useState<{ dayStart: string; startMs: number; endMs: number } | null>(null);
   const [scale, setScale] = useState<Scale>(60);
   const scaleIndex = SCALES.indexOf(scale);
   const tickCount = 1440 / scale;
@@ -353,8 +377,19 @@ export function Timeline(props: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [anchorDay != null, mode, anchorDay?.dayStart, scale]);
 
-  const handleDragCreate = (dayStart: string) => (d: { startedAt: string; stoppedAt: string }) =>
-    setDraft({ dayStart, startedAt: d.startedAt, stoppedAt: d.stoppedAt });
+  const handleDragCreate =
+    (dayStart: string) =>
+    (d: { startedAt: string; stoppedAt: string }) => {
+      const startMs = Date.parse(d.startedAt);
+      const endMs = Date.parse(d.stoppedAt);
+      setDraft({ dayStart, startedAt: d.startedAt, stoppedAt: d.stoppedAt });
+      setDraftAnchor({ dayStart, startMs, endMs });
+    };
+
+  const clearDraft = () => {
+    setDraft(null);
+    setDraftAnchor(null);
+  };
 
   const total = isDay ? dayTotal : weekTotal;
 
@@ -364,7 +399,7 @@ export function Timeline(props: {
       onOpenChange={(open) => {
         if (!open) {
           setSelectedId(null);
-          setDraft(null);
+          clearDraft();
         }
       }}
     >
@@ -428,6 +463,7 @@ export function Timeline(props: {
             selectedId={selectedId}
             onSelect={setSelectedId}
             onDragCreate={today ? handleDragCreate(today.dayStart) : undefined}
+            draftAnchor={draftAnchor?.dayStart === today?.dayStart ? draftAnchor : null}
           />
         ) : week ? (
           <div className="flex min-w-full flex-col">
@@ -481,6 +517,7 @@ export function Timeline(props: {
                     selectedId={selectedId}
                     onSelect={setSelectedId}
                     onDragCreate={handleDragCreate(d.dayStart)}
+                    draftAnchor={draftAnchor?.dayStart === d.dayStart ? draftAnchor : null}
                   />
                 </div>
               ))}
@@ -512,10 +549,10 @@ export function Timeline(props: {
             tags={tags}
             onSaved={() => {
               // 保存成功：关闭并刷新时间线数据
-              setDraft(null);
+              clearDraft();
               onEntryUpdated();
             }}
-            onClose={() => setDraft(null)}
+            onClose={clearDraft}
           />
         </PopoverContent>
       ) : null}
