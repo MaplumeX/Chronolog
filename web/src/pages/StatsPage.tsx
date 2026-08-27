@@ -51,11 +51,17 @@ export function StatsPage() {
 
   const selectedTag = tags.find((x) => x.id === tagId);
   const max = Math.max(1, ...(stats?.categories.map((c) => c.seconds) ?? [1]));
+  const totalSeconds = stats?.categories.reduce((s, c) => s + c.seconds, 0) ?? 0;
 
   return (
     <div className="px-6 py-6">
-      <h1 className="text-xl font-semibold">{t("nav.stats")}</h1>
-      <div className="mt-1 mb-4 flex flex-wrap items-center gap-2">
+      <div className="mb-4 rounded-lg border bg-card px-4 py-3">
+        <p className="text-sm text-muted-foreground">{t("stats.totalLogged")}</p>
+        <p className="mt-1 font-mono text-3xl font-bold tabular-nums">
+          {formatDuration(totalSeconds)}
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
         <p className="text-sm text-muted-foreground">
           {formatDayLabel(tz)} · {t("stats.byCategory")}
         </p>

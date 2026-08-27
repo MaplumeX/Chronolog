@@ -12,6 +12,7 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
@@ -48,6 +49,9 @@ function ShellNav(props: {
 
   return (
     <SidebarGroup>
+      <SidebarGroupLabel className="uppercase tracking-wide">
+        {t("nav.group")}
+      </SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
           {ITEMS.map((item) => {
@@ -89,6 +93,8 @@ export function Shell(props: {
   onLogout: () => void;
   themeMode: ThemeMode;
   onThemeMode: (mode: ThemeMode) => void;
+  /** 顶栏内容：非 Timer 页为页面大标题，Timer 页为 TimerBar */
+  header?: ReactNode;
   children: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -137,8 +143,9 @@ export function Shell(props: {
         <SidebarRail />
       </Sidebar>
       <SidebarInset className="min-h-0 overflow-hidden">
-        <header className="flex h-12 shrink-0 items-center border-b px-2">
+        <header className="flex min-h-12 shrink-0 items-center border-b px-2">
           <SidebarTrigger />
+          {props.header}
         </header>
         <div className="flex min-h-0 flex-1 flex-col overflow-auto">{props.children}</div>
       </SidebarInset>

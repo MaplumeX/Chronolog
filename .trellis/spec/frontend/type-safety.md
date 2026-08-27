@@ -12,7 +12,7 @@ Instants are `string`, not `Date`. Parse only at the edge with `Date.parse` / `n
 
 ## Props
 
-Pages use inline props objects (`TimerPage` `{ nowMs, current, onCurrent }`). No `React.FC`. Event handlers that return promises are wrapped with `void` at the JSX boundary (`void logout()`, `void refresh()`).
+Components use inline props objects (`useTimerController` `{ nowMs, current, onCurrent, enabled }`). No `React.FC`. Event handlers that return promises are wrapped with `void` at the JSX boundary (`void logout()`, `void refresh()`).
 
 ## Anti-patterns
 
