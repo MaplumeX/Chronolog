@@ -6,6 +6,8 @@ export type Category = { id: string; name: string; entryCount: number };
 
 export type Tag = { id: string; name: string; entryCount: number };
 
+export type ApiToken = { id: string; name: string; createdAt: string; lastUsedAt: string | null };
+
 export type TimeEntry = {
   id: string;
   categoryId: string;
@@ -116,6 +118,14 @@ export const api = {
     }),
   deleteTag: (id: string) =>
     request<{ ok: boolean }>(`/api/tags/${id}`, { method: "DELETE" }),
+  tokens: () => request<{ tokens: ApiToken[] }>("/api/tokens"),
+  createToken: (name: string) =>
+    request<{ id: string; name: string; token: string; createdAt: string }>("/api/tokens", {
+      method: "POST",
+      body: JSON.stringify({ name }),
+    }),
+  deleteToken: (id: string) =>
+    request<{ ok: boolean }>(`/api/tokens/${id}`, { method: "DELETE" }),
   current: () => request<{ entry: TimeEntry | null }>("/api/timer/current"),
   start: (categoryId: string, description?: string, tagIds?: string[]) =>
     request<{ entry: TimeEntry }>("/api/timer/start", {

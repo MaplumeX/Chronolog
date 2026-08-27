@@ -11,11 +11,13 @@ import { AuthPage } from "./pages/AuthPage";
 import { CategoriesPage } from "./pages/CategoriesPage";
 import { StatsPage } from "./pages/StatsPage";
 import { TagsPage } from "./pages/TagsPage";
+import { TokensPage } from "./pages/TokensPage";
 
 const HEADER_TITLE_KEYS = {
   stats: "nav.stats",
   categories: "nav.categories",
   tags: "nav.tags",
+  tokens: "nav.tokens",
 } as const;
 
 export function App() {
@@ -99,6 +101,7 @@ export function App() {
       {page === "stats" ? <StatsPage /> : null}
       {page === "categories" ? <CategoriesPage /> : null}
       {page === "tags" ? <TagsPage /> : null}
+      {page === "tokens" ? <TokensPage /> : null}
     </Shell>
   );
 }
