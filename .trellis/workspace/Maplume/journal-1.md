@@ -244,3 +244,24 @@ Resolved 6-file merge conflict with origin/main: kept refactored DayColumn + wee
 ### Status
 
 [OK] **Completed**
+
+
+## Session 12: Timeline tick density switcher (60/30/15/5)
+
+**Date**: 2026-08-27
+**Task**: Timeline tick density switcher (60/30/15/5)
+**Branch**: `feat/timeline-scale-switch`
+
+### Summary
+
+Added scale density switching to the timeline: 60/30/15/5-minute ticks via -/+ buttons, fixed 40px per tick with timeline height scaling to (1440/scale)*40px, all labels shown, pixel-based block tier thresholds, scroll anchor on scale change, applies to day and week views. Updated frontend component spec with the new geometry contract. Typecheck/build passed.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `09c9aaf` | (see git log) |
+
+### Status
+
+[OK] **Completed**

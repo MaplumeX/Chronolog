@@ -12,10 +12,23 @@ import {
   formatWeekdayHeader,
 } from "../format";
 import { EntryEditor } from "./EntryEditor";
+import { Button } from "./ui/button";
 import { Popover, PopoverAnchor, PopoverContent } from "./ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
+import { Minus, Plus } from "lucide-react";
 
-const HOURS = Array.from({ length: 25 }, (_, i) => i);
+const SCALES = [60, 30, 15, 5] as const;
+type Scale = (typeof SCALES)[number];
+const PX_PER_TICK = 40;
+
+/** 档位 → 每档分钟数对应的时间线总高：(1440 / 分钟数) × 40px */
+const innerHeightFor = (scale: Scale) => (1440 / scale) * PX_PER_TICK;
+
+/** 第 i 个刻度的标签（HH:MM） */
+function tickLabel(i: number, scale: Scale): string {
+  const m = i * scale;
+  return `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+}
 
 function isDayAt(day: TodayEntries, nowMs: number): boolean {
   return nowMs >= Date.parse(day.dayStart) && nowMs < Date.parse(day.dayEnd);
@@ -29,15 +42,17 @@ function DayColumn(props: {
   isToday: boolean;
   emptyHint?: string;
   showRuler?: boolean;
+  scale: Scale;
   selectedId: string | null;
   onSelect: (id: string) => void;
 }) {
   const { t } = useTranslation();
-  const { day, nowMs, tz, isToday, emptyHint, showRuler = true, selectedId, onSelect } = props;
+  const { day, nowMs, tz, isToday, emptyHint, showRuler = true, scale, selectedId, onSelect } = props;
 
   const dayStartMs = day ? Date.parse(day.dayStart) : 0;
   const dayEndMs = day ? Date.parse(day.dayEnd) : 0;
   const dayMs = dayEndMs - dayStartMs || 1;
+  const tickCount = 1440 / scale;
 
   const posPercent = (t: number) =>
     Math.max(0, Math.min(100, ((t - dayStartMs) / dayMs) * 100));
@@ -45,20 +60,20 @@ function DayColumn(props: {
   const nowTop = posPercent(nowMs);
 
   return (
-    <div className="timeline-inner">
+    <div className="timeline-inner" style={{ height: `${innerHeightFor(scale)}px` }}>
       {showRuler ? (
         <div className="timeline-ruler">
-          {HOURS.map((h) => (
-            <div key={h} className="hour" style={{ top: `${(h / 24) * 100}%` }}>
-              {String(h).padStart(2, "0")}:00
+          {Array.from({ length: tickCount + 1 }, (_, i) => (
+            <div key={i} className="hour" style={{ top: `${(i / tickCount) * 100}%` }}>
+              {tickLabel(i, scale)}
             </div>
           ))}
         </div>
       ) : null}
 
       <div className={`timeline-track${showRuler ? "" : " timeline-track--full"}`}>
-        {HOURS.map((h) => (
-          <div key={h} className="timeline-grid" style={{ top: `${(h / 24) * 100}%` }} />
+        {Array.from({ length: tickCount + 1 }, (_, i) => (
+          <div key={i} className="timeline-grid" style={{ top: `${(i / tickCount) * 100}%` }} />
         ))}
 
         {day && day.entries.length === 0 && emptyHint ? (
@@ -89,9 +104,11 @@ function DayColumn(props: {
               const textColor = contrastText(color);
               const desc = e.description || t("timeline.noDescription");
 
+              // tier 阈值按像素校准（60 档下 2.5% ≈ 24px、1% ≈ 10px），细档位下不因高度放大而失真
+              const heightPx = (heightPct / 100) * innerHeightFor(scale);
               let tier: "full" | "compact" | "mini";
-              if (heightPct >= 2.5) tier = "full";
-              else if (heightPct >= 1) tier = "compact";
+              if (heightPx >= 24) tier = "full";
+              else if (heightPx >= 10) tier = "compact";
               else tier = "mini";
 
               const title = `${desc} · ${e.categoryName} · ${timeRange} · ${formatDuration(secs)}${
@@ -207,6 +224,9 @@ export function Timeline(props: {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isDay = mode === "day";
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [scale, setScale] = useState<Scale>(60);
+  const scaleIndex = SCALES.indexOf(scale);
+  const tickCount = 1440 / scale;
 
   // 选中条目：从当前视图数据中查找；编辑后条目移出视图（或刷新后消失）时自动关闭 popover
   const selectedEntry: TimeEntry | null = selectedId
@@ -232,9 +252,9 @@ export function Timeline(props: {
     const inner = el.scrollHeight;
     const target = (nowTop / 100) * inner - el.clientHeight / 2;
     el.scrollTop = Math.max(0, target);
-    // 仅在视图数据首次加载或切换视图后滚动
+    // 仅在视图数据首次加载、切换视图或切换刻度档位后滚动
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [anchorDay != null, mode]);
+  }, [anchorDay != null, mode, scale]);
 
   const headerLabel = isDay
     ? formatDayLabel(tz)
@@ -263,6 +283,34 @@ export function Timeline(props: {
               <TabsTrigger value="week">{t("timeline.viewWeek")}</TabsTrigger>
             </TabsList>
           </Tabs>
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-xs"
+              disabled={scaleIndex >= SCALES.length - 1}
+              onClick={() => setScale(SCALES[scaleIndex + 1])}
+              aria-label={t("timeline.scaleDec")}
+            >
+              <Minus />
+            </Button>
+            <span
+              className="min-w-14 text-center text-xs tabular-nums text-muted-foreground"
+              aria-label={t("timeline.scaleLabel", { minutes: scale })}
+            >
+              {t("timeline.scaleLabel", { minutes: scale })}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon-xs"
+              disabled={scaleIndex <= 0}
+              onClick={() => setScale(SCALES[scaleIndex - 1])}
+              aria-label={t("timeline.scaleInc")}
+            >
+              <Plus />
+            </Button>
+          </div>
           <span className="truncate font-semibold">{headerLabel}</span>
         </div>
         <span className="font-mono text-sm font-medium tabular-nums">{formatDuration(total)}</span>
@@ -275,6 +323,7 @@ export function Timeline(props: {
             tz={tz}
             isToday
             emptyHint={t("timeline.empty")}
+            scale={scale}
             selectedId={selectedId}
             onSelect={setSelectedId}
           />
@@ -309,9 +358,9 @@ export function Timeline(props: {
             </div>
             <div className="flex">
               <div className="timeline-ruler timeline-ruler--static">
-                {HOURS.map((h) => (
-                  <div key={h} className="hour" style={{ top: `${(h / 24) * 100}%` }}>
-                    {String(h).padStart(2, "0")}:00
+                {Array.from({ length: tickCount + 1 }, (_, i) => (
+                  <div key={i} className="hour" style={{ top: `${(i / tickCount) * 100}%` }}>
+                    {tickLabel(i, scale)}
                   </div>
                 ))}
               </div>
@@ -326,6 +375,7 @@ export function Timeline(props: {
                     tz={tz}
                     isToday={isDayAt(d, nowMs)}
                     showRuler={false}
+                    scale={scale}
                     selectedId={selectedId}
                     onSelect={setSelectedId}
                   />

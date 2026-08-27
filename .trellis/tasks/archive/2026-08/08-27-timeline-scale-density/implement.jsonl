@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "Frontend spec entry point; general layer conventions"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Timeline.tsx is a component change; follow component patterns"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "Where new helpers/constants belong"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Type conventions for scale-step typing"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Scale state placement (local vs lifted) conventions"}
