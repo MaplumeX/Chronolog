@@ -11,7 +11,6 @@ export const zh = {
   "timer.selectCategory": "选择分类",
   "timer.selectTags": "选择标签",
   "timer.tagSeparator": "、",
-  "timeline.empty": "今天还没有记录",
   "timeline.weekEmpty": "无记录",
   "timeline.noDescription": "无说明",
   "timeline.todayPrefix": "今天 · ",

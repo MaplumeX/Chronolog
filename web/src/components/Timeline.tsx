@@ -41,14 +41,13 @@ function DayColumn(props: {
   nowMs: number;
   tz: string;
   isToday: boolean;
-  emptyHint?: string;
   showRuler?: boolean;
   scale: Scale;
   selectedId: string | null;
   onSelect: (id: string) => void;
 }) {
   const { t } = useTranslation();
-  const { day, nowMs, tz, isToday, emptyHint, showRuler = true, scale, selectedId, onSelect } = props;
+  const { day, nowMs, tz, isToday, showRuler = true, scale, selectedId, onSelect } = props;
 
   const dayStartMs = day ? Date.parse(day.dayStart) : 0;
   const dayEndMs = day ? Date.parse(day.dayEnd) : 0;
@@ -76,10 +75,6 @@ function DayColumn(props: {
         {Array.from({ length: tickCount + 1 }, (_, i) => (
           <div key={i} className="timeline-grid" style={{ top: `${(i / tickCount) * 100}%` }} />
         ))}
-
-        {day && day.entries.length === 0 && emptyHint ? (
-          <div className="timeline-empty-hint">{emptyHint}</div>
-        ) : null}
 
         {day
           ? day.entries.map((e) => {
@@ -335,7 +330,6 @@ export function Timeline(props: {
             nowMs={nowMs}
             tz={tz}
             isToday={date == null || (today ? isDayAt(today, nowMs) : true)}
-            emptyHint={t("timeline.empty")}
             scale={scale}
             selectedId={selectedId}
             onSelect={setSelectedId}

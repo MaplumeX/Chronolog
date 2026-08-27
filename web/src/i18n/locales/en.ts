@@ -13,7 +13,6 @@ export const en: Record<keyof typeof zh, string> = {
   "timer.selectCategory": "Select category",
   "timer.selectTags": "Select tags",
   "timer.tagSeparator": ", ",
-  "timeline.empty": "No entries yet today",
   "timeline.weekEmpty": "No entries",
   "timeline.noDescription": "No description",
   "timeline.todayPrefix": "Today · ",

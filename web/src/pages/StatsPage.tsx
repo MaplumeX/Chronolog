@@ -95,9 +95,7 @@ export function StatsPage() {
         </DropdownMenu>
       </div>
       {error ? <p className="mb-3 text-sm text-destructive">{error}</p> : null}
-      {!stats || stats.categories.length === 0 ? (
-        <p className="py-8 text-center text-muted-foreground">{t("timeline.empty")}</p>
-      ) : (
+      {!stats || stats.categories.length === 0 ? null : (
         <div className="divide-y">
           {stats.categories.map((c) => (
             <div

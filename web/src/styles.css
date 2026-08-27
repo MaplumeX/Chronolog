@@ -306,13 +306,3 @@
   border-radius: 4px;
   white-space: nowrap;
 }
-
-.timeline-empty-hint {
-  position: absolute;
-  left: 56px;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  text-align: center;
-  color: var(--muted-foreground);
-}
