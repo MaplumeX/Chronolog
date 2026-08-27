@@ -277,6 +277,15 @@ Added scale density switching to the timeline: 60/30/15/5-minute ticks via -/+ b
 [OK] **Completed**
 
 
+## Session 13: Fix zoom +/- semantics and remove scale label
+
+**Date**: 2026-08-27
+**Task**: Fix zoom +/- semantics and remove scale label
+**Branch**: `fix/inverted-zoom-semantics-remove-ticks`
+
+### Summary
+
+Swapped Timeline zoom button semantics: Plus = zoom in (scale 60->30->15->5, disabled at 5), Minus = zoom out (disabled at 60). Removed the visible scale label span between buttons and the timeline.scaleLabel i18n key; renamed scaleDec/scaleInc to timeline.zoomOut/zoomIn with corrected copy (缩小/放大). Updated component-guidelines.md contract. Typecheck/build passed; dispatched trellis-implement and trellis-check sub-agents (axonhub/glm-5.3-flash).
 ## Session 13: Adopt Toggl 2.0 layout/form style
 
 **Date**: 2026-08-27
@@ -291,6 +300,7 @@ Restyle UI to Toggl 2.0 layout: timer bar moved into Shell top bar via new heade
 
 | Hash | Message |
 |------|---------|
+| `c500f00` | (see git log) |
 | `abafeed` | (see git log) |
 
 ### Status

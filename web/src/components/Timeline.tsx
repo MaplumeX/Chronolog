@@ -286,25 +286,19 @@ export function Timeline(props: {
               type="button"
               variant="outline"
               size="icon-xs"
-              disabled={scaleIndex >= SCALES.length - 1}
-              onClick={() => setScale(SCALES[scaleIndex + 1])}
-              aria-label={t("timeline.scaleDec")}
+              disabled={scaleIndex <= 0}
+              onClick={() => setScale(SCALES[scaleIndex - 1])}
+              aria-label={t("timeline.zoomOut")}
             >
               <Minus />
             </Button>
-            <span
-              className="min-w-14 text-center text-xs tabular-nums text-muted-foreground"
-              aria-label={t("timeline.scaleLabel", { minutes: scale })}
-            >
-              {t("timeline.scaleLabel", { minutes: scale })}
-            </span>
             <Button
               type="button"
               variant="outline"
               size="icon-xs"
-              disabled={scaleIndex <= 0}
-              onClick={() => setScale(SCALES[scaleIndex - 1])}
-              aria-label={t("timeline.scaleInc")}
+              disabled={scaleIndex >= SCALES.length - 1}
+              onClick={() => setScale(SCALES[scaleIndex + 1])}
+              aria-label={t("timeline.zoomIn")}
             >
               <Plus />
             </Button>
