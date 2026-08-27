@@ -11,8 +11,6 @@ import {
 } from "../api";
 import { CategoryPicker } from "../components/CategoryPicker";
 import { TagPicker } from "../components/TagPicker";
-import { Timeline } from "../components/Timeline";
-import { TimerBar } from "../components/TimerBar";
 import { browserTz, clipSeconds, elapsedSeconds } from "../format";
 
 const DATE_VIEW_KEY = "chronolog-date-view";
@@ -36,10 +34,18 @@ function saveDateView(date: string | null): void {
   }
 }
 
-export function TimerPage(props: {
+/**
+ * Timer 页全部状态与动作（原 TimerPage 逻辑原样迁移）。
+ * TimerBar 位于 Shell 顶栏、Timeline 位于内容区，两者通过本 hook 共享状态。
+ *
+ * `enabled`：App 在顶层无条件调用本 hook（保证 hook 规则），未登录或不在 Timer 页时
+ * 传 false 跳过数据加载。
+ */
+export function useTimerController(props: {
   nowMs: number;
   current: TimeEntry | null;
   onCurrent: (entry: TimeEntry | null) => void;
+  enabled: boolean;
 }) {
   const { t } = useTranslation();
   const tz = browserTz();
@@ -71,8 +77,11 @@ export function TimerPage(props: {
   }
 
   useEffect(() => {
-    void refresh().catch((err) => setError(err instanceof ApiError ? err.message : t("common.loadFailed")));
-  }, []);
+    if (!props.enabled) return;
+    void refresh().catch((err) =>
+      setError(err instanceof ApiError ? err.message : t("common.loadFailed")),
+    );
+  }, [props.enabled]);
 
   /** 条目切换查看的日期后重新拉取当前视图的数据；回今天（null）时清除持久化。Step 3 DateNav 接入。 */
   function onDateChange(next: string | null) {
@@ -171,59 +180,58 @@ export function TimerPage(props: {
           .join(t("timer.tagSeparator"))
       : t("timer.selectTags");
 
-  return (
-    <>
-      <TimerBar
-        description={running ? running.description : description}
-        descriptionReadOnly={Boolean(running)}
-        onDescriptionChange={setDescription}
-        categoryPicker={
-          <CategoryPicker
-            categories={categories}
-            value={categoryId}
-            label={pickerLabel}
-            colorName={pickerColor}
-            disabled={Boolean(running)}
-            onChange={setCategoryId}
-          />
-        }
-        tagPicker={
-          <TagPicker
-            tags={tags}
-            value={tagIds}
-            label={tagPickerLabel}
-            disabled={Boolean(running)}
-            onChange={setTagIds}
-          />
-        }
-        runningTags={running?.tags ?? []}
-        elapsed={elapsed}
-        running={Boolean(running)}
-        canStart={Boolean(categoryId)}
-        onToggle={() => {
-          void onToggle();
-        }}
-        error={error}
-      />
-      <Timeline
-        today={today}
-        week={week}
-        mode={view}
-        onModeChange={(m) => {
-          void onModeChange(m);
-        }}
-        date={date}
-        onDateChange={onDateChange}
-        nowMs={props.nowMs}
-        tz={tz}
-        dayTotal={dayTotal}
-        weekTotal={weekTotal}
+  const barProps = {
+    description: running ? running.description : description,
+    descriptionReadOnly: Boolean(running),
+    onDescriptionChange: setDescription,
+    categoryPicker: (
+      <CategoryPicker
         categories={categories}
-        tags={tags}
-        onEntryUpdated={() => {
-          void refreshEntries();
-        }}
+        value={categoryId}
+        label={pickerLabel}
+        colorName={pickerColor}
+        disabled={Boolean(running)}
+        onChange={setCategoryId}
       />
-    </>
-  );
+    ),
+    tagPicker: (
+      <TagPicker
+        tags={tags}
+        value={tagIds}
+        label={tagPickerLabel}
+        disabled={Boolean(running)}
+        onChange={setTagIds}
+      />
+    ),
+    runningTags: running?.tags ?? [],
+    elapsed,
+    running: Boolean(running),
+    canStart: Boolean(categoryId),
+    onToggle: () => {
+      void onToggle();
+    },
+    error,
+  };
+
+  const timelineProps = {
+    today,
+    week,
+    mode: view,
+    onModeChange: (m: "day" | "week") => {
+      void onModeChange(m);
+    },
+    date,
+    onDateChange,
+    nowMs: props.nowMs,
+    tz,
+    dayTotal,
+    weekTotal,
+    categories,
+    tags,
+    onEntryUpdated: () => {
+      void refreshEntries();
+    },
+  };
+
+  return { barProps, timelineProps };
 }

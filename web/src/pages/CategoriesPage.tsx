@@ -64,7 +64,6 @@ export function CategoriesPage() {
 
   return (
     <div className="px-6 py-6">
-      <h1 className="mb-4 text-xl font-semibold">{t("nav.categories")}</h1>
       <div className="mb-4 flex gap-2">
         <Input
           value={name}

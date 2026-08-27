@@ -49,7 +49,7 @@ Adding `clippedSeconds` / `entryCount` / `categoryName` means:
 3. the page that renders it
 4. a test that asserts it
 
-`TimerPage` recomputes clip with `nowMs` even when the API sent `clippedSeconds`, because the snapshot would freeze the running row. Stats trust the server total and poll.
+The timer page (`useTimerController`) recomputes clip with `nowMs` even when the API sent `clippedSeconds`, because the snapshot would freeze the running row. Stats trust the server total and poll.
 
 ## Mistake: elapsed from a stale snapshot
 
