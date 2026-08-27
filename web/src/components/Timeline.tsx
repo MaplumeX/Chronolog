@@ -174,7 +174,8 @@ function DayColumn(props: {
         {draftAnchor ? (
           // 拖拽结束后的固化预览块：既是视觉残留也是 popover 的定位 anchor。
           // 无 anchor 时 Radix 会把 popover 定位到屏幕外（translate(0,-200%)），编辑器看起来没打开。
-          <PopoverAnchor
+          // 零尺寸 Anchor 钉在预览块中心，使编辑面板从预览块中部向右弹出（空间不足时自动翻转）
+          <div
             className="timeline-block drag-preview"
             style={{
               top: `${((draftAnchor.startMs - dayStartMs) / dayMs) * 100}%`,
@@ -184,7 +185,8 @@ function DayColumn(props: {
             <span className="block-time">
               {`${formatClock(new Date(draftAnchor.startMs).toISOString(), tz)} – ${formatClock(new Date(draftAnchor.endMs).toISOString(), tz)}`}
             </span>
-          </PopoverAnchor>
+            <PopoverAnchor className="absolute top-1/2 left-1/2 h-0 w-0" />
+          </div>
         ) : null}
 
         {day
@@ -542,7 +544,7 @@ export function Timeline(props: {
           />
         </PopoverContent>
       ) : draft ? (
-        <PopoverContent side="right" align="start" sideOffset={8} className="w-80">
+        <PopoverContent side="right" align="center" sideOffset={0} className="w-80">
           <EntryEditor
             key={draft.startedAt}
             draft={{ startedAt: draft.startedAt, stoppedAt: draft.stoppedAt }}
