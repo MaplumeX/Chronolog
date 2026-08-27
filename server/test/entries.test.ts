@@ -449,4 +449,186 @@ describe("entries", () => {
     assert.equal(cleared.statusCode, 200);
     assert.deepEqual((json(cleared).entry as { tags: unknown[] }).tags, []);
   });
+
+  describe("POST /api/entries", () => {
+    it("creates an entry and returns the EntryDto; visible in today", async () => {
+      const c: Clock = { value: new Date("2026-08-25T02:00:00.000Z") };
+      t = await createTestApp({ now: () => c.value });
+      const { sid } = await registerUser(t.app, "creator");
+      const cats = await categories(sid);
+      const work = cats.find((x) => x.name === "工作");
+      assert.ok(work);
+      const tagA = await createTag(sid, "深度");
+
+      const res = await t.app.inject({
+        method: "POST",
+        url: "/api/entries",
+        headers: cookieHeader(sid),
+        payload: {
+          description: "补录",
+          categoryId: work.id,
+          tagIds: [tagA],
+          startedAt: "2026-08-25T02:00:00.000Z",
+          stoppedAt: "2026-08-25T03:30:00.000Z",
+        },
+      });
+      assert.equal(res.statusCode, 201);
+      const entry = json(res).entry as {
+        id: string;
+        description: string;
+        categoryId: string;
+        categoryName: string;
+        startedAt: string;
+        stoppedAt: string;
+        durationSeconds: number;
+        tags: { id: string; name: string }[];
+      };
+      assert.ok(entry.id);
+      assert.equal(entry.description, "补录");
+      assert.equal(entry.categoryId, work.id);
+      assert.equal(entry.categoryName, "工作");
+      assert.equal(entry.startedAt, "2026-08-25T02:00:00.000Z");
+      assert.equal(entry.stoppedAt, "2026-08-25T03:30:00.000Z");
+      assert.equal(entry.durationSeconds, 5400);
+      assert.deepEqual(entry.tags.map((x) => x.id), [tagA]);
+
+      const today = await t.app.inject({
+        method: "GET",
+        url: "/api/entries/today?tz=UTC",
+        headers: cookieHeader(sid),
+      });
+      const entries = json(today).entries as { id: string; durationSeconds: number }[];
+      assert.equal(entries.length, 1);
+      assert.equal(entries[0].id, entry.id);
+      assert.equal(entries[0].durationSeconds, 5400);
+    });
+
+    it("stoppedAt <= startedAt is 400 VALIDATION", async () => {
+      const c: Clock = { value: new Date("2026-08-25T02:00:00.000Z") };
+      t = await createTestApp({ now: () => c.value });
+      const { sid } = await registerUser(t.app, "creator_bad_time");
+      const cats = await categories(sid);
+      const work = cats.find((x) => x.name === "工作");
+      assert.ok(work);
+      const base = { description: "x", categoryId: work.id, tagIds: [] };
+
+      const equal = await t.app.inject({
+        method: "POST",
+        url: "/api/entries",
+        headers: cookieHeader(sid),
+        payload: { ...base, startedAt: "2026-08-25T02:00:00.000Z", stoppedAt: "2026-08-25T02:00:00.000Z" },
+      });
+      assert.equal(equal.statusCode, 400);
+      assert.equal((json(equal).error as { code: string }).code, "VALIDATION");
+
+      const before = await t.app.inject({
+        method: "POST",
+        url: "/api/entries",
+        headers: cookieHeader(sid),
+        payload: { ...base, startedAt: "2026-08-25T03:00:00.000Z", stoppedAt: "2026-08-25T02:00:00.000Z" },
+      });
+      assert.equal(before.statusCode, 400);
+    });
+
+    it("foreign or missing category/tag is 404", async () => {
+      const c: Clock = { value: new Date("2026-08-25T02:00:00.000Z") };
+      t = await createTestApp({ now: () => c.value });
+      const a = await registerUser(t.app, "alice_create");
+      const b = await registerUser(t.app, "bob_create");
+      const aCats = await categories(a.sid);
+      const work = aCats.find((x) => x.name === "工作");
+      assert.ok(work);
+      const bCats = await categories(b.sid);
+      const bCat = bCats[0];
+      const bTag = await createTag(b.sid, "他人标签");
+      const base = {
+        description: "x",
+        startedAt: "2026-08-25T02:00:00.000Z",
+        stoppedAt: "2026-08-25T03:00:00.000Z",
+      };
+
+      const foreignCat = await t.app.inject({
+        method: "POST",
+        url: "/api/entries",
+        headers: cookieHeader(a.sid),
+        payload: { ...base, categoryId: bCat.id, tagIds: [] },
+      });
+      assert.equal(foreignCat.statusCode, 404);
+      assert.equal((json(foreignCat).error as { code: string }).code, "NOT_FOUND");
+
+      const missingCat = await t.app.inject({
+        method: "POST",
+        url: "/api/entries",
+        headers: cookieHeader(a.sid),
+        payload: { ...base, categoryId: "no-such-cat", tagIds: [] },
+      });
+      assert.equal(missingCat.statusCode, 404);
+
+      const foreignTag = await t.app.inject({
+        method: "POST",
+        url: "/api/entries",
+        headers: cookieHeader(a.sid),
+        payload: { ...base, categoryId: work.id, tagIds: [bTag] },
+      });
+      assert.equal(foreignTag.statusCode, 404);
+    });
+
+    it("overlaps with existing entries are 409; touching edges are fine", async () => {
+      const c: Clock = { value: new Date("2026-08-25T02:00:00.000Z") };
+      t = await createTestApp({ now: () => c.value });
+      const { sid } = await registerUser(t.app, "overlap_create");
+      const cats = await categories(sid);
+      const work = cats.find((x) => x.name === "工作");
+      assert.ok(work);
+      // 已有条目 A: 02:00–03:00
+      await createStopped(sid, work.id, c, "2026-08-25T02:00:00.000Z", "2026-08-25T03:00:00.000Z");
+      const base = { description: "x", categoryId: work.id, tagIds: [] };
+
+      // 与 A 重叠
+      const overlap = await t.app.inject({
+        method: "POST",
+        url: "/api/entries",
+        headers: cookieHeader(sid),
+        payload: { ...base, startedAt: "2026-08-25T02:30:00.000Z", stoppedAt: "2026-08-25T04:00:00.000Z" },
+      });
+      assert.equal(overlap.statusCode, 409);
+      assert.equal((json(overlap).error as { code: string }).code, "OVERLAP");
+
+      // 边界相接：新条目 [03:00, 04:00) 与 A [02:00, 03:00) 不冲突
+      const touching = await t.app.inject({
+        method: "POST",
+        url: "/api/entries",
+        headers: cookieHeader(sid),
+        payload: { ...base, startedAt: "2026-08-25T03:00:00.000Z", stoppedAt: "2026-08-25T04:00:00.000Z" },
+      });
+      assert.equal(touching.statusCode, 201);
+
+      // 运行中条目 06:00 开始延伸到无穷，与其重叠 → 409
+      c.value = new Date("2026-08-25T06:00:00.000Z");
+      const start = await t.app.inject({
+        method: "POST",
+        url: "/api/timer/start",
+        headers: cookieHeader(sid),
+        payload: { categoryId: work.id },
+      });
+      assert.equal(start.statusCode, 200);
+
+      const overlapRunning = await t.app.inject({
+        method: "POST",
+        url: "/api/entries",
+        headers: cookieHeader(sid),
+        payload: { ...base, startedAt: "2026-08-25T05:00:00.000Z", stoppedAt: "2026-08-25T07:00:00.000Z" },
+      });
+      assert.equal(overlapRunning.statusCode, 409);
+
+      // 结束时间恰好等于运行中条目开始时间 → 不冲突
+      const beforeRunning = await t.app.inject({
+        method: "POST",
+        url: "/api/entries",
+        headers: cookieHeader(sid),
+        payload: { ...base, startedAt: "2026-08-25T04:30:00.000Z", stoppedAt: "2026-08-25T05:00:00.000Z" },
+      });
+      assert.equal(beforeRunning.statusCode, 201);
+    });
+  });
 });

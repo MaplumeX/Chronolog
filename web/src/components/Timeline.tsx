@@ -35,6 +35,12 @@ function isDayAt(day: TodayEntries, nowMs: number): boolean {
   return nowMs >= Date.parse(day.dayStart) && nowMs < Date.parse(day.dayEnd);
 }
 
+/** 档位 → 拖拽创建 snap 网格（分钟）：60→15、30→10、15→5、5→1 */
+const SNAP_MINUTES: Record<Scale, number> = { 60: 15, 30: 10, 15: 5, 5: 1 };
+
+/** 拖拽创建预览状态：track 像素坐标内的起止（snap 后，自动排序） */
+type DragPreview = { startMs: number; endMs: number };
+
 /** 单日 24h 纵向时间线：ruler + track + blocks + now-line。day 与 week 模式共用。 */
 function DayColumn(props: {
   day: TodayEntries | null;
@@ -45,14 +51,78 @@ function DayColumn(props: {
   scale: Scale;
   selectedId: string | null;
   onSelect: (id: string) => void;
+  onDragCreate?: (draft: { startedAt: string; stoppedAt: string }) => void;
+  /** 草稿锚点：拖拽结束后固化的预览块，同时作为 popover 的定位 anchor（仅归属列传入） */
+  draftAnchor?: { startMs: number; endMs: number } | null;
 }) {
   const { t } = useTranslation();
-  const { day, nowMs, tz, isToday, showRuler = true, scale, selectedId, onSelect } = props;
+  const { day, nowMs, tz, isToday, showRuler = true, scale, selectedId, onSelect, onDragCreate, draftAnchor } = props;
+
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [dragPreview, setDragPreview] = useState<DragPreview | null>(null);
+  const dragStartMsRef = useRef(0);
+  const dragMovedRef = useRef(false);
 
   const dayStartMs = day ? Date.parse(day.dayStart) : 0;
   const dayEndMs = day ? Date.parse(day.dayEnd) : 0;
   const dayMs = dayEndMs - dayStartMs || 1;
   const tickCount = 1440 / scale;
+
+  const snapMs = (ms: number) => {
+    const gridMs = SNAP_MINUTES[scale] * 60_000;
+    const snapped = Math.round(ms / gridMs) * gridMs;
+    return Math.max(dayStartMs, Math.min(dayEndMs, snapped));
+  };
+
+  /** pointer 事件坐标 → snap 后的 day 绝对时间 ms，clamp 到当天窗口 */
+  const pointerToMs = (e: React.PointerEvent): number => {
+    const rect = trackRef.current!.getBoundingClientRect();
+    const ratio = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+    return snapMs(dayStartMs + ratio * dayMs);
+  };
+
+  function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    if (!onDragCreate || !day) return;
+    if (e.button !== 0) return;
+    // 命中色块：走原有点击编辑流程（R7）
+    if ((e.target as Element).closest(".timeline-block")) return;
+    e.preventDefault();
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    dragStartMsRef.current = pointerToMs(e);
+    dragMovedRef.current = false;
+  }
+
+  function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (!onDragCreate || !day) return;
+    if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
+    const ms = pointerToMs(e);
+    if (ms !== dragStartMsRef.current) dragMovedRef.current = true;
+    if (!dragMovedRef.current) return;
+    const startMs = Math.min(dragStartMsRef.current, ms);
+    let endMs = Math.max(dragStartMsRef.current, ms);
+    if (startMs === endMs) endMs = startMs + SNAP_MINUTES[scale] * 60_000; // 不足一格按一格（R4）
+    setDragPreview({ startMs, endMs });
+  }
+
+  function onPointerUp(e: React.PointerEvent<HTMLDivElement>) {
+    if (!onDragCreate || !day) return;
+    if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
+    e.currentTarget.releasePointerCapture(e.pointerId);
+    // 几乎未移动（点击）不触发创建（AC5）
+    if (!dragMovedRef.current) {
+      setDragPreview(null);
+      return;
+    }
+    const ms = pointerToMs(e);
+    const startMs = Math.min(dragStartMsRef.current, ms);
+    let endMs = Math.max(dragStartMsRef.current, ms);
+    if (startMs === endMs) endMs = startMs + SNAP_MINUTES[scale] * 60_000; // 不足一格按一格（R4）
+    setDragPreview(null);
+    onDragCreate({
+      startedAt: new Date(startMs).toISOString(),
+      stoppedAt: new Date(endMs).toISOString(),
+    });
+  }
 
   const posPercent = (t: number) =>
     Math.max(0, Math.min(100, ((t - dayStartMs) / dayMs) * 100));
@@ -71,10 +141,51 @@ function DayColumn(props: {
         </div>
       ) : null}
 
-      <div className={`timeline-track${showRuler ? "" : " timeline-track--full"}`}>
+      <div
+        ref={trackRef}
+        className={`timeline-track${showRuler ? "" : " timeline-track--full"}`}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={() => {
+          // 系统中断拖拽（来电/滚动接管等）：capture 自动丢失，清理预览避免残留
+          setDragPreview(null);
+          dragMovedRef.current = false;
+        }}
+      >
         {Array.from({ length: tickCount + 1 }, (_, i) => (
           <div key={i} className="timeline-grid" style={{ top: `${(i / tickCount) * 100}%` }} />
         ))}
+
+        {dragPreview ? (
+          <div
+            className="timeline-block drag-preview"
+            style={{
+              top: `${((dragPreview.startMs - dayStartMs) / dayMs) * 100}%`,
+              height: `${((dragPreview.endMs - dragPreview.startMs) / dayMs) * 100}%`,
+            }}
+          >
+            <span className="block-time">
+              {`${formatClock(new Date(dragPreview.startMs).toISOString(), tz)} – ${formatClock(new Date(dragPreview.endMs).toISOString(), tz)}`}
+            </span>
+          </div>
+        ) : null}
+
+        {draftAnchor ? (
+          // 拖拽结束后的固化预览块：既是视觉残留也是 popover 的定位 anchor。
+          // 无 anchor 时 Radix 会把 popover 定位到屏幕外（translate(0,-200%)），编辑器看起来没打开。
+          <PopoverAnchor
+            className="timeline-block drag-preview"
+            style={{
+              top: `${((draftAnchor.startMs - dayStartMs) / dayMs) * 100}%`,
+              height: `${((draftAnchor.endMs - draftAnchor.startMs) / dayMs) * 100}%`,
+            }}
+          >
+            <span className="block-time">
+              {`${formatClock(new Date(draftAnchor.startMs).toISOString(), tz)} – ${formatClock(new Date(draftAnchor.endMs).toISOString(), tz)}`}
+            </span>
+          </PopoverAnchor>
+        ) : null}
 
         {day
           ? day.entries.map((e) => {
@@ -225,6 +336,13 @@ export function Timeline(props: {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isDay = mode === "day";
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [draft, setDraft] = useState<{
+    dayStart: string;
+    startedAt: string;
+    stoppedAt: string;
+  } | null>(null);
+  // 拖拽结束后的固化预览块（仅渲染在发起拖拽的那一列），同时作为 draft popover 的 anchor
+  const [draftAnchor, setDraftAnchor] = useState<{ dayStart: string; startMs: number; endMs: number } | null>(null);
   const [scale, setScale] = useState<Scale>(60);
   const scaleIndex = SCALES.indexOf(scale);
   const tickCount = 1440 / scale;
@@ -259,13 +377,30 @@ export function Timeline(props: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [anchorDay != null, mode, anchorDay?.dayStart, scale]);
 
+  const handleDragCreate =
+    (dayStart: string) =>
+    (d: { startedAt: string; stoppedAt: string }) => {
+      const startMs = Date.parse(d.startedAt);
+      const endMs = Date.parse(d.stoppedAt);
+      setDraft({ dayStart, startedAt: d.startedAt, stoppedAt: d.stoppedAt });
+      setDraftAnchor({ dayStart, startMs, endMs });
+    };
+
+  const clearDraft = () => {
+    setDraft(null);
+    setDraftAnchor(null);
+  };
+
   const total = isDay ? dayTotal : weekTotal;
 
   return (
     <Popover
-      open={selectedEntry != null}
+      open={selectedEntry != null || draft != null}
       onOpenChange={(open) => {
-        if (!open) setSelectedId(null);
+        if (!open) {
+          setSelectedId(null);
+          clearDraft();
+        }
       }}
     >
       <section className="flex min-h-0 flex-1 flex-col">
@@ -327,6 +462,8 @@ export function Timeline(props: {
             scale={scale}
             selectedId={selectedId}
             onSelect={setSelectedId}
+            onDragCreate={today ? handleDragCreate(today.dayStart) : undefined}
+            draftAnchor={draftAnchor?.dayStart === today?.dayStart ? draftAnchor : null}
           />
         ) : week ? (
           <div className="flex min-w-full flex-col">
@@ -379,6 +516,8 @@ export function Timeline(props: {
                     scale={scale}
                     selectedId={selectedId}
                     onSelect={setSelectedId}
+                    onDragCreate={handleDragCreate(d.dayStart)}
+                    draftAnchor={draftAnchor?.dayStart === d.dayStart ? draftAnchor : null}
                   />
                 </div>
               ))}
@@ -399,6 +538,21 @@ export function Timeline(props: {
               onEntryUpdated();
             }}
             onClose={() => setSelectedId(null)}
+          />
+        </PopoverContent>
+      ) : draft ? (
+        <PopoverContent side="right" align="start" sideOffset={8} className="w-80">
+          <EntryEditor
+            key={draft.startedAt}
+            draft={{ startedAt: draft.startedAt, stoppedAt: draft.stoppedAt }}
+            categories={categories}
+            tags={tags}
+            onSaved={() => {
+              // 保存成功：关闭并刷新时间线数据
+              clearDraft();
+              onEntryUpdated();
+            }}
+            onClose={clearDraft}
           />
         </PopoverContent>
       ) : null}

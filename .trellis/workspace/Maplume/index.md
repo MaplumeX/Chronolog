@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 14
+- **Total Sessions**: 15
 - **Last Active**: 2026-08-27
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~329 | Active |
+| `journal-1.md` | ~352 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 15 | 2026-08-27 | Timeline drag-to-create entries | `b17a8c9`, `178b264`, `f4e6aed` | `feat/timeline-drag-create-entries` |
 | 14 | 2026-08-27 | CLI/Agent PAT 认证（Bearer token + Web 管理页） | `134a04c` | `feat/cli-agent-auth` |
 | 13 | 2026-08-27 | Fix zoom +/- semantics and remove scale label | `c500f00` | `fix/inverted-zoom-semantics-remove-ticks` |
 | 13 | 2026-08-27 | Adopt Toggl 2.0 layout/form style | `abafeed` | `thankful-frog` |

@@ -273,6 +273,25 @@
   animation: timeline-pulse 1.6s ease-in-out infinite;
 }
 
+/* 拖拽创建预览块：半透明浮层，仅显示时间范围 */
+.timeline-block.drag-preview {
+  background: var(--primary);
+  opacity: 0.35;
+  color: var(--primary-foreground);
+  z-index: 2;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  cursor: default;
+}
+
+.timeline-block.drag-preview .block-time {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 @keyframes timeline-pulse {
   0%,
   100% {

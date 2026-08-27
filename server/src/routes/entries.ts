@@ -1,8 +1,8 @@
 import { and, eq, gt, inArray, isNull, lt, ne, or } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { requireUser } from "../auth.js";
-import type { Deps } from "../db.js";
+import { newId, requireUser } from "../auth.js";
+import type { Db, Deps } from "../db.js";
 import { getEntry } from "../entries.js";
 import { AppError, parseBody } from "../errors.js";
 import { categories, entryTags, tags, timeEntries } from "../schema.js";
@@ -18,12 +18,55 @@ const updateBody = z.object({
   stoppedAt: z.iso.datetime("时间格式无效"),
 });
 
-function updateOnce(
-  deps: Deps,
-  userId: string,
-  id: string,
-  body: z.infer<typeof updateBody>,
-) {
+type UpsertBody = z.infer<typeof updateBody>;
+
+function checkTimeOrder(body: UpsertBody) {
+  if (body.stoppedAt <= body.startedAt) {
+    throw new AppError(400, "VALIDATION", "结束时间必须晚于开始时间");
+  }
+}
+
+function checkCategory(tx: Db, userId: string, categoryId: string) {
+  const cat = tx
+    .select({ id: categories.id })
+    .from(categories)
+    .where(and(eq(categories.id, categoryId), eq(categories.userId, userId)))
+    .get();
+  if (!cat) throw new AppError(404, "NOT_FOUND", "分类不存在");
+}
+
+function checkTags(tx: Db, userId: string, tagIds: string[]) {
+  if (tagIds.length > 0) {
+    const owned = tx
+      .select({ id: tags.id })
+      .from(tags)
+      .where(and(eq(tags.userId, userId), inArray(tags.id, tagIds)))
+      .all();
+    if (owned.length !== tagIds.length) {
+      throw new AppError(404, "NOT_FOUND", "标签不存在");
+    }
+  }
+}
+
+// 半开区间 [start, end) 重叠校验：边界相接（前一条结束 == 后一条开始）不算重叠。
+// 运行中条目（stoppedAt IS NULL）视为延伸到无穷，参与冲突检测。
+function checkOverlap(tx: Db, userId: string, startedAt: string, stoppedAt: string, excludeId?: string) {
+  const overlap = tx
+    .select({ id: timeEntries.id })
+    .from(timeEntries)
+    .where(
+      and(
+        eq(timeEntries.userId, userId),
+        excludeId !== undefined ? ne(timeEntries.id, excludeId) : undefined,
+        lt(timeEntries.startedAt, stoppedAt),
+        or(isNull(timeEntries.stoppedAt), gt(timeEntries.stoppedAt, startedAt)),
+      ),
+    )
+    .get();
+  if (overlap) throw new AppError(409, "OVERLAP", "该时间段与其它条目重叠");
+}
+
+function updateOnce(deps: Deps, userId: string, id: string, body: UpsertBody) {
   deps.db.transaction((tx) => {
     const entry = tx
       .select()
@@ -33,43 +76,10 @@ function updateOnce(
     if (!entry) throw new AppError(404, "NOT_FOUND", "条目不存在");
     if (!entry.stoppedAt) throw new AppError(409, "CONFLICT", "运行中的条目不可编辑");
 
-    const cat = tx
-      .select({ id: categories.id })
-      .from(categories)
-      .where(and(eq(categories.id, body.categoryId), eq(categories.userId, userId)))
-      .get();
-    if (!cat) throw new AppError(404, "NOT_FOUND", "分类不存在");
-
-    if (body.tagIds.length > 0) {
-      const owned = tx
-        .select({ id: tags.id })
-        .from(tags)
-        .where(and(eq(tags.userId, userId), inArray(tags.id, body.tagIds)))
-        .all();
-      if (owned.length !== body.tagIds.length) {
-        throw new AppError(404, "NOT_FOUND", "标签不存在");
-      }
-    }
-
-    if (body.stoppedAt <= body.startedAt) {
-      throw new AppError(400, "VALIDATION", "结束时间必须晚于开始时间");
-    }
-
-    // 半开区间 [start, end) 重叠校验：边界相接（前一条结束 == 后一条开始）不算重叠。
-    // 运行中条目（stoppedAt IS NULL）视为延伸到无穷，参与冲突检测。
-    const overlap = tx
-      .select({ id: timeEntries.id })
-      .from(timeEntries)
-      .where(
-        and(
-          eq(timeEntries.userId, userId),
-          ne(timeEntries.id, id),
-          lt(timeEntries.startedAt, body.stoppedAt),
-          or(isNull(timeEntries.stoppedAt), gt(timeEntries.stoppedAt, body.startedAt)),
-        ),
-      )
-      .get();
-    if (overlap) throw new AppError(409, "OVERLAP", "该时间段与其它条目重叠");
+    checkCategory(tx, userId, body.categoryId);
+    checkTags(tx, userId, body.tagIds);
+    checkTimeOrder(body);
+    checkOverlap(tx, userId, body.startedAt, body.stoppedAt, id);
 
     tx.update(timeEntries)
       .set({
@@ -90,6 +100,33 @@ function updateOnce(
   });
 }
 
+function createOnce(deps: Deps, userId: string, body: UpsertBody): string {
+  return deps.db.transaction((tx) => {
+    checkTimeOrder(body);
+    checkCategory(tx, userId, body.categoryId);
+    checkTags(tx, userId, body.tagIds);
+    checkOverlap(tx, userId, body.startedAt, body.stoppedAt);
+
+    const id = newId();
+    tx.insert(timeEntries)
+      .values({
+        id,
+        userId,
+        categoryId: body.categoryId,
+        description: body.description,
+        startedAt: body.startedAt,
+        stoppedAt: body.stoppedAt,
+      })
+      .run();
+    if (body.tagIds.length > 0) {
+      tx.insert(entryTags)
+        .values(body.tagIds.map((tagId) => ({ entryId: id, tagId })))
+        .run();
+    }
+    return id;
+  });
+}
+
 export function registerEntryRoutes(app: FastifyInstance, deps: Deps) {
   app.patch("/api/entries/:id", async (req) => {
     const user = requireUser(req, deps);
@@ -98,6 +135,16 @@ export function registerEntryRoutes(app: FastifyInstance, deps: Deps) {
     const tagIds = [...new Set(body.tagIds)];
     updateOnce(deps, user.id, id, { ...body, tagIds });
     const entry = getEntry(deps.db, user.id, id, deps.now());
+    return { entry };
+  });
+
+  app.post("/api/entries", async (req, reply) => {
+    const user = requireUser(req, deps);
+    const body = parseBody(updateBody, req.body);
+    const tagIds = [...new Set(body.tagIds)];
+    const id = createOnce(deps, user.id, { ...body, tagIds });
+    const entry = getEntry(deps.db, user.id, id, deps.now());
+    reply.code(201);
     return { entry };
   });
 }

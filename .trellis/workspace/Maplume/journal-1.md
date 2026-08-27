@@ -327,3 +327,26 @@ Restyle UI to Toggl 2.0 layout: timer bar moved into Shell top bar via new heade
 ### Status
 
 [OK] **Completed**
+
+
+## Session 15: Timeline drag-to-create entries
+
+**Date**: 2026-08-27
+**Task**: Timeline drag-to-create entries
+**Branch**: `feat/timeline-drag-create-entries`
+
+### Summary
+
+Implemented Toggl-style drag-to-create on the timeline: new POST /api/entries reusing the PATCH validation chain (ownership, half-open overlap -> 409 OVERLAP) with full test coverage; frontend pointer-drag on empty track space with scale-snapped preview (60/30/15/5 -> 15/10/5/1 min), EntryEditor draft mode (category required), week-mode column attribution, and i18n. Specs updated (http-routes, component-guidelines). All AC verified except AC1 manual smoke test.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b17a8c9` | (see git log) |
+| `178b264` | (see git log) |
+| `f4e6aed` | (see git log) |
+
+### Status
+
+[OK] **Completed**

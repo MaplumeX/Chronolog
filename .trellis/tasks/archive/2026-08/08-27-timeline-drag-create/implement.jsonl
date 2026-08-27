@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/backend/http-routes.md", "reason": "新增 POST /api/entries 需遵循路由注册、DTO、PATCH 校验链约定（校验顺序、半开区间重叠）"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "AppError status map：400 VALIDATION / 404 NOT_FOUND / 409 OVERLAP，zod 是唯一校验层"}
+{"file": ".trellis/spec/backend/time-and-timezone.md", "reason": "ISO-Z instant 存储约定、deps.now() 注入、不接受客户端 startedAt 的边界（本任务例外需显式说明）"}
+{"file": ".trellis/spec/backend/auth.md", "reason": "requireUser 与跨用户隔离（404 而非 403）约定"}
+{"file": ".trellis/spec/frontend/api-client.md", "reason": "createEntry 走 api.ts request()，TimeEntry 类型与 EntryDto 同步，ApiError 展示约定"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Timeline/EntryEditor 组件改动遵循组件规范"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "i18n zh/en 同步、typecheck、Tailwind tokens"}
