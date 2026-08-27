@@ -182,6 +182,16 @@ describe("today clip and timezone", () => {
     const withB = entries.find((e) => e.tags.some((x) => x.id === tagBId));
     assert.ok(withA && withB);
     assert.equal(withA.tags.length, 1);
+
+    const filteredList = await t.app.inject({
+      method: "GET",
+      url: `/api/entries/today?tz=Asia/Shanghai&tagId=${tagAId}`,
+      headers: cookieHeader(sid),
+    });
+    assert.equal(filteredList.statusCode, 200);
+    const filteredEntries = json(filteredList).entries as { id: string }[];
+    assert.equal(filteredEntries.length, 1);
+    assert.equal(filteredEntries[0].id, withA.id);
     assert.equal(withA.tags[0].name, "深度");
 
     const filtered = await t.app.inject({

@@ -31,7 +31,7 @@ export function registerTodayRoutes(app: FastifyInstance, deps: Deps) {
     const user = requireUser(req, deps);
     const tz = requireTz(tzQuery(req.query));
     const date = dateQuery(req.query, tz);
-    return listToday(deps.db, user.id, tz, deps.now(), undefined, date);
+    return listToday(deps.db, user.id, tz, deps.now(), tagIdQuery(req.query), date);
   });
 
   app.get("/api/entries/week", async (req) => {
