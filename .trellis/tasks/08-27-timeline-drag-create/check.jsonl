@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/http-routes.md", "reason": "核对 POST /api/entries 符合路由表面、EntryDto、PATCH 行为未被破坏"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "核对错误码：OVERLAP 409、VALIDATION 400、跨用户 404，测试断言 status+code"}
+{"file": ".trellis/spec/frontend/api-client.md", "reason": "核对前端类型同步与错误展示"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "核对 i18n key 同步、typecheck/build 通过"}
+{"file": ".trellis/spec/backend/time-and-timezone.md", "reason": "核对 ISO-Z 与 deps.now() 使用，无 new Date() 落入 domain 代码"}
