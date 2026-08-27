@@ -23,7 +23,7 @@ export function CategoryPicker(props: {
           type="button"
           variant="outline"
           disabled={props.disabled}
-          className="w-full shrink-0 justify-start gap-2 rounded-full md:w-auto"
+          className="w-full shrink-0 justify-start gap-2 rounded-lg md:w-auto"
         >
           <span
             className="size-2 shrink-0 rounded-full"

@@ -1,0 +1,7 @@
+{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python3 .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": ".trellis/spec/frontend/index.md", "reason": "前端层入口：技术栈、预读清单、质量检查命令"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Shell 结构约定（sidebar、header、页面标题归属），本任务改动核心契约"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "新增 use-timer-controller hook 需遵循 effect/interval/页面级 fetch 约定"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "Timer 状态提升到 hook，session/running timer 约定"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "新增 hook 文件、删除 TimerPage 的目录位置约定"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "i18n copy 与 Tailwind token 约定（新增 nav.group/stats.totalLogged）"}

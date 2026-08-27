@@ -19,10 +19,10 @@ export function TimerBar(props: {
 }) {
   const { t } = useTranslation();
   return (
-    <div className="shrink-0 border-b px-4 py-3">
+    <div className="shrink-0 px-4 py-3">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-3">
         <input
-          className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
+          className="min-w-0 flex-1 bg-transparent text-lg outline-none placeholder:text-muted-foreground"
           placeholder={t("timer.placeholder")}
           value={props.description}
           onChange={(e) => {
@@ -51,7 +51,7 @@ export function TimerBar(props: {
           props.tagPicker
         )}
         <div className="flex items-center justify-end gap-3">
-          <div className="min-w-[88px] text-right font-mono text-lg tabular-nums">
+          <div className="min-w-[88px] text-right font-mono text-xl tabular-nums">
             {formatDuration(props.elapsed)}
           </div>
           <Button

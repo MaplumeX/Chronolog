@@ -30,6 +30,7 @@
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
 | 13 | 2026-08-27 | Fix zoom +/- semantics and remove scale label | `c500f00` | `fix/inverted-zoom-semantics-remove-ticks` |
+| 13 | 2026-08-27 | Adopt Toggl 2.0 layout/form style | `abafeed` | `thankful-frog` |
 | 12 | 2026-08-27 | Toggl-style date switcher for timer timeline | `a9986b3` | `feat/date-switcher` |
 | 12 | 2026-08-27 | Timeline tick density switcher (60/30/15/5) | `09c9aaf` | `feat/timeline-scale-switch` |
 | 11 | 2026-08-26 | 时间线条目可点击编辑（popover） | `6703408`, `d615c63`, `9a8b831` | `feat/clickable-entries-editable-popup` |
