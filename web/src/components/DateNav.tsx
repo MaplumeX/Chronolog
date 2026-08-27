@@ -93,11 +93,13 @@ export function DateNav(props: {
   }
 
   return (
-    <div className="flex items-center gap-0.5">
+    <>
+      <div className="flex items-center overflow-hidden rounded-md border">
       <Button
         type="button"
         variant="ghost"
         size="icon-xs"
+        className="rounded-none rounded-l-md hover:bg-transparent dark:hover:bg-transparent cursor-pointer"
         aria-label={t("timeline.prev")}
         onClick={() => navigate(-step)}
       >
@@ -105,8 +107,13 @@ export function DateNav(props: {
       </Button>
       <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
         <PopoverTrigger asChild>
-          <Button type="button" variant="ghost" size="sm" className="font-semibold">
-            {label}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="w-36 justify-center rounded-none border-x px-2 font-semibold tabular-nums hover:bg-transparent dark:hover:bg-transparent cursor-pointer"
+          >
+            <span className="truncate">{label}</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent align="start" className="w-auto p-0">
@@ -130,22 +137,24 @@ export function DateNav(props: {
         type="button"
         variant="ghost"
         size="icon-xs"
+        className="rounded-none rounded-r-md hover:bg-transparent dark:hover:bg-transparent cursor-pointer"
         aria-label={t("timeline.next")}
         onClick={() => navigate(step)}
       >
         <ChevronRight />
       </Button>
-      {date !== null ? (
-        <Button
-          type="button"
-          variant="ghost"
-          size="xs"
-          className="text-muted-foreground"
-          onClick={() => onChange(null)}
-        >
-          {t("timeline.backToToday")}
-        </Button>
-      ) : null}
     </div>
+    {date !== null ? (
+      <Button
+        type="button"
+        variant="ghost"
+        size="xs"
+        className="ml-1 text-muted-foreground"
+        onClick={() => onChange(null)}
+      >
+        {t("timeline.backToToday")}
+      </Button>
+    ) : null}
+  </>
   );
 }
