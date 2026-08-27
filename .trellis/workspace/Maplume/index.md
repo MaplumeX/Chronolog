@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 12
+- **Total Sessions**: 13
 - **Last Active**: 2026-08-27
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~267 | Active |
+| `journal-1.md` | ~298 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 13 | 2026-08-27 | Fix zoom +/- semantics and remove scale label | `c500f00` | `fix/inverted-zoom-semantics-remove-ticks` |
 | 12 | 2026-08-27 | Toggl-style date switcher for timer timeline | `a9986b3` | `feat/date-switcher` |
 | 12 | 2026-08-27 | Timeline tick density switcher (60/30/15/5) | `09c9aaf` | `feat/timeline-scale-switch` |
 | 11 | 2026-08-26 | 时间线条目可点击编辑（popover） | `6703408`, `d615c63`, `9a8b831` | `feat/clickable-entries-editable-popup` |
