@@ -16,23 +16,29 @@ function toLocalInput(iso: string): string {
 }
 
 export function EntryEditor(props: {
-  entry: TimeEntry;
+  /** 编辑模式：已有条目 */
+  entry?: TimeEntry;
+  /** 新建模式：拖拽创建的草稿起止时间 */
+  draft?: { startedAt: string; stoppedAt: string };
   categories: Category[];
   tags: Tag[];
   onSaved: () => void;
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const [description, setDescription] = useState(props.entry.description);
-  const [categoryId, setCategoryId] = useState(props.entry.categoryId);
-  const [tagIds, setTagIds] = useState(props.entry.tags.map((x) => x.id));
-  const [startedAt, setStartedAt] = useState(toLocalInput(props.entry.startedAt));
+  const [description, setDescription] = useState(props.entry?.description ?? "");
+  const [categoryId, setCategoryId] = useState(props.entry?.categoryId ?? "");
+  const [tagIds, setTagIds] = useState(props.entry?.tags.map((x) => x.id) ?? []);
+  const [startedAt, setStartedAt] = useState(
+    toLocalInput(props.entry?.startedAt ?? props.draft!.startedAt),
+  );
   const [stoppedAt, setStoppedAt] = useState(
-    toLocalInput(props.entry.stoppedAt ?? props.entry.startedAt),
+    toLocalInput(props.entry?.stoppedAt ?? props.draft!.stoppedAt),
   );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  const isDraft = props.draft != null;
   const startMs = Date.parse(startedAt);
   const stopMs = Date.parse(stoppedAt);
   const duration = Number.isNaN(startMs) || Number.isNaN(stopMs)
@@ -54,14 +60,19 @@ export function EntryEditor(props: {
     }
     setSaving(true);
     setError("");
+    const body = {
+      description,
+      categoryId,
+      tagIds,
+      startedAt: new Date(startMs).toISOString(),
+      stoppedAt: new Date(stopMs).toISOString(),
+    };
     try {
-      await api.updateEntry(props.entry.id, {
-        description,
-        categoryId,
-        tagIds,
-        startedAt: new Date(startMs).toISOString(),
-        stoppedAt: new Date(stopMs).toISOString(),
-      });
+      if (isDraft) {
+        await api.createEntry(body);
+      } else {
+        await api.updateEntry(props.entry!.id, body);
+      }
     } catch (err) {
       if (err instanceof ApiError && err.code === "OVERLAP") {
         setError(t("entry.overlap"));
@@ -78,7 +89,7 @@ export function EntryEditor(props: {
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold">{t("entry.edit")}</h3>
+      <h3 className="text-sm font-semibold">{isDraft ? t("entry.create") : t("entry.edit")}</h3>
       <div className="space-y-1.5">
         <Label htmlFor="entry-description">{t("entry.description")}</Label>
         <Input
@@ -136,7 +147,11 @@ export function EntryEditor(props: {
         <Button type="button" variant="outline" onClick={props.onClose} disabled={saving}>
           {t("entry.cancel")}
         </Button>
-        <Button type="button" onClick={() => void onSave()} disabled={saving}>
+        <Button
+          type="button"
+          onClick={() => void onSave()}
+          disabled={saving || (isDraft && categoryId === "")}
+        >
           {t("entry.save")}
         </Button>
       </div>

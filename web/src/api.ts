@@ -141,6 +141,17 @@ export const api = {
     request<WeekEntries>(
       `/api/entries/week?tz=${encodeURIComponent(tz)}${date ? `&date=${encodeURIComponent(date)}` : ""}`,
     ),
+  createEntry: (body: {
+    description: string;
+    categoryId: string;
+    tagIds: string[];
+    startedAt: string;
+    stoppedAt: string;
+  }) =>
+    request<{ entry: TimeEntry }>("/api/entries", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   updateEntry: (id: string, body: {
     description: string;
     categoryId: string;

@@ -27,6 +27,7 @@ export const zh = {
   "timeline.zoomOut": "缩小",
   "timeline.zoomIn": "放大",
   "entry.edit": "编辑条目",
+  "entry.create": "新建条目",
   "entry.description": "描述",
   "entry.category": "分类",
   "entry.tags": "标签",

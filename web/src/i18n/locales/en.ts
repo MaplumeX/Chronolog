@@ -29,6 +29,7 @@ export const en: Record<keyof typeof zh, string> = {
   "timeline.zoomOut": "Zoom out",
   "timeline.zoomIn": "Zoom in",
   "entry.edit": "Edit entry",
+  "entry.create": "New entry",
   "entry.description": "Description",
   "entry.category": "Category",
   "entry.tags": "Tags",
