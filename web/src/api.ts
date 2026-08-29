@@ -37,6 +37,13 @@ export type WeekEntries = {
   days: TodayEntries[];
 };
 
+/** 查询窗口紧邻外侧条目（gap 插槽边界）：prev/next 各最多一条 */
+export type BoundaryEntries = {
+  tz: string;
+  prevEntry: TimeEntry | null;
+  nextEntry: TimeEntry | null;
+};
+
 export type TodayStats = {
   tz: string;
   dayStart: string;
@@ -162,6 +169,10 @@ export const api = {
   weekEntries: (tz: string, date?: string) =>
     request<WeekEntries>(
       `/api/entries/week?tz=${encodeURIComponent(tz)}${date ? `&date=${encodeURIComponent(date)}` : ""}`,
+    ),
+  boundaryEntries: (tz: string, start: string, end: string) =>
+    request<BoundaryEntries>(
+      `/api/entries/boundary?tz=${encodeURIComponent(tz)}&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`,
     ),
   createEntry: (body: {
     description: string;

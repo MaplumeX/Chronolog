@@ -27,6 +27,7 @@ export const en: Record<keyof typeof zh, string> = {
   "timeline.viewToggle": "Switch timeline view",
   "timeline.zoomOut": "Zoom out",
   "timeline.zoomIn": "Zoom in",
+  "timeline.gapTitle": "Click to create {{range}} ({{duration}})",
   "entry.edit": "Edit entry",
   "entry.create": "New entry",
   "entry.description": "Description",
