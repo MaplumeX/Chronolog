@@ -1,8 +1,8 @@
 # Component Guidelines
 
-Light product shell, Tailwind v4 + shadcn/ui (new-york, neutral). No elevated white cards as page chrome. Visual grouping is spacing, `border-b`, and surface color.
+Light product shell, Tailwind v4 + shadcn/ui (new-york). No elevated white cards as page chrome. Visual grouping is spacing, `border-b`, and surface color.
 
-Tokens live on `:root` in `web/src/styles.css` (shadcn CSS variables). Light only: do not add a `.dark` theme or `prefers-color-scheme` invert.
+Tokens live on `:root` and `.dark` in `web/src/styles.css` (shadcn CSS variables, teal cool-theme, both light and dark maintained — see [Design Tokens](./design-tokens.md)). Theme switching is handled by `ThemeSwitcher` + the `use-theme` hook; do not hardcode raw colors in components.
 
 ## Shell
 

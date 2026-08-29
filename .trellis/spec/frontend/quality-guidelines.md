@@ -23,9 +23,9 @@ Root `npm run typecheck` includes web. There is no frontend unit-test runner.
 
 ## CSS
 
-`web/src/styles.css`: `@import "tailwindcss"`, shadcn `:root` tokens, and a small timeline geometry block (`timeline-inner`, `timeline-block`, `now-line`). Page layout uses Tailwind utilities + shadcn components.
+`web/src/styles.css`: `@import "tailwindcss"`, shadcn `:root` / `.dark` tokens (teal cool theme, light + dark), and a small timeline geometry block (`timeline-inner`, `timeline-block`, `now-line`). Page layout uses Tailwind utilities + shadcn components. See [Design Tokens](./design-tokens.md).
 
-Light, neutral gray. No beige `--page`. No `.dark` class toggle.
+Dual theme (light / dark) via the `.dark` class, switched by `ThemeSwitcher` / `use-theme`. No beige `--page`. Do not hardcode raw colors in components or CSS — consume semantic tokens / `color-mix` derivations instead.
 
 Prefer existing primitives (`Button`, `Input`, `Table`, `DropdownMenu`, `Sidebar`) over new global classes. Timeline absolute positioning is the exception.
 
