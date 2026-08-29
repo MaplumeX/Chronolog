@@ -15,6 +15,7 @@ export async function createTestApp(opts?: {
   now?: () => Date;
   dbPath?: string;
   keepDir?: boolean;
+  registrationOpen?: boolean;
 }): Promise<TestApp> {
   const dir = opts?.dbPath
     ? path.dirname(opts.dbPath)
@@ -24,6 +25,7 @@ export async function createTestApp(opts?: {
     dbPath,
     cookieSecure: false,
     sessionTtlSeconds: 604800,
+    registrationOpen: opts?.registrationOpen ?? true,
     now: opts?.now ?? (() => new Date()),
     logger: false,
   });

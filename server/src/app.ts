@@ -6,6 +6,7 @@ import Fastify from "fastify";
 import { AppError } from "./errors.js";
 import { openDb, type Deps } from "./db.js";
 import { registerAuthRoutes } from "./routes/auth.js";
+import { registerAccountRoutes } from "./routes/account.js";
 import { registerCategoryRoutes } from "./routes/categories.js";
 import { registerEntryRoutes } from "./routes/entries.js";
 import { registerTimerRoutes } from "./routes/timer.js";
@@ -17,6 +18,7 @@ export type AppConfig = {
   dbPath: string;
   cookieSecure: boolean;
   sessionTtlSeconds: number;
+  registrationOpen: boolean;
   webDist?: string;
   now?: () => Date;
   logger?: boolean;
@@ -29,6 +31,7 @@ export async function buildApp(opts: AppConfig) {
     sqlite,
     cookieSecure: opts.cookieSecure,
     sessionTtlSeconds: opts.sessionTtlSeconds,
+    registrationOpen: opts.registrationOpen,
     now: opts.now ?? (() => new Date()),
   };
 
@@ -48,6 +51,7 @@ export async function buildApp(opts: AppConfig) {
   });
 
   registerAuthRoutes(app, deps);
+  registerAccountRoutes(app, deps);
   registerCategoryRoutes(app, deps);
   registerEntryRoutes(app, deps);
   registerTimerRoutes(app, deps);

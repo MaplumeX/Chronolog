@@ -14,15 +14,25 @@ import type { Deps } from "../db.js";
 import { AppError, isUniqueViolation, parseBody } from "../errors.js";
 import { DEFAULT_CATEGORIES, categories, sessions, users } from "../schema.js";
 
+export const usernameSchema = z
+  .string()
+  .regex(/^[A-Za-z0-9_]{3,32}$/, "用户名须为 3–32 个字母、数字或下划线");
+
+export const passwordSchema = z
+  .string()
+  .min(8, "密码至少 8 个字符")
+  .max(256, "密码过长");
+
 const credentials = z.object({
-  username: z
-    .string()
-    .regex(/^[A-Za-z0-9_]{3,32}$/, "用户名须为 3–32 个字母、数字或下划线"),
-  password: z.string().min(8, "密码至少 8 个字符").max(256, "密码过长"),
+  username: usernameSchema,
+  password: passwordSchema,
 });
 
 export function registerAuthRoutes(app: FastifyInstance, deps: Deps) {
   app.post("/api/auth/register", async (req, reply) => {
+    if (!deps.registrationOpen) {
+      throw new AppError(403, "FORBIDDEN", "注册已关闭");
+    }
     const body = parseBody(credentials, req.body);
     const nowIso = deps.now().toISOString();
     const userId = newId();
@@ -58,7 +68,7 @@ export function registerAuthRoutes(app: FastifyInstance, deps: Deps) {
 
     const sid = replaceSession(deps, req, userId);
     setSessionCookie(reply, sid, deps);
-    return { id: userId, username: body.username };
+    return { id: userId, username: body.username, displayName: null };
   });
 
   app.post("/api/auth/login", async (req, reply) => {
@@ -70,7 +80,7 @@ export function registerAuthRoutes(app: FastifyInstance, deps: Deps) {
     }
     const sid = replaceSession(deps, req, user.id);
     setSessionCookie(reply, sid, deps);
-    return { id: user.id, username: user.username };
+    return { id: user.id, username: user.username, displayName: user.displayName ?? null };
   });
 
   app.post("/api/auth/logout", async (req, reply) => {

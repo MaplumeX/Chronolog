@@ -7,6 +7,7 @@ export const users = sqliteTable(
     id: text("id").primaryKey(),
     username: text("username").notNull(),
     passwordHash: text("password_hash").notNull(),
+    displayName: text("display_name"),
     createdAt: text("created_at").notNull(),
   },
   (t) => [uniqueIndex("users_username_unique").on(t.username)],
