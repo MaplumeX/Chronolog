@@ -108,6 +108,26 @@ describe("auth", () => {
     }
   });
 
+  it("includes a null displayName in me for a fresh user", async () => {
+    t = await createTestApp();
+    await registerUser(t.app, "grace");
+
+    const login = await t.app.inject({
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { username: "grace", password: "password1" },
+    });
+    const sid = sidOf(login);
+
+    const me = await t.app.inject({
+      method: "GET",
+      url: "/api/auth/me",
+      headers: cookieHeader(sid),
+    });
+    assert.equal(me.statusCode, 200);
+    assert.equal((json(me) as { displayName: string | null }).displayName, null);
+  });
+
   it("logout deletes the session so later requests are 401", async () => {
     t = await createTestApp();
     const { sid } = await registerUser(t.app, "carol");

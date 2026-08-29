@@ -11,6 +11,7 @@ export type Deps = {
   sqlite: InstanceType<typeof Database>;
   cookieSecure: boolean;
   sessionTtlSeconds: number;
+  registrationOpen: boolean;
   now: () => Date;
 };
 
@@ -19,6 +20,7 @@ CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   username TEXT NOT NULL COLLATE NOCASE,
   password_hash TEXT NOT NULL,
+  display_name TEXT,
   created_at TEXT NOT NULL
 );
 CREATE UNIQUE INDEX IF NOT EXISTS users_username_unique ON users(username);
@@ -87,6 +89,17 @@ export function openDb(dbPath: string): { sqlite: InstanceType<typeof Database>;
   sqlite.pragma("foreign_keys = ON");
   sqlite.pragma("synchronous = NORMAL");
   sqlite.exec(SCHEMA_SQL);
+  migrate(sqlite);
   const db = drizzle(sqlite, { schema });
   return { sqlite, db };
+}
+
+/** Idempotent column migrations for databases created before a schema change. */
+function migrate(sqlite: InstanceType<typeof Database>) {
+  const userCols = (sqlite.pragma("table_info(users)") as { name: string }[]).map(
+    (c) => c.name,
+  );
+  if (!userCols.includes("display_name")) {
+    sqlite.exec("ALTER TABLE users ADD COLUMN display_name TEXT");
+  }
 }

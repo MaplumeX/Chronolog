@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiError, api, type User } from "../api";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,15 @@ export function AuthPage(props: { onAuthed: (user: User) => void }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [registrationOpen, setRegistrationOpen] = useState(true);
+
+  useEffect(() => {
+    // meta 极少失败；失败时按开放处理，不阻塞登录
+    api
+      .meta()
+      .then((m) => setRegistrationOpen(m.registrationOpen))
+      .catch(() => undefined);
+  }, []);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -46,9 +55,14 @@ export function AuthPage(props: { onAuthed: (user: User) => void }) {
         >
           <TabsList>
             <TabsTrigger value="login">{t("auth.login")}</TabsTrigger>
-            <TabsTrigger value="register">{t("auth.register")}</TabsTrigger>
+            <TabsTrigger value="register" disabled={!registrationOpen}>
+              {t("auth.register")}
+            </TabsTrigger>
           </TabsList>
         </Tabs>
+        {!registrationOpen ? (
+          <p className="text-sm text-muted-foreground">{t("auth.registrationClosed")}</p>
+        ) : null}
         <div className="space-y-2">
           <Label htmlFor="username">{t("auth.username")}</Label>
           <Input

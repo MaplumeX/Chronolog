@@ -161,6 +161,7 @@ describe("timer", () => {
       dbPath,
       cookieSecure: false,
       sessionTtlSeconds: 604800,
+      registrationOpen: true,
       logger: false,
     });
     try {

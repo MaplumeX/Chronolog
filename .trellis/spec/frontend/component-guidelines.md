@@ -22,14 +22,18 @@ Nav items (fixed product IA):
 | `stats` | 统计 | Today’s **per-category** totals + tag filter |
 | `categories` | 分类 | Category table |
 | `tags` | 标签 | Tag table (create / rename / delete) |
+| `tokens` | Tokens | PAT table (create / revoke) |
+| `settings` | 设置 | Profile / change password / delete account (task 08-29-user-system) |
 
-Footer: username + language switcher (`LanguageSwitcher`, shadcn `DropdownMenu` with 中文 / English) + `退出`. While a timer runs, the 计时 item shows elapsed (`formatDuration`) via `SidebarMenuBadge`. Do not add Calendar, Timesheet, week pickers, or a marketing landing page.
+Footer: user entry (shows `displayName ?? username`, clickable → settings page) + language switcher (`LanguageSwitcher`, shadcn `DropdownMenu` with 中文 / English) + `退出`. While a timer runs, the 计时 item shows elapsed (`formatDuration`) via `SidebarMenuBadge`. Do not add Calendar, Timesheet, week pickers, or a marketing landing page.
 
 Screen-reader copy on Sidebar/Sheet is i18n-ized (`sidebar.nav`, `sidebar.toggle`, `sidebar.close` keys).
 
 ## Pages
 
-`AuthPage`: centered `max-w-sm` form, `Tabs` for 登录/注册. No card shadow wrapper.
+`AuthPage`: centered `max-w-sm` form, `Tabs` for 登录/注册. No card shadow wrapper. Loads `GET /api/meta` on mount (failure = treat as open); when `registrationOpen` is false the 注册 tab is disabled with `auth.registrationClosed` copy.
+
+`SettingsPage` (task 08-29-user-system): three `max-w-md` sections separated by `border-t` — profile (username + displayName, save button disabled until something changed), change password (3 password inputs, submit blocked on mismatch), danger zone (delete account via shadcn `Dialog` password confirmation). Props `{ user, onUserUpdated, onLoggedOut }`; after `DELETE /api/account` succeeds, `App` just clears local state (server already cleared the cookie — calling `api.logout` would 401). No `<h1>`; page title renders through the Shell `header` like other non-timer pages.
 
 Timer orchestration lives in the `useTimerController` hook (see [Hook Guidelines](./hook-guidelines.md)) — there is no `TimerPage`. Markup lives in:
 

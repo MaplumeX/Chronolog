@@ -84,7 +84,7 @@ export function replaceSession(deps: Deps, req: FastifyRequest, userId: string):
   return createSession(deps, userId);
 }
 
-export type AuthUser = { id: string; username: string };
+export type AuthUser = { id: string; username: string; displayName: string | null };
 
 export function loadUser(req: FastifyRequest, deps: Deps): AuthUser | null {
   // Bearer token branch: only when the client sends an Authorization header
@@ -106,7 +106,7 @@ export function loadUser(req: FastifyRequest, deps: Deps): AuthUser | null {
       .run();
     const tokenUser = deps.db.select().from(users).where(eq(users.id, row.userId)).get();
     if (!tokenUser) return null;
-    return { id: tokenUser.id, username: tokenUser.username };
+    return { id: tokenUser.id, username: tokenUser.username, displayName: tokenUser.displayName ?? null };
   }
 
   const sid = req.cookies.sid;
@@ -119,7 +119,7 @@ export function loadUser(req: FastifyRequest, deps: Deps): AuthUser | null {
   }
   const user = deps.db.select().from(users).where(eq(users.id, row.userId)).get();
   if (!user) return null;
-  return { id: user.id, username: user.username };
+  return { id: user.id, username: user.username, displayName: user.displayName ?? null };
 }
 
 export function requireUser(req: FastifyRequest, deps: Deps): AuthUser {

@@ -1,0 +1,12 @@
+{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python3 .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": ".trellis/spec/backend/index.md", "reason": "backend spec index: which guidelines apply"}
+{"file": ".trellis/spec/backend/auth.md", "reason": "session/PAT/password conventions to extend"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "sqlite schema/migration rules for display_name column"}
+{"file": ".trellis/spec/backend/http-routes.md", "reason": "route registration and body validation conventions"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "AppError/isUniqueViolation/parseBody usage"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "frontend spec index"}
+{"file": ".trellis/spec/frontend/api-client.md", "reason": "api client conventions for new endpoints"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "SettingsPage component conventions"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "user state propagation after profile update"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "User type / i18n key typing"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "frontend quality bar"}
