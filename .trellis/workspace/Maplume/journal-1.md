@@ -394,3 +394,24 @@ Replaced neutral-gray shadcn theme with teal cool-tone dual theme (light+dark) i
 ### Status
 
 [OK] **Completed**
+
+
+## Session 18: Move sidebar extras into tabbed settings page
+
+**Date**: 2026-08-29
+**Task**: Move sidebar extras into tabbed settings page
+**Branch**: `feat/sidebar-items-to-tabbed-settings`
+
+### Summary
+
+Slimmed the sidebar: nav keeps timer/stats/categories/tags only, footer keeps only the user entry. SettingsPage rebuilt as three tabs — General (language + theme), Account (profile/password/logout/danger zone), API Tokens (embedded TokensPage). Removed PageId 'tokens', synced zh/en i18n keys, updated frontend component-guidelines spec.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a95d932` | (see git log) |
+
+### Status
+
+[OK] **Completed**
