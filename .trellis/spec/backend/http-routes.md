@@ -56,6 +56,7 @@ New endpoints belong in an existing file if they share the resource, or a new `r
 | POST | `/api/timer/stop` | yes | no running → 409 |
 | GET | `/api/entries/today?tz=` | yes | overlapping entries + `clippedSeconds` |
 | GET | `/api/entries/week?tz=` | yes | ISO week (Mon–Sun) as 7 day buckets: `{ tz, weekStart, weekEnd, days: TodayEntries[] }` |
+| GET | `/api/entries/boundary?tz=&start=&end=` | yes | entries adjacent to the `[start, end)` window: `{ tz, prevEntry: EntryDto \| null, nextEntry: EntryDto \| null }` (gap-slot feature). `start`/`end` are ISO instants (zod `z.iso.datetime()`, `start < end` else 400 `VALIDATION`); `tz` is validated with `requireTz` but does not drive window math — the frontend converts the day/week view window to absolute instants. `prevEntry` = latest right edge (`stoppedAt ?? ∞`) among entries with `startedAt < start` and (`stoppedAt IS NULL` or `stoppedAt <= start`); `nextEntry` = min `startedAt >= end`. Query lives in `listBoundary` (`server/src/entries.ts`), route in `routes/entries.ts`. |
 | GET | `/api/stats/today?tz=&tagId=` | yes | per-category clipped seconds; optional `tagId` filter |
 | POST | `/api/entries` | yes | create: `{ description, categoryId, tagIds, startedAt, stoppedAt }` → 201 + `EntryDto`; overlap → 409 `OVERLAP` |
 | PATCH | `/api/entries/:id` | yes | full update: `{ description, categoryId, tagIds, startedAt, stoppedAt }`; stopped entries only; overlap → 409 `OVERLAP` |

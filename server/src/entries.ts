@@ -1,4 +1,4 @@
-import { and, desc, eq, exists, gt, inArray, isNull, lt, or } from "drizzle-orm";
+import { and, desc, eq, exists, gt, gte, inArray, isNull, lt, lte, or, sql } from "drizzle-orm";
 import type { Db } from "./db.js";
 import { AppError } from "./errors.js";
 import {
@@ -177,6 +177,52 @@ export function listWeek(db: Db, userId: string, tzRaw: unknown, now: Date, date
   );
 
   return { tz, weekStart, weekEnd, days };
+}
+
+/** 窗口紧邻外侧条目：prevEntry = startedAt < start 且（未结束或已结束且 stoppedAt <= start）中右端（stoppedAt ?? ∞）最大的一条；nextEntry = startedAt >= end 中 startedAt 最小的一条。 */
+export function listBoundary(
+  db: Db,
+  userId: string,
+  tzRaw: unknown,
+  startIso: string,
+  endIso: string,
+  now: Date,
+) {
+  const tz = requireTz(tzRaw);
+  const prevRow = db
+    .select(entrySelect)
+    .from(timeEntries)
+    .innerJoin(categories, eq(categories.id, timeEntries.categoryId))
+    .where(
+      and(
+        eq(timeEntries.userId, userId),
+        lt(timeEntries.startedAt, startIso),
+        // 未结束（running）条目也参与前邻：右端为 ∞，coalesce 排序下自然最大（跨过 start 仍在运行的条目右端覆盖窗口起点，前端据此判定无顶部空档）
+        or(isNull(timeEntries.stoppedAt), lte(timeEntries.stoppedAt, startIso)),
+      ),
+    )
+    .orderBy(desc(sql`coalesce(${timeEntries.stoppedAt}, '9999')`), desc(timeEntries.startedAt))
+    .get();
+  const nextRow = db
+    .select(entrySelect)
+    .from(timeEntries)
+    .innerJoin(categories, eq(categories.id, timeEntries.categoryId))
+    .where(and(eq(timeEntries.userId, userId), gte(timeEntries.startedAt, endIso)))
+    .orderBy(timeEntries.startedAt)
+    .get();
+
+  const toDto = (row: typeof prevRow | null): EntryDto | null => {
+    if (!row) return null;
+    const entry: EntryDto = {
+      ...row,
+      durationSeconds: durationSeconds(row.startedAt, row.stoppedAt, now),
+      tags: [],
+    };
+    attachTags(db, [entry]);
+    return entry;
+  };
+
+  return { tz, prevEntry: toDto(prevRow), nextEntry: toDto(nextRow) };
 }
 
 export function statsToday(db: Db, userId: string, tzRaw: unknown, now: Date, tagId?: string) {

@@ -1,0 +1,6 @@
+{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python3 .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": ".trellis/spec/backend/http-routes.md", "reason": "新 boundary 路由要遵循的注册方式、DTO、校验顺序与 anti-patterns"}
+{"file": ".trellis/spec/backend/time-and-timezone.md", "reason": "boundary 查询涉及时刻比较与半开区间语义"}
+{"file": ".trellis/spec/frontend/api-client.md", "reason": "新增 api.boundaryEntries 方法需与现有 client 约定一致"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Timeline/DayColumn 渲染契约与拖拽创建交互，slot 必须兼容现有 pointer 流程"}
+{"file": ".trellis/spec/frontend/design-tokens.md", "reason": "slot 样式必须用 token 化颜色，禁硬编码"}

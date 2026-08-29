@@ -3,7 +3,8 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { newId, requireUser } from "../auth.js";
 import type { Db, Deps } from "../db.js";
-import { getEntry } from "../entries.js";
+import { getEntry, listBoundary } from "../entries.js";
+import { requireTz } from "../time.js";
 import { AppError, parseBody } from "../errors.js";
 import { categories, entryTags, tags, timeEntries } from "../schema.js";
 
@@ -127,7 +128,24 @@ function createOnce(deps: Deps, userId: string, body: UpsertBody): string {
   });
 }
 
+const boundaryQuery = z.object({
+  tz: z.string().min(1, "时区无效"),
+  start: z.iso.datetime("时间格式无效"),
+  end: z.iso.datetime("时间格式无效"),
+});
+
 export function registerEntryRoutes(app: FastifyInstance, deps: Deps) {
+  // 查询窗口紧邻外侧的条目（前端 gap 插槽边界）：start/end 为 ISO 时刻，tz 仅做校验
+  app.get("/api/entries/boundary", async (req) => {
+    const user = requireUser(req, deps);
+    const q = parseBody(boundaryQuery, req.query);
+    const tz = requireTz(q.tz);
+    if (q.end <= q.start) {
+      throw new AppError(400, "VALIDATION", "结束时间必须晚于开始时间");
+    }
+    return listBoundary(deps.db, user.id, tz, q.start, q.end, deps.now());
+  });
+
   app.patch("/api/entries/:id", async (req) => {
     const user = requireUser(req, deps);
     const { id } = parseBody(z.object({ id: z.string().min(1) }), req.params);

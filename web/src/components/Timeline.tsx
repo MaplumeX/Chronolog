@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { Category, Tag, TimeEntry, TodayEntries, WeekEntries } from "../api";
+import type { BoundaryEntries, Category, Tag, TimeEntry, TodayEntries, WeekEntries } from "../api";
 import {
   categoryColor,
   categoryIndex,
@@ -41,6 +41,75 @@ const SNAP_MINUTES: Record<Scale, number> = { 60: 15, 30: 10, 15: 5, 5: 1 };
 /** 拖拽创建预览状态：track 像素坐标内的起止（snap 后，自动排序） */
 type DragPreview = { startMs: number; endMs: number };
 
+/** 空档：全局绝对时刻（可跨天/跨多天）；点击后以其起止创建条目 */
+export type Gap = { startMs: number; endMs: number };
+
+/** gap 可见段最小像素高度：低于则不渲染插槽 */
+const MIN_SLOT_PX = 10;
+
+/**
+ * 计算视图窗口内全部条目（含 boundary 外邻）之间的空档（design §4）：
+ * 把窗口内条目（运行中按 nowMs 为右端）与 prevEntry/nextEntry 合并为覆盖区间序列，
+ * gap = 相邻区间之间的空隙，输出全局绝对时刻（可跨天/跨多天）。各列渲染时与自身窗口求交：
+ * - 列内相邻条目、跨午夜条目前后、空列（多天空档中间投影）自然正确；
+ * - prevEntry 缺失则首条前无 gap，nextEntry 缺失则末条后无 gap（R3）；
+ * - 一侧 boundary 缺失时空列 gap 的该侧 clamp 到视图窗口边界（无法创建无限长条目）。
+ */
+function computeGaps(
+  viewWindow: { startMs: number; endMs: number },
+  entries: TimeEntry[],
+  boundary: { prevEntry: TimeEntry | null; nextEntry: TimeEntry | null } | null,
+  nowMs: number,
+): Gap[] {
+  const { startMs: wStart, endMs: wEnd } = viewWindow;
+  if (wEnd <= wStart) return [];
+
+  // 覆盖区间：运行中条目右端 = nowMs（同用户唯一 running，无后继）
+  const rightEdge = (e: TimeEntry) =>
+    e.stoppedAt ? Date.parse(e.stoppedAt) : nowMs;
+  // 去重：周视图同一条目会出现在多个 day bucket（跨午夜）
+  const byId = new Map<string, { start: number; end: number }>();
+  for (const e of entries) {
+    byId.set(e.id, { start: Date.parse(e.startedAt), end: rightEdge(e) });
+  }
+  const intervals = [...byId.values()].sort((a, b) => a.start - b.start);
+
+  const gaps: Gap[] = [];
+  const push = (startMs: number, endMs: number) => {
+    if (endMs - startMs <= 0) return;
+    // 只保留与视图窗口有交集的 gap（外邻之前的空隙不关心）
+    if (endMs <= wStart || startMs >= wEnd) return;
+    gaps.push({ startMs, endMs });
+  };
+
+  const prev = boundary?.prevEntry ?? null;
+  const next = boundary?.nextEntry ?? null;
+
+  // 前邻是运行中条目（右端 = nowMs 仍在推进，覆盖窗口起点）：窗口起点侧无空档
+  if (prev && !prev.stoppedAt) return gaps;
+
+  if (intervals.length === 0) {
+    // 空窗口：仅两侧任一存在边界条目时一个 gap（两侧都在 = 跨多天空档的全局投影）。
+    // 两侧均缺失（新用户零条目 / boundary 请求失败降级）时不渲染，避免幽灵插槽（design §4 规则 4、§6）
+    if (!prev && !next) return gaps;
+    const start = prev ? rightEdge(prev) : wStart;
+    const end = next ? Date.parse(next.startedAt) : wEnd;
+    push(start, end);
+    return gaps;
+  }
+
+  // 顶部：prevEntry 右端 → 首条（prevEntry 跨午夜伸入窗口时它也在 entries 里，
+  // 排序后首条即它，gap 非正被跳过，公式自动正确）
+  if (prev) push(rightEdge(prev), intervals[0].start);
+  // 相邻区间之间（含跨列、跨午夜条目两侧）
+  for (let i = 0; i + 1 < intervals.length; i++) {
+    push(intervals[i].end, intervals[i + 1].start);
+  }
+  // 底部：末条右端 → nextEntry.startedAt
+  if (next) push(intervals[intervals.length - 1].end, Date.parse(next.startedAt));
+  return gaps;
+}
+
 /** 单日 24h 纵向时间线：ruler + track + blocks + now-line。day 与 week 模式共用。 */
 function DayColumn(props: {
   day: TodayEntries | null;
@@ -54,9 +123,28 @@ function DayColumn(props: {
   onDragCreate?: (draft: { startedAt: string; stoppedAt: string }) => void;
   /** 草稿锚点：拖拽结束后固化的预览块，同时作为 popover 的定位 anchor（仅归属列传入） */
   draftAnchor?: { startMs: number; endMs: number } | null;
+  /** gap 插槽：该列可见窗口内的空档（全局绝对时刻） */
+  gaps?: Gap[];
+  onGapClick?: (gap: Gap, vis: { startMs: number; endMs: number }) => void;
+  /** gap 草稿锚点：被点击 slot 可见段的固化快照，作为 draft popover 的定位 anchor（不随 gap 重算移动） */
+  gapAnchor?: { startMs: number; endMs: number } | null;
 }) {
   const { t } = useTranslation();
-  const { day, nowMs, tz, isToday, showRuler = true, scale, selectedId, onSelect, onDragCreate, draftAnchor } = props;
+  const {
+    day,
+    nowMs,
+    tz,
+    isToday,
+    showRuler = true,
+    scale,
+    selectedId,
+    onSelect,
+    onDragCreate,
+    draftAnchor,
+    gaps,
+    onGapClick,
+    gapAnchor,
+  } = props;
 
   const trackRef = useRef<HTMLDivElement>(null);
   const [dragPreview, setDragPreview] = useState<DragPreview | null>(null);
@@ -86,6 +174,8 @@ function DayColumn(props: {
     if (e.button !== 0) return;
     // 命中色块：走原有点击编辑流程（R7）
     if ((e.target as Element).closest(".timeline-block")) return;
+    // 命中 gap 插槽：走点击创建流程，不触发拖拽预览
+    if ((e.target as Element).closest(".timeline-slot")) return;
     e.preventDefault();
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     dragStartMsRef.current = pointerToMs(e);
@@ -295,6 +385,49 @@ function DayColumn(props: {
             })
           : null}
 
+        {gaps && onGapClick
+          ? gaps.map((gap, i) => {
+              // 可见段：gap 与本列窗口求交；像素高度低于阈值不渲染（R5/AC5）
+              const visStart = Math.max(gap.startMs, dayStartMs);
+              const visEnd = Math.min(gap.endMs, dayEndMs);
+              const visPx = ((visEnd - visStart) / dayMs) * innerHeightFor(scale);
+              if (visPx < MIN_SLOT_PX) return null;
+              const top = posPercent(visStart);
+              const heightPct = ((visEnd - visStart) / dayMs) * 100;
+              const range = `${formatClock(new Date(gap.startMs).toISOString(), tz)} – ${formatClock(
+                new Date(gap.endMs).toISOString(),
+                tz,
+              )}`;
+              const title = t("timeline.gapTitle", {
+                range,
+                duration: formatDuration((gap.endMs - gap.startMs) / 1000),
+              });
+              return (
+                <div
+                  key={`slot-${i}-${gap.startMs}`}
+                  className="timeline-slot"
+                  style={{ top: `${top}%`, height: `${heightPct}%` }}
+                  title={title}
+                  onClick={() => onGapClick(gap, { startMs: visStart, endMs: visEnd })}
+                />
+              );
+            })
+          : null}
+
+        {gapAnchor ? (
+          // gap 草稿的固化锚点：点击 slot 时快照其可见段，popover 打开期间 gap 数据刷新也不移位
+          // （与拖拽 draft 的 draftAnchor 同手法，不依赖实时重算的 gaps 匹配）
+          <div
+            className="pointer-events-none absolute right-0 left-0"
+            style={{
+              top: `${((gapAnchor.startMs - dayStartMs) / dayMs) * 100}%`,
+              height: `${((gapAnchor.endMs - gapAnchor.startMs) / dayMs) * 100}%`,
+            }}
+          >
+            <PopoverAnchor className="absolute top-1/2 left-1/2 h-0 w-0" />
+          </div>
+        ) : null}
+
         {isToday ? (
           <div className="now-line" style={{ top: `${nowTop}%` }}>
             <span className="now-label">{formatClock(new Date(nowMs).toISOString(), tz)}</span>
@@ -308,6 +441,8 @@ function DayColumn(props: {
 export function Timeline(props: {
   today: TodayEntries | null;
   week: WeekEntries | null;
+  /** 当前视图窗口的紧邻外侧条目（gap 插槽边界）；null 时只渲染列内 gap */
+  boundary?: BoundaryEntries | null;
   mode: "day" | "week";
   onModeChange: (mode: "day" | "week") => void;
   /** 当前查看的日期（"YYYY-MM-DD" | null = 今天）；Step 3 DateNav 接入 */
@@ -325,6 +460,7 @@ export function Timeline(props: {
   const {
     today,
     week,
+    boundary,
     mode,
     onModeChange,
     date,
@@ -350,6 +486,14 @@ export function Timeline(props: {
   const [scale, setScale] = useState<Scale>(60);
   const scaleIndex = SCALES.indexOf(scale);
   const tickCount = 1440 / scale;
+  // gap 草稿：点击 slot 时的完整空档（全局时刻，可跨天）+ 被点 slot 可见段的固化快照
+  // （快照仅作 popover anchor 定位，不随 gap 数据重算移动，避免 popover 飞出屏幕）
+  const [gapDraft, setGapDraft] = useState<{
+    dayStart: string;
+    startedAt: string;
+    stoppedAt: string;
+    anchor: { dayStart: string; startMs: number; endMs: number };
+  } | null>(null);
 
   // 选中条目：从当前视图数据中查找；编辑后条目移出视图（或刷新后消失）时自动关闭 popover
   const selectedEntry: TimeEntry | null = selectedId
@@ -393,13 +537,67 @@ export function Timeline(props: {
   const clearDraft = () => {
     setDraft(null);
     setDraftAnchor(null);
+    setGapDraft(null);
   };
+
+  /**
+   * 全局 gap 计算：视图窗口内全部条目 + boundary 外邻 → 相邻区间之间的空隙（design §4）
+   */
+  const gaps = useMemo(() => {
+    const viewEntries = isDay
+      ? (today?.entries ?? [])
+      : (week?.days.flatMap((d) => d.entries) ?? []);
+    const viewStart = isDay
+      ? (today ? Date.parse(today.dayStart) : 0)
+      : (week ? Date.parse(week.weekStart) : 0);
+    const viewEnd = isDay
+      ? (today ? Date.parse(today.dayEnd) : 0)
+      : (week ? Date.parse(week.weekEnd) : 0);
+    if (!viewEnd) return [];
+    return computeGaps(
+      { startMs: viewStart, endMs: viewEnd },
+      viewEntries,
+      boundary ?? null,
+      nowMs,
+    );
+  }, [today, week, boundary, nowMs, isDay]);
+
+  /** 指定列可见窗口内的 gap 段（与全局 gap 求交；可见段可多个，但同列内各 gap 互不重叠） */
+  const gapsFor = (day: TodayEntries | null): Gap[] => {
+    if (!day) return [];
+    const startMs = Date.parse(day.dayStart);
+    const endMs = Date.parse(day.dayEnd);
+    return gaps.filter((g) => g.endMs > startMs && g.startMs < endMs);
+  };
+
+  const todayGaps = useMemo(() => gapsFor(today), [gaps, today]);
+  const weekGaps = useMemo(
+    () => (week ? week.days.map((d) => gapsFor(d)) : []),
+    [gaps, week],
+  );
+
+  /** slot 点击：以整个空档的起止时间创建草稿，复用既有 draft popover 流程（R6/AC2）；
+   *  anchor 快照固化被点 slot 的可见段，popover 打开期间 gap 刷新也不移位 */
+  const handleGapClick =
+    (dayStart: string) =>
+    (gap: Gap, vis: { startMs: number; endMs: number }): void => {
+      // 关闭可能打开的编辑 popover，避免两个状态叠加
+      setSelectedId(null);
+      setDraft(null);
+      setDraftAnchor(null);
+      setGapDraft({
+        dayStart,
+        startedAt: new Date(gap.startMs).toISOString(),
+        stoppedAt: new Date(gap.endMs).toISOString(),
+        anchor: { dayStart, startMs: vis.startMs, endMs: vis.endMs },
+      });
+    };
 
   const total = isDay ? dayTotal : weekTotal;
 
   return (
     <Popover
-      open={selectedEntry != null || draft != null}
+      open={selectedEntry != null || draft != null || gapDraft != null}
       onOpenChange={(open) => {
         if (!open) {
           setSelectedId(null);
@@ -468,6 +666,11 @@ export function Timeline(props: {
             onSelect={setSelectedId}
             onDragCreate={today ? handleDragCreate(today.dayStart) : undefined}
             draftAnchor={draftAnchor?.dayStart === today?.dayStart ? draftAnchor : null}
+            gaps={todayGaps}
+            onGapClick={today ? handleGapClick(today.dayStart) : undefined}
+            gapAnchor={
+              gapDraft && gapDraft.anchor.dayStart === today?.dayStart ? gapDraft.anchor : null
+            }
           />
         ) : week ? (
           <div className="flex min-w-full flex-col">
@@ -506,7 +709,7 @@ export function Timeline(props: {
                   </div>
                 ))}
               </div>
-              {week.days.map((d) => (
+              {week.days.map((d, i) => (
                 <div
                   key={d.dayStart}
                   className="flex min-w-[180px] flex-1 flex-col border-l"
@@ -522,6 +725,9 @@ export function Timeline(props: {
                     onSelect={setSelectedId}
                     onDragCreate={handleDragCreate(d.dayStart)}
                     draftAnchor={draftAnchor?.dayStart === d.dayStart ? draftAnchor : null}
+                    gaps={weekGaps[i]}
+                    onGapClick={handleGapClick(d.dayStart)}
+                    gapAnchor={gapDraft?.anchor.dayStart === d.dayStart ? gapDraft.anchor : null}
                   />
                 </div>
               ))}
@@ -544,11 +750,14 @@ export function Timeline(props: {
             onClose={() => setSelectedId(null)}
           />
         </PopoverContent>
-      ) : draft ? (
+      ) : draft || gapDraft ? (
         <PopoverContent side="right" align="center" sideOffset={0} className="w-80">
           <EntryEditor
-            key={draft.startedAt}
-            draft={{ startedAt: draft.startedAt, stoppedAt: draft.stoppedAt }}
+            key={(gapDraft ?? draft)!.startedAt}
+            draft={{
+              startedAt: (gapDraft ?? draft)!.startedAt,
+              stoppedAt: (gapDraft ?? draft)!.stoppedAt,
+            }}
             categories={categories}
             tags={tags}
             onSaved={() => {

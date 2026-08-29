@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import {
   ApiError,
   api,
+  type BoundaryEntries,
   type Category,
   type Tag,
   type TimeEntry,
@@ -53,6 +54,8 @@ export function useTimerController(props: {
   const [tags, setTags] = useState<Tag[]>([]);
   const [today, setToday] = useState<TodayEntries | null>(null);
   const [week, setWeek] = useState<WeekEntries | null>(null);
+  // 当前视图窗口的紧邻外侧条目（gap 插槽边界）；null = 未加载/加载失败，静默降级
+  const [boundary, setBoundary] = useState<BoundaryEntries | null>(null);
   const [view, setView] = useState<"day" | "week">("day");
   // "YYYY-MM-DD" | null；null = 今天（默认）。查看的日期，day/week 视图共用
   const [date, setDate] = useState<string | null>(loadDateView);
@@ -61,16 +64,32 @@ export function useTimerController(props: {
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
 
+  /** 拉取窗口紧邻外侧条目（gap 插槽边界）；失败静默降级为 null，不阻塞主数据 */
+  function loadBoundary(start: string, end: string) {
+    return api
+      .boundaryEntries(tz, start, end)
+      .then(setBoundary)
+      .catch(() => setBoundary(null));
+  }
+
   async function refresh() {
-    const [cats, tagRes, entries, cur] = await Promise.all([
+    // 先拿 day 视图窗口，与主数据并行拉取 boundary
+    const dayWindowP = api.todayEntries(tz, date ?? undefined);
+    const boundaryP = dayWindowP.then(
+      (d) => api.boundaryEntries(tz, d.dayStart, d.dayEnd).catch(() => null),
+      () => undefined as BoundaryEntries | null | undefined,
+    );
+    const [cats, tagRes, cur, dayWindow, b] = await Promise.all([
       api.categories(),
       api.tags(),
-      api.todayEntries(tz, date ?? undefined),
       api.current(),
+      dayWindowP,
+      boundaryP,
     ]);
     setCategories(cats.categories);
     setTags(tagRes.tags);
-    setToday(entries);
+    setToday(dayWindow);
+    setBoundary(b ?? null);
     props.onCurrent(cur.entry);
     if (!categoryId && cur.entry) setCategoryId(cur.entry.categoryId);
     if (cur.entry) setDescription(cur.entry.description);
@@ -91,12 +110,18 @@ export function useTimerController(props: {
     if (view === "day") {
       void api
         .todayEntries(tz, next ?? undefined)
-        .then(setToday)
+        .then((d) => {
+          setToday(d);
+          return loadBoundary(d.dayStart, d.dayEnd);
+        })
         .catch((err) => setError(err instanceof ApiError ? err.message : t("common.loadFailed")));
     } else {
       void api
         .weekEntries(tz, next ?? undefined)
-        .then(setWeek)
+        .then((w) => {
+          setWeek(w);
+          return loadBoundary(w.weekStart, w.weekEnd);
+        })
         .catch((err) => setError(err instanceof ApiError ? err.message : t("common.loadFailed")));
     }
   }
@@ -131,10 +156,13 @@ export function useTimerController(props: {
       }
       const entries = await api.todayEntries(tz, date ?? undefined);
       setToday(entries);
-      // 已加载过周数据则一并刷新，避免切回周视图时看到过期数据
-      if (week) {
+      // 已加载过周数据则一并刷新，避免切回周视图时看到过期数据；boundary 随当前视图窗口重拉
+      if (week && view === "week") {
         const w = await api.weekEntries(tz, date ?? undefined);
         setWeek(w);
+        await loadBoundary(w.weekStart, w.weekEnd);
+      } else {
+        await loadBoundary(entries.dayStart, entries.dayEnd);
       }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("common.operationFailed"));
@@ -147,9 +175,14 @@ export function useTimerController(props: {
     // 在其他日期下拉取的（如先看本周再导航到上周），直接复用会展示错位的周/日
     try {
       if (mode === "week") {
-        setWeek(await api.weekEntries(tz, date ?? undefined));
+        const w = await api.weekEntries(tz, date ?? undefined);
+        setWeek(w);
+        // 先拿到新视图数据再取其窗口拉 boundary
+        await loadBoundary(w.weekStart, w.weekEnd);
       } else {
-        setToday(await api.todayEntries(tz, date ?? undefined));
+        const d = await api.todayEntries(tz, date ?? undefined);
+        setToday(d);
+        await loadBoundary(d.dayStart, d.dayEnd);
       }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("common.loadFailed"));
@@ -165,6 +198,12 @@ export function useTimerController(props: {
       ]);
       setToday(entries);
       if (w) setWeek(w);
+      // 当前视图窗口重拉 boundary（新建条目可能占用/缩小 gap）
+      if (view === "day") {
+        await loadBoundary(entries.dayStart, entries.dayEnd);
+      } else if (w) {
+        await loadBoundary(w.weekStart, w.weekEnd);
+      }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("common.loadFailed"));
     }
@@ -216,6 +255,7 @@ export function useTimerController(props: {
   const timelineProps = {
     today,
     week,
+    boundary,
     mode: view,
     onModeChange: (m: "day" | "week") => {
       void onModeChange(m);

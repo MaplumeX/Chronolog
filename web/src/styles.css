@@ -330,6 +330,22 @@
   animation: timeline-pulse 1.6s ease-in-out infinite;
 }
 
+/* gap 插槽：静态可见的空档占位，虚线边框 + 灰色半透明内部（token 化，双主题可用） */
+.timeline-slot {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border: 1px dashed color-mix(in srgb, var(--muted-foreground) 45%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--muted) 50%, transparent);
+  cursor: pointer;
+}
+
+.timeline-slot:hover {
+  /* hover 强化是可及性提示（可点击），不改变静态可见形态，不违反「非 hover 才出现」非目标 */
+  background: color-mix(in srgb, var(--muted) 75%, transparent);
+}
+
 /* 拖拽创建预览块：半透明浮层，仅显示时间范围 */
 .timeline-block.drag-preview {
   background: var(--primary);

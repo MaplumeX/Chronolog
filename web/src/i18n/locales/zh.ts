@@ -25,6 +25,7 @@ export const zh = {
   "timeline.viewToggle": "切换时间线视图",
   "timeline.zoomOut": "缩小",
   "timeline.zoomIn": "放大",
+  "timeline.gapTitle": "点击创建 {{range}}（{{duration}}）",
   "entry.edit": "编辑条目",
   "entry.create": "新建条目",
   "entry.description": "描述",
