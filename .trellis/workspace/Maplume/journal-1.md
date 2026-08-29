@@ -372,3 +372,25 @@ Implemented Toggl-style drag-to-create on the timeline: new POST /api/entries re
 ### Status
 
 [OK] **Completed**
+
+
+## Session 17: Refactor web design system to teal dual-theme
+
+**Date**: 2026-08-29
+**Task**: Refactor web design system to teal dual-theme
+**Branch**: `feat/refactor-design-system`
+
+### Summary
+
+Replaced neutral-gray shadcn theme with teal cool-tone dual theme (light+dark) in styles.css; rebuilt 8-color category palette as oklch tokens (--category-1..8) with format.ts COLORS migrated to same-source array; cleaned Timeline hardcoded whites via color-mix/currentColor; added --destructive-foreground; WCAG AA contrast verified by script (research/contrast-report.md); added spec/frontend/design-tokens.md and fixed stale light-only notes in component/quality guidelines. AC8 manual visual check across 8 pages x dual themes pending user verification.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2466ae1` | (see git log) |
+| `8812fd1` | (see git log) |
+
+### Status
+
+[OK] **Completed**
