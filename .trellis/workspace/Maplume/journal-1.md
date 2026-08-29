@@ -457,3 +457,24 @@ Removed the unnecessary overflow-x-auto on SettingsPage TabsList (permanent desk
 ### Status
 
 [OK] **Completed**
+
+
+## Session 21: Recolor category palette to softer balanced-wheel scheme
+
+**Date**: 2026-08-29
+**Task**: Recolor category palette to softer balanced-wheel scheme
+**Branch**: `feat/recolor-stats-tag-entries`
+
+### Summary
+
+Replaced all 32 category color tokens (light/dark, base+foreground) in web/src/styles.css with a softer low-saturation palette (light 0.74/0.09, dark 0.58/0.08) using a warm-4/cold-4 balanced hue wheel (15/50/100/135/250/285/315/345), still avoiding the 185-225 teal range reserved for primary. Chose 'balanced wheel' option after comparing 4 hue-distribution candidates with the user. format.ts hash mapping untouched; design-tokens.md spec synced. Verified via trellis-check (all pass) and npm build.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8e7a858` | (see git log) |
+
+### Status
+
+[OK] **Completed**
