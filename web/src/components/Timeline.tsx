@@ -51,9 +51,9 @@ const MIN_SLOT_PX = 10;
  * 计算视图窗口内全部条目（含 boundary 外邻）之间的空档（design §4）：
  * 把窗口内条目（运行中按 nowMs 为右端）与 prevEntry/nextEntry 合并为覆盖区间序列，
  * gap = 相邻区间之间的空隙，输出全局绝对时刻（可跨天/跨多天）。各列渲染时与自身窗口求交：
- * - 列内相邻条目、跨午夜条目前后、空列（多天空档中间投影）自然正确；
- * - prevEntry 缺失则首条前无 gap，nextEntry 缺失则末条后无 gap（R3）；
- * - 一侧 boundary 缺失时空列 gap 的该侧 clamp 到视图窗口边界（无法创建无限长条目）。
+ * - 列内相邻条目、跨午夜条目前后、空列（多天空档中间投影，需双侧 boundary 都存在）自然正确；
+ * - prevEntry 缺失则首条前无 gap，nextEntry 缺失则末条后无 gap（R1/R3，
+ *   同样适用于空列：单侧缺失不渲染，无另一侧边界不算「两个已有条目之间」）。
  */
 function computeGaps(
   viewWindow: { startMs: number; endMs: number },
@@ -89,12 +89,12 @@ function computeGaps(
   if (prev && !prev.stoppedAt) return gaps;
 
   if (intervals.length === 0) {
-    // 空窗口：仅两侧任一存在边界条目时一个 gap（两侧都在 = 跨多天空档的全局投影）。
-    // 两侧均缺失（新用户零条目 / boundary 请求失败降级）时不渲染，避免幽灵插槽（design §4 规则 4、§6）
-    if (!prev && !next) return gaps;
-    const start = prev ? rightEdge(prev) : wStart;
-    const end = next ? Date.parse(next.startedAt) : wEnd;
-    push(start, end);
+    // 空窗口：仅两侧**都**存在边界条目时渲染（= 跨多天空档的中间投影）。
+    // 单侧存在（未来无条目日 / 有史以来最早条目之前的日期）或双侧缺失
+    // （新用户零条目 / boundary 请求失败降级）都不渲染——「两个已有条目」
+    // 之间才算 gap（R1/R3），单侧没有另一侧边界（design §4 规则 4、§6）
+    if (!prev || !next) return gaps;
+    push(rightEdge(prev), Date.parse(next.startedAt));
     return gaps;
   }
 
