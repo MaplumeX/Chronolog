@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 22
-- **Last Active**: 2026-08-29
+- **Total Sessions**: 23
+- **Last Active**: 2026-08-30
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~501 | Active |
+| `journal-1.md` | ~542 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 23 | 2026-08-30 | Allow editing running timer's description, category and tags | `187d33a` | `feat/edit-task-while-timing` |
 | 22 | 2026-08-29 | Beautify entry time picker with custom DateTimePicker | `4a7e87a` | `feat/beautify-time-picker-in-entries` |
 | 23 | 2026-08-29 | 重构统计页面：范围切换、趋势图、分类占比与标签统计 | `9799529` | `refactor/statistics-page` |
 | 24 | 2026-08-29 | Timeline gap placeholder slots | `3628901` | `feat/placeholder-entry-between-items` |
