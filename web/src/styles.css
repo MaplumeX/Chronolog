@@ -77,18 +77,46 @@
   --sidebar-ring: oklch(0.78 0.1 195);
 }
 
-/* 分类色板：light/dark 共用，统一 L/C、色相绕色环均匀分布（185–225 青色区间留给 primary）。
-   format.ts 的 COLORS 数组与这里的值同源，修改时须两边同步。 */
-:root,
+/* 分类色板：light/dark 各一套（185–225 青色区间留给 primary）。
+   具体数值只在此定义；format.ts 仅持有 token 名（var(--category-N)），无需两边同步。 */
+:root {
+  /* light：亮版，适配冷白底 */
+  --category-1: oklch(0.72 0.12 10);
+  --category-2: oklch(0.72 0.12 50);
+  --category-3: oklch(0.72 0.12 95);
+  --category-4: oklch(0.72 0.12 140);
+  --category-5: oklch(0.72 0.12 240);
+  --category-6: oklch(0.72 0.12 280);
+  --category-7: oklch(0.72 0.12 320);
+  --category-8: oklch(0.72 0.12 350);
+  --category-1-foreground: oklch(0.25 0.03 10);
+  --category-2-foreground: oklch(0.25 0.03 50);
+  --category-3-foreground: oklch(0.25 0.03 95);
+  --category-4-foreground: oklch(0.25 0.03 140);
+  --category-5-foreground: oklch(0.25 0.03 240);
+  --category-6-foreground: oklch(0.25 0.03 280);
+  --category-7-foreground: oklch(0.25 0.03 320);
+  --category-8-foreground: oklch(0.25 0.03 350);
+}
+
 .dark {
-  --category-1: oklch(0.63 0.11 10);
-  --category-2: oklch(0.63 0.11 50);
-  --category-3: oklch(0.63 0.11 95);
-  --category-4: oklch(0.63 0.11 140);
-  --category-5: oklch(0.63 0.11 240);
-  --category-6: oklch(0.63 0.11 280);
-  --category-7: oklch(0.63 0.11 320);
-  --category-8: oklch(0.63 0.11 350);
+  /* dark：暗版，适配冷深灰底；前景为近白略带色相 */
+  --category-1: oklch(0.54 0.10 10);
+  --category-2: oklch(0.54 0.10 50);
+  --category-3: oklch(0.54 0.10 95);
+  --category-4: oklch(0.54 0.10 140);
+  --category-5: oklch(0.54 0.10 240);
+  --category-6: oklch(0.54 0.10 280);
+  --category-7: oklch(0.54 0.10 320);
+  --category-8: oklch(0.54 0.10 350);
+  --category-1-foreground: oklch(0.97 0.01 10);
+  --category-2-foreground: oklch(0.97 0.01 50);
+  --category-3-foreground: oklch(0.97 0.01 95);
+  --category-4-foreground: oklch(0.97 0.01 140);
+  --category-5-foreground: oklch(0.97 0.01 240);
+  --category-6-foreground: oklch(0.97 0.01 280);
+  --category-7-foreground: oklch(0.97 0.01 320);
+  --category-8-foreground: oklch(0.97 0.01 350);
 }
 
 @theme inline {
@@ -259,7 +287,7 @@
   line-height: 1;
   padding: 2px 6px;
   border-radius: 999px;
-  /* 徽章底色由色块文字色派生，随 contrastText 自动适配浅色/深色块 */
+  /* 徽章底色由色块文字色（--category-N-foreground）派生 */
   background: color-mix(in srgb, currentColor 22%, transparent);
   white-space: nowrap;
 }

@@ -74,60 +74,26 @@ export function clipSeconds(
   return Math.max(0, Math.floor((end - start) / 1000));
 }
 
-// 分类色板：与 web/src/styles.css 的 --category-1..8 token 同源（light/dark 共用），修改须两边同步。
-// 统一 L=0.63 C=0.11，色相绕色环均匀分布；185–225 青色区间留给 primary，避免混淆。
-const COLORS = [
-  "oklch(0.63 0.11 10)",
-  "oklch(0.63 0.11 50)",
-  "oklch(0.63 0.11 95)",
-  "oklch(0.63 0.11 140)",
-  "oklch(0.63 0.11 240)",
-  "oklch(0.63 0.11 280)",
-  "oklch(0.63 0.11 320)",
-  "oklch(0.63 0.11 350)",
+// 分类色板：token 引用（值定义在 web/src/styles.css 的 :root（light）/ .dark（dark）两套 --category-1..8）。
+// 色相绕色环均匀分布；185–225 青色区间留给 primary，避免混淆。分类颜色不落库，始终由名称 hash 分配。
+const CATEGORY_VARS = [
+  "var(--category-1)",
+  "var(--category-2)",
+  "var(--category-3)",
+  "var(--category-4)",
+  "var(--category-5)",
+  "var(--category-6)",
+  "var(--category-7)",
+  "var(--category-8)",
 ];
 
-export function categoryColor(name: string): string {
+/** 分类名称 → 色板索引（0–7）。hash 逻辑不可改动：分类颜色不落库，改 hash 会改变既有映射。 */
+export function categoryIndex(name: string): number {
   let h = 0;
   for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
-  return COLORS[h % COLORS.length];
+  return h % CATEGORY_VARS.length;
 }
 
-/** WCAG 相对亮度（0–1）。支持 hex（#rrggbb）与 oklch(L C H)，均线性化到 sRGB。 */
-function relativeLuminance(color: string): number {
-  const hex = /^#([0-9a-f]{6})$/i.exec(color);
-  if (hex) {
-    const channels = [0, 2, 4].map((i) => parseInt(hex[1].slice(i, i + 2), 16) / 255);
-    const linear = channels.map((c) =>
-      c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4),
-    );
-    return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
-  }
-  const oklch = /^oklch\(\s*([\d.]+)\s+([\d.]+)\s+([\d.]+)\s*\)$/i.exec(color);
-  if (!oklch) return 0;
-  const L = parseFloat(oklch[1]);
-  const C = parseFloat(oklch[2]);
-  const H = parseFloat(oklch[3]);
-  const rad = (H * Math.PI) / 180;
-  const a = C * Math.cos(rad);
-  const b = C * Math.sin(rad);
-  // Oklab → 线性 sRGB（Björn Ottosson 变换），越界分量裁剪到 [0,1]
-  const l = Math.pow(L + 0.3963377774 * a + 0.2158037573 * b, 3);
-  const m = Math.pow(L - 0.1055613458 * a - 0.0638541728 * b, 3);
-  const s = Math.pow(L - 0.0894841775 * a - 1.291485548 * b, 3);
-  const clamp01 = (c: number) => Math.min(Math.max(c, 0), 1);
-  const r = clamp01(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s);
-  const g = clamp01(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s);
-  const bl = clamp01(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s);
-  return 0.2126 * r + 0.7152 * g + 0.0722 * bl;
-}
-
-const DARK_TEXT_LUMINANCE = relativeLuminance("#111111");
-
-/** 按 WCAG 对比度选择色块文字颜色：深色底用白字，浅色底用深字。入参支持 hex / oklch。 */
-export function contrastText(color: string): "#fff" | "#111" {
-  const l = relativeLuminance(color);
-  const contrastWhite = 1.05 / (l + 0.05);
-  const contrastDark = (l + 0.05) / (DARK_TEXT_LUMINANCE + 0.05);
-  return contrastWhite >= contrastDark ? "#fff" : "#111";
+export function categoryColor(name: string): string {
+  return CATEGORY_VARS[categoryIndex(name)];
 }

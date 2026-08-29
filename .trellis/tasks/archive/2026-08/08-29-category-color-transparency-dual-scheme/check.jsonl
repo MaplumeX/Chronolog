@@ -1,0 +1,3 @@
+{"file": ".trellis/tasks/08-29-category-color-transparency-dual-scheme/prd.md", "reason": "验收标准 AC1–AC5"}
+{"file": ".trellis/tasks/08-29-category-color-transparency-dual-scheme/design.md", "reason": "技术方案与兼容性（categoryColor 返回值兼容、contrastText 删除）"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "检查门槛"}

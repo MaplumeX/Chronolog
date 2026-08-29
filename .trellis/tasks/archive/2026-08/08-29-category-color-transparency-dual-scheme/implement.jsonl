@@ -1,0 +1,5 @@
+{"file": ".trellis/tasks/08-29-category-color-transparency-dual-scheme/prd.md", "reason": "需求（透明度 1a、light/dark 双套色板）与验收标准"}
+{"file": ".trellis/tasks/08-29-category-color-transparency-dual-scheme/design.md", "reason": "token 策略、color-mix 透明度、foreground token 替代 contrastText 的决策"}
+{"file": ".trellis/spec/frontend/design-tokens.md", "reason": "现有色板 token 约定，改动后需同步更新"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Timeline/StatsPage 等分类色消费处的约定"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "前端质量门槛与对比度验证要求"}
