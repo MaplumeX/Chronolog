@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/api-client.md", "reason": "DTO 类型与 api 客户端约定（statsRange 参数编码、错误展示）"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Shell/页面结构、i18n、无 h1 等组件规范"}
+{"file": ".trellis/spec/frontend/design-tokens.md", "reason": "recharts 配色必须走 CSS 变量与 categoryColor，双主题适配"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "前端质量门槛（typecheck 等）"}

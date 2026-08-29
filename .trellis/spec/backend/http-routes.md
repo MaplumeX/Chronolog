@@ -56,7 +56,8 @@ New endpoints belong in an existing file if they share the resource, or a new `r
 | POST | `/api/timer/stop` | yes | no running → 409 |
 | GET | `/api/entries/today?tz=` | yes | overlapping entries + `clippedSeconds` |
 | GET | `/api/entries/week?tz=` | yes | ISO week (Mon–Sun) as 7 day buckets: `{ tz, weekStart, weekEnd, days: TodayEntries[] }` |
-| GET | `/api/stats/today?tz=&tagId=` | yes | per-category clipped seconds; optional `tagId` filter |
+| GET | `/api/stats/today?tz=&tagId=` | yes | per-category clipped seconds; optional `tagId` filter (legacy — StatsPage now uses `/api/stats/range`; endpoint kept) |
+| GET | `/api/stats/range?tz=&from=&to=&tagId=` | yes | range aggregation (task 08-29-refactor-stats-page): `days` (per-day clipped seconds incl. zero days, tz-local `YYYY-MM-DD`), `categories` (range-clipped, desc), `tags` (multi-tag entries count fully under each tag; `tagId: null` = no-tag bucket), `totalSeconds` |
 | POST | `/api/entries` | yes | create: `{ description, categoryId, tagIds, startedAt, stoppedAt }` → 201 + `EntryDto`; overlap → 409 `OVERLAP` |
 | PATCH | `/api/entries/:id` | yes | full update: `{ description, categoryId, tagIds, startedAt, stoppedAt }`; stopped entries only; overlap → 409 `OVERLAP` |
 

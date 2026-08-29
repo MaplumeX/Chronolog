@@ -7,6 +7,8 @@ import {
   dateWeekBounds,
   dateWeekDayBounds,
   durationSeconds,
+  parseDateParam,
+  rangeDayBounds,
   requireTz,
   todayBounds,
   weekBounds,
@@ -200,4 +202,130 @@ export function statsToday(db: Db, userId: string, tzRaw: unknown, now: Date, ta
   const grouped = [...byId.values()].sort((a, b) => b.seconds - a.seconds);
   const totalSeconds = grouped.reduce((sum, c) => sum + c.seconds, 0);
   return { tz, dayStart, dayEnd, categories: grouped, totalSeconds };
+}
+
+export const STATS_RANGE_MAX_DAYS = 92;
+
+export type RangeStats = {
+  tz: string;
+  rangeStart: string;
+  rangeEnd: string;
+  days: { date: string; seconds: number }[];
+  categories: { categoryId: string; categoryName: string; seconds: number }[];
+  tags: { tagId: string | null; tagName: string | null; seconds: number }[];
+  totalSeconds: number;
+};
+
+/** GET /api/stats/range：tz 本地日期闭区间 [from, to] 的多路聚合统计。
+ *
+ * - days：逐日 clip 秒数，空白天也输出（含 0）；date 为 tz 本地 YYYY-MM-DD
+ * - categories：range 级 clip（首日 dayStart 到末日 dayEnd）按分类聚合，降序
+ * - tags：attachTags 后多标签条目在每个标签下计入全额 clipped 秒（tags 总和可能 > totalSeconds，UI 不应展示 tags 总和）；
+ *   无任何标签的秒数进 tagId:null 桶，降序
+ * - 运行中条目按 now 裁剪（clipSeconds 语义自然继承） */
+export function statsRange(
+  db: Db,
+  userId: string,
+  tzRaw: unknown,
+  fromRaw: unknown,
+  toRaw: unknown,
+  now: Date,
+  tagId?: string,
+): RangeStats {
+  const tz = requireTz(tzRaw);
+  // 校验顺序：tz（requireTz 已抛）→ from/to 日期 → from > to → 区间过大
+  if (typeof fromRaw !== "string" || typeof toRaw !== "string" || !parseDateParam(fromRaw, tz) || !parseDateParam(toRaw, tz)) {
+    throw new AppError(400, "VALIDATION", "日期无效");
+  }
+  const from = fromRaw as string;
+  const to = toRaw as string;
+  if (to < from) {
+    throw new AppError(400, "VALIDATION", "起始日期不能晚于结束日期");
+  }
+  const bounds = rangeDayBounds(tz, from, to);
+  if (!bounds) throw new AppError(400, "VALIDATION", "日期无效"); // 理论不可达，防御
+  if (bounds.days.length > STATS_RANGE_MAX_DAYS) {
+    throw new AppError(400, "VALIDATION", "日期区间过大");
+  }
+  if (tagId !== undefined) {
+    const owned = db
+      .select({ id: tags.id })
+      .from(tags)
+      .where(and(eq(tags.id, tagId), eq(tags.userId, userId)))
+      .get();
+    if (!owned) throw new AppError(404, "NOT_FOUND", "标签不存在");
+  }
+
+  const { rangeStart, rangeEnd, days } = bounds;
+  const tagFilter =
+    tagId !== undefined
+      ? exists(
+          db
+            .select({ one: entryTags.entryId })
+            .from(entryTags)
+            .where(
+              and(
+                eq(entryTags.entryId, timeEntries.id),
+                eq(entryTags.tagId, tagId),
+              ),
+            ),
+        )
+      : undefined;
+  const rows = db
+    .select(entrySelect)
+    .from(timeEntries)
+    .innerJoin(categories, eq(categories.id, timeEntries.categoryId))
+    .where(and(overlap(userId, rangeStart, rangeEnd), tagFilter))
+    .all();
+  const entries: EntryDto[] = rows.map((row) => ({
+    ...row,
+    durationSeconds: durationSeconds(row.startedAt, row.stoppedAt, now),
+    tags: [],
+  }));
+  attachTags(db, entries);
+
+  // range 级 clip 秒数（运行中条目按 now 裁剪）
+  const rangeClipped = new Map<string, number>(); // entryId -> clipped seconds
+  const catById = new Map<string, { categoryId: string; categoryName: string; seconds: number }>();
+  for (const e of entries) {
+    const seconds = clipSeconds(e.startedAt, e.stoppedAt, rangeStart, rangeEnd, now);
+    rangeClipped.set(e.id, seconds);
+    if (seconds <= 0) continue;
+    const cur = catById.get(e.categoryId);
+    if (cur) cur.seconds += seconds;
+    else catById.set(e.categoryId, { categoryId: e.categoryId, categoryName: e.categoryName, seconds });
+  }
+  const categoriesGrouped = [...catById.values()].sort((a, b) => b.seconds - a.seconds);
+  const totalSeconds = categoriesGrouped.reduce((sum, c) => sum + c.seconds, 0);
+
+  // days：逐日窗口 clip 求和（含 0 天）
+  const dayRows = days.map(({ date, dayStart, dayEnd }) => {
+    let seconds = 0;
+    for (const e of entries) {
+      seconds += clipSeconds(e.startedAt, e.stoppedAt, dayStart, dayEnd, now);
+    }
+    return { date, seconds };
+  });
+
+  // tags：多标签条目每个标签计入全额 clipped 秒；无标签秒数进 null 桶
+  const tagById = new Map<string, { tagId: string | null; tagName: string | null; seconds: number }>();
+  const noTagKey = "\u0000"; // 用哨兵 key 区分 null 桶与真实 tagId
+  for (const e of entries) {
+    const seconds = rangeClipped.get(e.id) ?? 0;
+    if (seconds <= 0) continue;
+    if (e.tags.length === 0) {
+      const cur = tagById.get(noTagKey);
+      if (cur) cur.seconds += seconds;
+      else tagById.set(noTagKey, { tagId: null, tagName: null, seconds });
+    } else {
+      for (const t of e.tags) {
+        const cur = tagById.get(t.id);
+        if (cur) cur.seconds += seconds;
+        else tagById.set(t.id, { tagId: t.id, tagName: t.name, seconds });
+      }
+    }
+  }
+  const tagsGrouped = [...tagById.values()].sort((a, b) => b.seconds - a.seconds);
+
+  return { tz, rangeStart, rangeEnd, days: dayRows, categories: categoriesGrouped, tags: tagsGrouped, totalSeconds };
 }

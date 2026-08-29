@@ -27,6 +27,10 @@ Proven fixture (`server/test/today.test.ts`): at `2026-08-25T02:00:00.000Z` with
 
 `listToday` selects entries that **overlap** the window (`startedAt < dayEnd` and (`stoppedAt` is null or `stoppedAt > dayStart`)), then attaches `clippedSeconds`. `statsToday` sums `clippedSeconds` per category, dropping non-positive slices, sorted by seconds descending.
 
+## Range stats (`/api/stats/range`)
+
+`statsRange(db, userId, tz, from, to, now, tagId?)` aggregates an arbitrary tz-local date range (closed interval `from`..`to`, ≤ `STATS_RANGE_MAX_DAYS = 92`). `rangeDayBounds(tz, from, to)` in `server/src/time.ts` derives per-day windows the same DST-safe way as `weekDayBoundsFrom` (luxon `plus({ days: i })` per day, never `start + i * 86400000`) and returns `null` for invalid dates or `from > to` (caller maps to 400 `VALIDATION`; > 92 days is also 400). One `overlap` query + optional tag subquery, then three aggregations: `days` (per-day clipped seconds, zero days included, `date` is tz-local `YYYY-MM-DD`), `categories` (range-clipped per category, desc), `tags` (`attachTags` result; multi-tag entries count their full clipped seconds under **each** tag — the tags sum may exceed `totalSeconds`, which is why the UI never shows a tags total; entries with no tags land in the `tagId: null` bucket, desc). Running entries clip at the injected `now`. Foreign `tagId` → 404 `NOT_FOUND`, same as `statsToday`. Tests: `server/test/stats-range.test.ts`.
+
 `durationSeconds` is the unclipped length (`stoppedAt ?? now - startedAt`). Stats and the timer-page day total use clipped values.
 
 ## Week bounds and clip

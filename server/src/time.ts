@@ -98,6 +98,34 @@ function weekDayBoundsFrom(weekStart: DateTime): { dayStart: string; dayEnd: str
   });
 }
 
+/** tz 本地日期闭区间 [from, to] 的逐日窗口，外加 range 首尾（rangeStart = 首日 dayStart，rangeEnd = 末日 dayEnd，[start, end) 半开）。
+ * 逐日用 luxon plus({ days: i }) 从 from 锚点推导（与 weekDayBoundsFrom 同构，DST 安全）。
+ * from/to 任一无效或 from > to 返回 null（调用方负责细粒度报错）。 */
+export function rangeDayBounds(
+  tz: string,
+  from: string,
+  to: string,
+): { rangeStart: string; rangeEnd: string; days: { date: string; dayStart: string; dayEnd: string }[] } | null {
+  const fromAnchor = parseDateParam(from, tz);
+  const toAnchor = parseDateParam(to, tz);
+  if (!fromAnchor || !toAnchor || toAnchor < fromAnchor) return null;
+  const dayCount = Math.round(toAnchor.diff(fromAnchor, "days").days) + 1;
+  const days = Array.from({ length: dayCount }, (_, i) => {
+    const start = fromAnchor.plus({ days: i });
+    const end = fromAnchor.plus({ days: i + 1 });
+    return {
+      date: start.toISODate() ?? "",
+      dayStart: start.toUTC().toJSDate().toISOString(),
+      dayEnd: end.toUTC().toJSDate().toISOString(),
+    };
+  });
+  return {
+    rangeStart: days[0].dayStart,
+    rangeEnd: days[dayCount - 1].dayEnd,
+    days,
+  };
+}
+
 export function clipSeconds(
   startedAt: string,
   stoppedAt: string | null,
