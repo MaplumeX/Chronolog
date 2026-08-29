@@ -396,7 +396,7 @@ Replaced neutral-gray shadcn theme with teal cool-tone dual theme (light+dark) i
 [OK] **Completed**
 
 
-## Session 18: Move sidebar extras into tabbed settings page
+## Session 19: Move sidebar extras into tabbed settings page
 
 **Date**: 2026-08-29
 **Task**: Move sidebar extras into tabbed settings page
@@ -417,7 +417,28 @@ Slimmed the sidebar: nav keeps timer/stats/categories/tags only, footer keeps on
 [OK] **Completed**
 
 
-## Session 19: Fix settings tab scrollbar and split sidebar footer entries
+## Session 18: 分类颜色：透明度 + light/dark 双套色板
+
+**Date**: 2026-08-29
+**Task**: 分类颜色：透明度 + light/dark 双套色板
+**Branch**: `feat/category-color-transparency-dual-scheme`
+
+### Summary
+
+拆分 --category-1..8 为 light（L=0.72）/dark（L=0.54）双套并新增 --category-N-foreground token；format.ts 仅持 token 名（categoryIndex + categoryColor 返回 var(--category-N)），删除 contrastText/relativeLuminance JS 计算；Timeline 块底色 color-mix 80% 半透明，小元素保持实色。对比度验证 light 7.5-8.0:1、dark 6.0-6.5:1；typecheck/build/后端测试通过；spec design-tokens.md 已同步。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a95d932` | (see git log) |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 20: Fix settings tab scrollbar and split sidebar footer entries
 
 **Date**: 2026-08-29
 **Task**: Fix settings tab scrollbar and split sidebar footer entries

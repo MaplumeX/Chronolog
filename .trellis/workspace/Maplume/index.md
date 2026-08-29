@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 19
+- **Total Sessions**: 20
 - **Last Active**: 2026-08-29
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~438 | Active |
+| `journal-1.md` | ~458 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,8 +29,9 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
-| 19 | 2026-08-29 | Fix settings tab scrollbar and split sidebar footer entries | `c9ee62e` | `feat/sidebar-items-to-tabbed-settings` |
-| 18 | 2026-08-29 | Move sidebar extras into tabbed settings page | `a95d932` | `feat/sidebar-items-to-tabbed-settings` |
+| 20 | 2026-08-29 | Fix settings tab scrollbar and split sidebar footer entries | `c9ee62e` | `feat/sidebar-items-to-tabbed-settings` |
+| 19 | 2026-08-29 | Move sidebar extras into tabbed settings page | `a95d932` | `feat/sidebar-items-to-tabbed-settings` |
+| 18 | 2026-08-29 | 分类颜色：透明度 + light/dark 双套色板 | `64b6ddd` | `feat/category-color-transparency-dual-scheme` |
 | 17 | 2026-08-29 | Refactor web design system to teal dual-theme | `2466ae1`, `8812fd1` | `feat/refactor-design-system` |
 | 16 | 2026-08-29 | 完善用户系统：资料/改密/注销/注册控制 + 设置页 | `a6f4be3`, `af4a0ff` | `feat/user-system` |
 | 15 | 2026-08-27 | Timeline drag-to-create entries | `b17a8c9`, `178b264`, `f4e6aed` | `feat/timeline-drag-create-entries` |

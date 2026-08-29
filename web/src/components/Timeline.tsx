@@ -3,8 +3,8 @@ import { useTranslation } from "react-i18next";
 import type { Category, Tag, TimeEntry, TodayEntries, WeekEntries } from "../api";
 import {
   categoryColor,
+  categoryIndex,
   clipSeconds,
-  contrastText,
   formatClock,
   formatDayLabel,
   formatDuration,
@@ -210,7 +210,7 @@ function DayColumn(props: {
                 e.stoppedAt ? formatClock(e.stoppedAt, tz) : "…"
               }`;
               const color = categoryColor(e.categoryName);
-              const textColor = contrastText(color);
+              const textColor = `var(--category-${categoryIndex(e.categoryName) + 1}-foreground)`;
               const desc = e.description || t("timeline.noDescription");
 
               // tier 阈值按像素校准（60 档下 2.5% ≈ 24px、1% ≈ 10px），细档位下不因高度放大而失真
@@ -260,7 +260,8 @@ function DayColumn(props: {
               const blockStyle = {
                 top: `${top}%`,
                 height: `${heightPct}%`,
-                background: color,
+                /* 半透明底色：透出轨道背景（小元素色点/条形仍用实色 categoryColor） */
+                background: `color-mix(in srgb, ${color} 50%, transparent)`,
                 color: textColor,
               };
 

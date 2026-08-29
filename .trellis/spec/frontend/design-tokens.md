@@ -21,13 +21,14 @@
 
 ## 分类色板
 
-`--category-1..8`（styles.css 内 `:root, .dark` 共用块，light/dark 共用一组）：
+`--category-1..8`（styles.css 内 `:root`（light）与 `.dark`（dark）各一套）：
 
-- 统一步长：L=0.63、C=0.11，色相绕色环均匀分布（10/50/95/140/240/280/320/350）。
+- light 亮版（L≈0.72、C≈0.12）、dark 暗版（L≈0.54、C≈0.10），色相绕色环均匀分布（10/50/95/140/240/280/320/350），两套保持同色相。
 - **185–225 hue 区间留给 primary**，分类色避开，防止混淆。
-- `web/src/format.ts` 的 `COLORS` 数组与此 token 同源（oklch 字符串，注释锚定），修改必须两边同步。
-- 色块文字色由 `contrastText()`（format.ts）按 WCAG 亮度计算选择 `#fff` / `#111`，新色板 8 色均输出 `#111`。
-- 分类颜色不落库，始终由名称 hash 分配（`categoryColor`）。
+- 每色配套 `--category-N-foreground`（light 下深色文字、dark 下近白略带色相），随主题翻转；Timeline 色块文字/派生色（tag 徽章底、running 轮廓）消费它。
+- `web/src/format.ts` 仅持有 token 名：`categoryIndex(name)`（hash → 0–7）+ `categoryColor(name)` 返回 `var(--category-N)`。具体数值只在 styles.css 一处定义，无需两边同步。
+- 分类颜色不落库，始终由名称 hash 分配（`categoryColor`）；hash 逻辑不可改动，否则既有映射漂移。
+- Timeline 时间块底色用 `color-mix(in srgb, <categoryColor> 80%, transparent)` 半透明透出轨道背景；小色点/条形（picker、列表、Stats）用实色 `categoryColor()`。
 
 ## 圆角
 
@@ -47,4 +48,4 @@
 
 - 不在组件里硬编码 hex / rgba 颜色（destructive 语义色等经 token 引用除外）。
 - 叠在彩色色块上的前景（tag 徽章底、running 轮廓）用 `color-mix(in srgb, currentColor N%, transparent)` 从色块文字色派生，不用白色硬编码。例外：`timeline-pulse` 阴影画在色块外的页面背景上，不从文字色派生（dark 下深色文字不可见），改用 `color-mix(var(--ring) N%, transparent)`。
-- 不为分类色做 per-theme 变体，除非 dark 目检证实可读性问题。
+- 分类色已按 per-theme 双套定义（light 亮版 / dark 暗版 + 各自 foreground），色相不变。
