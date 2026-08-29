@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiError, api, type Category, type Tag, type TimeEntry } from "../api";
 import { CategoryPicker } from "./CategoryPicker";
+import { DateTimePicker } from "./DateTimePicker";
 import { TagPicker } from "./TagPicker";
 import { formatDuration } from "../format";
 import { Button } from "@/components/ui/button";
@@ -120,22 +121,20 @@ export function EntryEditor(props: {
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="entry-start">{t("entry.startTime")}</Label>
-        <Input
+        <DateTimePicker
           id="entry-start"
-          type="datetime-local"
-          step={1}
+          ariaLabel={t("entry.startTime")}
           value={startedAt}
-          onChange={(e) => setStartedAt(e.target.value)}
+          onChange={setStartedAt}
         />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="entry-end">{t("entry.endTime")}</Label>
-        <Input
+        <DateTimePicker
           id="entry-end"
-          type="datetime-local"
-          step={1}
+          ariaLabel={t("entry.endTime")}
           value={stoppedAt}
-          onChange={(e) => setStoppedAt(e.target.value)}
+          onChange={setStoppedAt}
         />
       </div>
       <div className="flex items-center justify-between text-sm">

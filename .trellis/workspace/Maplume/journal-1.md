@@ -489,12 +489,22 @@ Replaced all 32 category color tokens (light/dark, base+foreground) in web/src/s
 ### Summary
 
 新增 GET /api/stats/range 聚合端点（DST 安全逐日窗口、92 天上限、多标签全额计入+无标签桶，6 个测试）；前端引入 recharts 3.10，StatsPage 重构为 today/week/month/custom 四档位：每日趋势 BarChart、分类占比 donut+百分比列表、纯 CSS 标签条形（无标签桶）；仅 today 档 5s 轮询且跨午夜自动滚动；zh/en i18n 同步；spec 四处更新（component-guidelines/api-client/http-routes/time-and-timezone）。
+## Session 22: Beautify entry time picker with custom DateTimePicker
+
+**Date**: 2026-08-29
+**Task**: Beautify entry time picker with custom DateTimePicker
+**Branch**: `feat/beautify-time-picker-in-entries`
+
+### Summary
+
+Replaced native datetime-local inputs in EntryEditor with a custom DateTimePicker (Popover + Calendar + HH:MM:SS stepper TimeFields) matching the teal dual-theme picker styling. Value contract YYYY-MM-DDTHH:mm:ss unchanged; keyboard stepping/typing with clamp and auto-advance; 'Now' shortcut; i18n entry.now zh/en. Updated component-guidelines spec. typecheck+build pass.
 
 ### Git Commits
 
 | Hash | Message |
 |------|---------|
 | `9799529` | (see git log) |
+| `4a7e87a` | (see git log) |
 
 ### Status
 
