@@ -478,3 +478,24 @@ Replaced all 32 category color tokens (light/dark, base+foreground) in web/src/s
 ### Status
 
 [OK] **Completed**
+
+
+## Session 22: Beautify entry time picker with custom DateTimePicker
+
+**Date**: 2026-08-29
+**Task**: Beautify entry time picker with custom DateTimePicker
+**Branch**: `feat/beautify-time-picker-in-entries`
+
+### Summary
+
+Replaced native datetime-local inputs in EntryEditor with a custom DateTimePicker (Popover + Calendar + HH:MM:SS stepper TimeFields) matching the teal dual-theme picker styling. Value contract YYYY-MM-DDTHH:mm:ss unchanged; keyboard stepping/typing with clamp and auto-advance; 'Now' shortcut; i18n entry.now zh/en. Updated component-guidelines spec. typecheck+build pass.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `4a7e87a` | (see git log) |
+
+### Status
+
+[OK] **Completed**
