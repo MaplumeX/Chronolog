@@ -478,3 +478,24 @@ Replaced all 32 category color tokens (light/dark, base+foreground) in web/src/s
 ### Status
 
 [OK] **Completed**
+
+
+## Session 22: 重构统计页面：范围切换、趋势图、分类占比与标签统计
+
+**Date**: 2026-08-29
+**Task**: 重构统计页面：范围切换、趋势图、分类占比与标签统计
+**Branch**: `refactor/statistics-page`
+
+### Summary
+
+新增 GET /api/stats/range 聚合端点（DST 安全逐日窗口、92 天上限、多标签全额计入+无标签桶，6 个测试）；前端引入 recharts 3.10，StatsPage 重构为 today/week/month/custom 四档位：每日趋势 BarChart、分类占比 donut+百分比列表、纯 CSS 标签条形（无标签桶）；仅 today 档 5s 轮询且跨午夜自动滚动；zh/en i18n 同步；spec 四处更新（component-guidelines/api-client/http-routes/time-and-timezone）。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9799529` | (see git log) |
+
+### Status
+
+[OK] **Completed**
