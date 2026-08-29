@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { ChartNoAxesColumn, Tag, Tags, Timer } from "lucide-react";
+import { ChartNoAxesColumn, Settings, Tag, Tags, Timer } from "lucide-react";
 import { formatDuration } from "../format";
 import type { zh } from "../i18n/locales/zh";
 import {
@@ -82,11 +82,18 @@ function ShellNav(props: {
   );
 }
 
-function ShellUserButton(props: {
-  username: string;
-  displayName?: string | null;
-  onPage: (page: PageId) => void;
-}) {
+function ShellUserButton(props: { username: string; displayName?: string | null }) {
+  return (
+    <SidebarMenuButton className="pointer-events-none" tabIndex={-1}>
+      <span className="flex size-4 items-center justify-center text-xs font-medium">
+        {props.username.slice(0, 1)}
+      </span>
+      <span className="truncate">{props.displayName ?? props.username}</span>
+    </SidebarMenuButton>
+  );
+}
+
+function ShellSettingsButton(props: { onPage: (page: PageId) => void }) {
   const { t } = useTranslation();
   const { isMobile, setOpenMobile } = useSidebar();
 
@@ -97,10 +104,8 @@ function ShellUserButton(props: {
 
   return (
     <SidebarMenuButton type="button" tooltip={t("nav.settings")} onClick={goSettings}>
-      <span className="flex size-4 items-center justify-center text-xs font-medium">
-        {props.username.slice(0, 1)}
-      </span>
-      <span className="truncate">{props.displayName ?? props.username}</span>
+      <Settings />
+      <span>{t("nav.settings")}</span>
     </SidebarMenuButton>
   );
 }
@@ -139,8 +144,10 @@ export function Shell(props: {
               <ShellUserButton
                 username={props.username}
                 displayName={props.displayName}
-                onPage={props.onPage}
               />
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <ShellSettingsButton onPage={props.onPage} />
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>

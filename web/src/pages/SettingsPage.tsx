@@ -108,7 +108,7 @@ export function SettingsPage(props: {
   return (
     <div className="px-6 py-6">
       <Tabs defaultValue="account">
-        <TabsList className="max-w-md overflow-x-auto">
+        <TabsList className="max-w-md">
           <TabsTrigger value="general">{t("settings.tabGeneral")}</TabsTrigger>
           <TabsTrigger value="account">{t("settings.tabAccount")}</TabsTrigger>
           <TabsTrigger value="tokens">{t("settings.tabTokens")}</TabsTrigger>
