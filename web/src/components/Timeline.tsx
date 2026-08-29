@@ -261,7 +261,7 @@ function DayColumn(props: {
                 top: `${top}%`,
                 height: `${heightPct}%`,
                 /* 半透明底色：透出轨道背景（小元素色点/条形仍用实色 categoryColor） */
-                background: `color-mix(in srgb, ${color} 80%, transparent)`,
+                background: `color-mix(in srgb, ${color} 50%, transparent)`,
                 color: textColor,
               };
 
