@@ -23,7 +23,7 @@
 
 `--category-1..8`（styles.css 内 `:root`（light）与 `.dark`（dark）各一套）：
 
-- light 亮版（L≈0.72、C≈0.12）、dark 暗版（L≈0.54、C≈0.10），色相绕色环均匀分布（10/50/95/140/240/280/320/350），两套保持同色相。
+- light 亮版（L≈0.74、C≈0.09）、dark 暗版（L≈0.58、C≈0.08），柔和低饱和，色相均衡绕色环分布（15/50/100/135/250/285/315/345，暖4冷4），两套保持同色相。
 - **185–225 hue 区间留给 primary**，分类色避开，防止混淆。
 - 每色配套 `--category-N-foreground`（light 下深色文字、dark 下近白略带色相），随主题翻转；Timeline 色块文字/派生色（tag 徽章底、running 轮廓）消费它。
 - `web/src/format.ts` 仅持有 token 名：`categoryIndex(name)`（hash → 0–7）+ `categoryColor(name)` 返回 `var(--category-N)`。具体数值只在 styles.css 一处定义，无需两边同步。

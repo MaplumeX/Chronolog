@@ -80,43 +80,43 @@
 /* 分类色板：light/dark 各一套（185–225 青色区间留给 primary）。
    具体数值只在此定义；format.ts 仅持有 token 名（var(--category-N)），无需两边同步。 */
 :root {
-  /* light：亮版，适配冷白底 */
-  --category-1: oklch(0.72 0.12 10);
-  --category-2: oklch(0.72 0.12 50);
-  --category-3: oklch(0.72 0.12 95);
-  --category-4: oklch(0.72 0.12 140);
-  --category-5: oklch(0.72 0.12 240);
-  --category-6: oklch(0.72 0.12 280);
-  --category-7: oklch(0.72 0.12 320);
-  --category-8: oklch(0.72 0.12 350);
-  --category-1-foreground: oklch(0.25 0.03 10);
+  /* light：亮版柔和低饱和，适配冷白底；色相均衡绕色环（暖4冷4） */
+  --category-1: oklch(0.74 0.09 15);
+  --category-2: oklch(0.74 0.09 50);
+  --category-3: oklch(0.74 0.09 100);
+  --category-4: oklch(0.74 0.09 135);
+  --category-5: oklch(0.74 0.09 250);
+  --category-6: oklch(0.74 0.09 285);
+  --category-7: oklch(0.74 0.09 315);
+  --category-8: oklch(0.74 0.09 345);
+  --category-1-foreground: oklch(0.25 0.03 15);
   --category-2-foreground: oklch(0.25 0.03 50);
-  --category-3-foreground: oklch(0.25 0.03 95);
-  --category-4-foreground: oklch(0.25 0.03 140);
-  --category-5-foreground: oklch(0.25 0.03 240);
-  --category-6-foreground: oklch(0.25 0.03 280);
-  --category-7-foreground: oklch(0.25 0.03 320);
-  --category-8-foreground: oklch(0.25 0.03 350);
+  --category-3-foreground: oklch(0.25 0.03 100);
+  --category-4-foreground: oklch(0.25 0.03 135);
+  --category-5-foreground: oklch(0.25 0.03 250);
+  --category-6-foreground: oklch(0.25 0.03 285);
+  --category-7-foreground: oklch(0.25 0.03 315);
+  --category-8-foreground: oklch(0.25 0.03 345);
 }
 
 .dark {
-  /* dark：暗版，适配冷深灰底；前景为近白略带色相 */
-  --category-1: oklch(0.54 0.10 10);
-  --category-2: oklch(0.54 0.10 50);
-  --category-3: oklch(0.54 0.10 95);
-  --category-4: oklch(0.54 0.10 140);
-  --category-5: oklch(0.54 0.10 240);
-  --category-6: oklch(0.54 0.10 280);
-  --category-7: oklch(0.54 0.10 320);
-  --category-8: oklch(0.54 0.10 350);
-  --category-1-foreground: oklch(0.97 0.01 10);
+  /* dark：暗版柔和低饱和，适配冷深灰底；前景为近白略带色相，色相同 light */
+  --category-1: oklch(0.58 0.08 15);
+  --category-2: oklch(0.58 0.08 50);
+  --category-3: oklch(0.58 0.08 100);
+  --category-4: oklch(0.58 0.08 135);
+  --category-5: oklch(0.58 0.08 250);
+  --category-6: oklch(0.58 0.08 285);
+  --category-7: oklch(0.58 0.08 315);
+  --category-8: oklch(0.58 0.08 345);
+  --category-1-foreground: oklch(0.97 0.01 15);
   --category-2-foreground: oklch(0.97 0.01 50);
-  --category-3-foreground: oklch(0.97 0.01 95);
-  --category-4-foreground: oklch(0.97 0.01 140);
-  --category-5-foreground: oklch(0.97 0.01 240);
-  --category-6-foreground: oklch(0.97 0.01 280);
-  --category-7-foreground: oklch(0.97 0.01 320);
-  --category-8-foreground: oklch(0.97 0.01 350);
+  --category-3-foreground: oklch(0.97 0.01 100);
+  --category-4-foreground: oklch(0.97 0.01 135);
+  --category-5-foreground: oklch(0.97 0.01 250);
+  --category-6-foreground: oklch(0.97 0.01 285);
+  --category-7-foreground: oklch(0.97 0.01 315);
+  --category-8-foreground: oklch(0.97 0.01 345);
 }
 
 @theme inline {
