@@ -1,6 +1,8 @@
 import i18n from "./i18n";
 
-export type User = { id: string; username: string };
+export type User = { id: string; username: string; displayName: string | null };
+
+export type Meta = { registrationOpen: boolean };
 
 export type Category = { id: string; name: string; entryCount: number };
 
@@ -98,6 +100,16 @@ export const api = {
       body: JSON.stringify({ username, password }),
     }),
   logout: () => request<{ ok: boolean }>("/api/auth/logout", { method: "POST" }),
+  meta: () => request<Meta>("/api/meta"),
+  updateProfile: (body: { username?: string; displayName?: string }) =>
+    request<User>("/api/profile", { method: "PATCH", body: JSON.stringify(body) }),
+  changePassword: (body: { currentPassword: string; newPassword: string }) =>
+    request<{ ok: boolean }>("/api/account/password", {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  deleteAccount: (password: string) =>
+    request<{ ok: boolean }>("/api/account", { method: "DELETE", body: JSON.stringify({ password }) }),
   categories: () => request<{ categories: Category[] }>("/api/categories"),
   createCategory: (name: string) =>
     request<Category>("/api/categories", { method: "POST", body: JSON.stringify({ name }) }),

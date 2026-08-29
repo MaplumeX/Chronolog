@@ -25,7 +25,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-export type PageId = "timer" | "stats" | "categories" | "tags" | "tokens";
+export type PageId = "timer" | "stats" | "categories" | "tags" | "tokens" | "settings";
 
 const ITEMS: { id: PageId; labelKey: keyof typeof zh; icon: typeof Timer }[] = [
   { id: "timer", labelKey: "nav.timer", icon: Timer },
@@ -88,6 +88,7 @@ function ShellNav(props: {
 
 export function Shell(props: {
   username: string;
+  displayName?: string | null;
   page: PageId;
   elapsedSeconds?: number;
   onPage: (page: PageId) => void;
@@ -99,6 +100,12 @@ export function Shell(props: {
   children: ReactNode;
 }) {
   const { t } = useTranslation();
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  function goSettings() {
+    props.onPage("settings");
+    if (isMobile) setOpenMobile(false);
+  }
   return (
     <SidebarProvider className="h-dvh min-h-dvh">
       <Sidebar collapsible="icon">
@@ -120,11 +127,15 @@ export function Shell(props: {
         <SidebarFooter>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton tooltip={props.username} className="pointer-events-none">
+              <SidebarMenuButton
+                type="button"
+                tooltip={t("nav.settings")}
+                onClick={goSettings}
+              >
                 <span className="flex size-4 items-center justify-center text-xs font-medium">
                   {props.username.slice(0, 1)}
                 </span>
-                <span className="truncate">{props.username}</span>
+                <span className="truncate">{props.displayName ?? props.username}</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>

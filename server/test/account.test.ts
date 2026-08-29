@@ -140,6 +140,21 @@ describe("account: profile", () => {
     assert.equal(unauth.statusCode, 401);
     assert.equal(errorCode(unauth), "UNAUTHORIZED");
   });
+
+  it("lets a Bearer PAT update the profile", async () => {
+    t = await createTestApp();
+    const { sid } = await registerUser(t.app, "alice");
+    const token = await createToken(t.app, sid);
+
+    const res = await t.app.inject({
+      method: "PATCH",
+      url: "/api/profile",
+      payload: { displayName: "  Alice  " },
+      headers: bearerHeader(token),
+    });
+    assert.equal(res.statusCode, 200);
+    assert.equal((json(res) as { displayName: string }).displayName, "Alice");
+  });
 });
 
 describe("account: password", () => {
@@ -274,6 +289,8 @@ describe("account: deletion", () => {
       headers: cookieHeader(sid),
     });
     assert.equal(del.statusCode, 200);
+    // clearSessionCookie emits an empty sid cookie alongside the row cascade
+    assert.ok(del.cookies.some((c) => c.name === "sid" && c.value === ""));
 
     const me = await t.app.inject({
       method: "GET",

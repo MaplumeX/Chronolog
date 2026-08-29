@@ -19,11 +19,11 @@ The volume must be local disk, not NFS. WAL needs `-wal` / `-shm` writable besid
 
 This MVP does **not** use drizzle-kit migrations. Boot runs `CREATE TABLE IF NOT EXISTS` from `SCHEMA_SQL` in `server/src/db.ts`. `server/src/schema.ts` is the drizzle mirror used by queries.
 
-When adding a column or index, update **both** files in the same change. Do not ship a destructive in-place `ALTER` that drops or retypes columns.
+When adding a column or index, update **both** files in the same change. For new columns on existing tables, also add an idempotent migration in `migrate()` (`openDb`): `PRAGMA table_info(<table>)` to check, then `ALTER TABLE ... ADD COLUMN` (SQLite has no `ADD COLUMN IF NOT EXISTS`). Do not ship a destructive in-place `ALTER` that drops or retypes columns.
 
 | Table | Notes |
 |-------|--------|
-| `users` | `username` unique with `COLLATE NOCASE`; `password_hash` Argon2id PHC |
+| `users` | `username` unique with `COLLATE NOCASE`; `password_hash` Argon2id PHC; `display_name` nullable (added task 08-29-user-system) |
 | `sessions` | opaque id; `ON DELETE CASCADE` with user |
 | `categories` | unique `(user_id, name)` |
 | `tags` | unique `(user_id, name)`; `ON DELETE CASCADE` with user |

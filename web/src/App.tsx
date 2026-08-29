@@ -9,6 +9,7 @@ import { useTheme } from "./hooks/use-theme";
 import { useTimerController } from "./hooks/use-timer-controller";
 import { AuthPage } from "./pages/AuthPage";
 import { CategoriesPage } from "./pages/CategoriesPage";
+import { SettingsPage } from "./pages/SettingsPage";
 import { StatsPage } from "./pages/StatsPage";
 import { TagsPage } from "./pages/TagsPage";
 import { TokensPage } from "./pages/TokensPage";
@@ -18,6 +19,7 @@ const HEADER_TITLE_KEYS = {
   categories: "nav.categories",
   tags: "nav.tags",
   tokens: "nav.tokens",
+  settings: "nav.settings",
 } as const;
 
 export function App() {
@@ -78,9 +80,16 @@ export function App() {
     setCurrent(null);
   }
 
+  function onAccountDeleted() {
+    // DELETE /api/account 已清除 cookie，无需再调 logout（会 401）
+    setUser(null);
+    setCurrent(null);
+  }
+
   return (
     <Shell
       username={user.username}
+      displayName={user.displayName}
       page={page}
       elapsedSeconds={current ? elapsedSeconds(current.startedAt, nowMs) : undefined}
       onPage={setPage}
@@ -102,6 +111,9 @@ export function App() {
       {page === "categories" ? <CategoriesPage /> : null}
       {page === "tags" ? <TagsPage /> : null}
       {page === "tokens" ? <TokensPage /> : null}
+      {page === "settings" ? (
+        <SettingsPage user={user} onUserUpdated={setUser} onLoggedOut={onAccountDeleted} />
+      ) : null}
     </Shell>
   );
 }

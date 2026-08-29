@@ -30,7 +30,23 @@ Default Docker / local HTTP keeps `COOKIE_SECURE=false`. If you set Secure on pl
 - `requireUser` throws `AppError(401, "UNAUTHORIZED", "请先登录")`.
 - Logout deletes the session row and `clearSessionCookie`.
 
-Public: `POST /api/auth/register`, `POST /api/auth/login`. `GET /api/auth/me` uses `loadUser` and still 401s when logged out. Every other `/api/*` route must call `requireUser`.
+Public: `POST /api/auth/register`, `POST /api/auth/login`, `GET /api/meta` (returns `{ registrationOpen }`). `GET /api/auth/me` uses `loadUser` and still 401s when logged out. Every other `/api/*` route must call `requireUser`.
+
+`AuthUser` is `{ id, username, displayName: string | null }`; register/login/me all return it. `users.display_name` is optional — UI falls back to `username` when null. Old databases get the column via the idempotent `migrate()` in `openDb` (`PRAGMA table_info` check + `ALTER TABLE users ADD COLUMN display_name TEXT`); keep `schema.ts` and `SCHEMA_SQL` in the same change when adding columns.
+
+## Registration gate
+
+`REGISTRATION_OPEN=false` (env, parsed in `index.ts` as `!== "false"`, default open) makes `POST /api/auth/register` throw 403 `FORBIDDEN` "注册已关闭". The flag travels `index.ts` → `AppConfig.registrationOpen` → `Deps.registrationOpen` (required, not optional — tests must pass it explicitly).
+
+## Account management (task 08-29-user-system)
+
+All in `server/src/routes/account.ts`, all `requireUser` (cookie or Bearer both work):
+
+- `PATCH /api/profile` `{ username?, displayName? }` → `{ id, username, displayName }`. `username` reuses the register schema (`usernameSchema` exported from `routes/auth.ts`); duplicate (NOCASE) → 409 `CONFLICT`. `displayName` is trimmed, max 32, empty string stores NULL. Body with neither field → 400 via `.refine`. Changing your own username to a different case is allowed (NOCASE unique index does not block same-value updates).
+- `PATCH /api/account/password` `{ currentPassword, newPassword }` → `{ ok: true }`. Wrong current password → 401 `UNAUTHORIZED` "当前密码错误". On success all other sessions are revoked (`WHERE id != current sid`); a Bearer request has no sid, so it revokes every session. **PATs are NOT revoked** — password and PAT are independent credentials; revoke PATs manually via `DELETE /api/tokens/:id`.
+- `DELETE /api/account` `{ password }` → `{ ok: true }` + `clearSessionCookie`. Wrong password → 401. The `delete(users)` relies on FK `ON DELETE CASCADE` to clean sessions/entries/categories/tags/api_tokens (entry_tags cascade via entries).
+
+Tests: `server/test/account.test.ts` (profile 409/400/Bearer, password session semantics + PAT survival, deletion cascade + empty sid cookie assertion, meta/registration gate).
 
 Login compares the password even when the user is missing (`user ? verify : false`) so timing does not advertise existence. Failure is 401 `UNAUTHORIZED` `"用户名或密码错误"`. Duplicate username (NOCASE) is 409 `CONFLICT`.
 
