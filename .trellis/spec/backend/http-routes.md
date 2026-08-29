@@ -54,6 +54,7 @@ New endpoints belong in an existing file if they share the resource, or a new `r
 | GET | `/api/timer/current` | yes | `{ entry: EntryDto \| null }` |
 | POST | `/api/timer/start` | yes | `{ categoryId, description?, tagIds? }` |
 | POST | `/api/timer/stop` | yes | no running → 409 |
+| PATCH | `/api/timer/current` | yes | update running entry: `{ description?, categoryId?, tagIds? }` (zod `strictObject` — rejects `startedAt`/`stoppedAt`); trim description ≤ 200; no running → 409 `CONFLICT`; category/tags not owned → 404; returns `{ entry: EntryDto }` (task 08-30-edit-while-timing) |
 | GET | `/api/entries/today?tz=` | yes | overlapping entries + `clippedSeconds` |
 | GET | `/api/entries/week?tz=` | yes | ISO week (Mon–Sun) as 7 day buckets: `{ tz, weekStart, weekEnd, days: TodayEntries[] }` |
 | GET | `/api/entries/boundary?tz=&start=&end=` | yes | entries adjacent to the `[start, end)` window: `{ tz, prevEntry: EntryDto \| null, nextEntry: EntryDto \| null }` (gap-slot feature). `start`/`end` are ISO instants (zod `z.iso.datetime()`, `start < end` else 400 `VALIDATION`); `tz` is validated with `requireTz` but does not drive window math — the frontend converts the day/week view window to absolute instants. `prevEntry` = latest right edge (`stoppedAt ?? ∞`) among entries with `startedAt < start` and (`stoppedAt IS NULL` or `stoppedAt <= start`); `nextEntry` = min `startedAt >= end`. Query lives in `listBoundary` (`server/src/entries.ts`), route in `routes/entries.ts`. |

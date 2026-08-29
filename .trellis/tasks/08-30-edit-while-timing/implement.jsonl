@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/http-routes.md", "reason": "路由注册约定、Deps/now 注入、AppError 错误模式"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "AppError/parseBody/zod 校验约定，PATCH 新接口需遵循"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "use-timer-controller 是唯一业务 hook，编辑逻辑必须写在这里"}
+{"file": ".trellis/spec/frontend/api-client.md", "reason": "api.ts 新增 updateCurrent 需遵循请求封装约定"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "计时中编辑涉及本地 draft state 与全局 current 的同步"}

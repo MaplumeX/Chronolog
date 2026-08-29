@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ApiError,
@@ -63,6 +63,10 @@ export function useTimerController(props: {
   const [tagIds, setTagIds] = useState<string[]>([]);
   const [description, setDescription] = useState("");
   const [error, setError] = useState("");
+  // 计时中说明输入框的受控草稿（不直接改 running 对象）；running 切换时重置
+  const [runningDraft, setRunningDraft] = useState<string | null>(null);
+  // 说明防抖：待发送的 setTimeout id
+  const descriptionDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /** 拉取窗口紧邻外侧条目（gap 插槽边界）；失败静默降级为 null，不阻塞主数据 */
   function loadBoundary(start: string, end: string) {
@@ -128,6 +132,64 @@ export function useTimerController(props: {
 
   const selected = categories.find((c) => c.id === categoryId);
   const running = props.current;
+
+  // running 切换（开始新计时/停止）时重置说明草稿并取消 pending 防抖，
+  // 避免停止后把草稿误发到 timer 接口（409）或残留到新计时表单
+  useEffect(() => {
+    setRunningDraft(running ? running.description : null);
+    if (descriptionDebounceRef.current) {
+      clearTimeout(descriptionDebounceRef.current);
+      descriptionDebounceRef.current = null;
+    }
+  }, [running?.id]);
+
+  // 卸载时取消 pending 防抖
+  useEffect(
+    () => () => {
+      if (descriptionDebounceRef.current) clearTimeout(descriptionDebounceRef.current);
+    },
+    [],
+  );
+
+  /** 计时中编辑说明：更新草稿，防抖 600ms 后保存 */
+  function onRunningDescriptionChange(value: string) {
+    setRunningDraft(value);
+    if (descriptionDebounceRef.current) clearTimeout(descriptionDebounceRef.current);
+    if (!running) return;
+    descriptionDebounceRef.current = setTimeout(() => {
+      descriptionDebounceRef.current = null;
+      api
+        .updateCurrent({ description: value })
+        .then(({ entry }) => props.onCurrent(entry))
+        .catch((err) =>
+          setError(err instanceof ApiError ? err.message : t("common.operationFailed")),
+        );
+    }, 600);
+  }
+
+  /** 计时中切换分类：立即保存并刷新 today/week（Timeline 色块颜色） */
+  async function onRunningCategoryChange(nextCategoryId: string) {
+    if (!running || running.categoryId === nextCategoryId) return;
+    try {
+      const { entry } = await api.updateCurrent({ categoryId: nextCategoryId });
+      props.onCurrent(entry);
+      await refreshEntries();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : t("common.operationFailed"));
+    }
+  }
+
+  /** 计时中切换标签：立即保存（标签只影响胶囊展示，不刷 Timeline） */
+  async function onRunningTagsChange(nextTagIds: string[]) {
+    if (!running) return;
+    try {
+      const { entry } = await api.updateCurrent({ tagIds: nextTagIds });
+      props.onCurrent(entry);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : t("common.operationFailed"));
+    }
+  }
+
   const elapsed = running ? elapsedSeconds(running.startedAt, props.nowMs) : 0;
   const runningClipped =
     running && today
@@ -211,35 +273,37 @@ export function useTimerController(props: {
 
   const pickerLabel = running?.categoryName ?? selected?.name ?? t("timer.selectCategory");
   const pickerColor = running?.categoryName ?? selected?.name ?? "";
+  const runningTagIds = running?.tags.map((tag) => tag.id) ?? [];
   const tagPickerLabel =
-    tagIds.length > 0
-      ? tagIds
+    (running ? runningTagIds : tagIds).length > 0
+      ? (running ? runningTagIds : tagIds)
           .map((id) => tags.find((x) => x.id === id)?.name)
           .filter(Boolean)
           .join(t("timer.tagSeparator"))
       : t("timer.selectTags");
 
   const barProps = {
-    description: running ? running.description : description,
-    descriptionReadOnly: Boolean(running),
-    onDescriptionChange: setDescription,
+    description: running ? (runningDraft ?? running.description) : description,
+    onDescriptionChange: running ? onRunningDescriptionChange : setDescription,
     categoryPicker: (
       <CategoryPicker
         categories={categories}
-        value={categoryId}
+        value={running ? running.categoryId : categoryId}
         label={pickerLabel}
         colorName={pickerColor}
-        disabled={Boolean(running)}
-        onChange={setCategoryId}
+        onChange={running ? (id: string) => {
+          void onRunningCategoryChange(id);
+        } : setCategoryId}
       />
     ),
     tagPicker: (
       <TagPicker
         tags={tags}
-        value={tagIds}
+        value={running ? runningTagIds : tagIds}
         label={tagPickerLabel}
-        disabled={Boolean(running)}
-        onChange={setTagIds}
+        onChange={running ? (ids: string[]) => {
+          void onRunningTagsChange(ids);
+        } : setTagIds}
       />
     ),
     runningTags: running?.tags ?? [],
