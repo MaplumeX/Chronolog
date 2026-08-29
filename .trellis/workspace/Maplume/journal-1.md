@@ -478,3 +478,24 @@ Replaced all 32 category color tokens (light/dark, base+foreground) in web/src/s
 ### Status
 
 [OK] **Completed**
+
+
+## Session 22: Timeline gap placeholder slots
+
+**Date**: 2026-08-29
+**Task**: Timeline gap placeholder slots
+**Branch**: `feat/placeholder-entry-between-items`
+
+### Summary
+
+实现时间线条目间空档占位插槽：新增 GET /api/entries/boundary 返回查询窗口紧邻外侧条目（prev 含 running 无穷右端、next 取最小 startedAt），前端 computeGaps 按全部数据计算全局 gap（含跨天/跨多天投影），.timeline-slot 虚线边框+半透明灰静态渲染（<10px 不显示），点击以整个空档预填 EntryEditor 复用 draft popover 链路，anchor 快照化防脱锚；拖拽创建 pointerdown 早退 .timeline-slot。check 发现并修复空视图幽灵插槽（M1）与 anchor 失配（m1）。72 tests + typecheck 全绿。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `3628901` | (see git log) |
+
+### Status
+
+[OK] **Completed**
