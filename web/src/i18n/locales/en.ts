@@ -40,6 +40,7 @@ export const en: Record<keyof typeof zh, string> = {
   "entry.saveFailed": "Failed to save",
   "entry.overlap": "This time range overlaps another entry",
   "entry.invalidTime": "Invalid time format",
+  "entry.now": "Now",
   "auth.tagline": "See where your time goes",
   "auth.registrationClosed": "Registration is closed. Contact the administrator or log in with an existing account.",
   "auth.login": "Log in",

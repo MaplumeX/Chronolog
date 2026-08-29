@@ -38,6 +38,7 @@ export const zh = {
   "entry.saveFailed": "保存失败",
   "entry.overlap": "该时间段与其它条目重叠",
   "entry.invalidTime": "时间格式无效",
+  "entry.now": "现在",
   "auth.tagline": "记录时间去了哪里",
   "auth.registrationClosed": "注册已关闭，请联系管理员或使用已有账户登录",
   "auth.login": "登录",
