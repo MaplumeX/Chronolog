@@ -1,7 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { requireUser } from "../auth.js";
 import type { Deps } from "../db.js";
-import { listToday, listWeek, statsToday } from "../entries.js";
+import { listToday, listWeek, statsRange, statsToday } from "../entries.js";
 import { requireDate, requireTz } from "../time.js";
 
 function tzQuery(query: unknown): unknown {
@@ -18,12 +18,16 @@ function dateQuery(query: unknown, tz: string): string | undefined {
   return undefined;
 }
 
-function tagIdQuery(query: unknown): string | undefined {
-  if (query && typeof query === "object" && "tagId" in query) {
-    const v = (query as { tagId: unknown }).tagId;
+function stringQuery(query: unknown, key: string): string | undefined {
+  if (query && typeof query === "object" && key in query) {
+    const v = (query as Record<string, unknown>)[key];
     if (typeof v === "string" && v.length > 0) return v;
   }
   return undefined;
+}
+
+function tagIdQuery(query: unknown): string | undefined {
+  return stringQuery(query, "tagId");
 }
 
 export function registerTodayRoutes(app: FastifyInstance, deps: Deps) {
@@ -44,5 +48,18 @@ export function registerTodayRoutes(app: FastifyInstance, deps: Deps) {
   app.get("/api/stats/today", async (req) => {
     const user = requireUser(req, deps);
     return statsToday(deps.db, user.id, tzQuery(req.query), deps.now(), tagIdQuery(req.query));
+  });
+
+  app.get("/api/stats/range", async (req) => {
+    const user = requireUser(req, deps);
+    return statsRange(
+      deps.db,
+      user.id,
+      tzQuery(req.query),
+      stringQuery(req.query, "from"),
+      stringQuery(req.query, "to"),
+      deps.now(),
+      tagIdQuery(req.query),
+    );
   });
 }

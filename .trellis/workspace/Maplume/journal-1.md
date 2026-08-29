@@ -480,7 +480,7 @@ Replaced all 32 category color tokens (light/dark, base+foreground) in web/src/s
 [OK] **Completed**
 
 
-## Session 22: Timeline gap placeholder slots
+## Session 24: Timeline gap placeholder slots
 
 **Date**: 2026-08-29
 **Task**: Timeline gap placeholder slots
@@ -489,12 +489,32 @@ Replaced all 32 category color tokens (light/dark, base+foreground) in web/src/s
 ### Summary
 
 实现时间线条目间空档占位插槽：新增 GET /api/entries/boundary 返回查询窗口紧邻外侧条目（prev 含 running 无穷右端、next 取最小 startedAt），前端 computeGaps 按全部数据计算全局 gap（含跨天/跨多天投影），.timeline-slot 虚线边框+半透明灰静态渲染（<10px 不显示），点击以整个空档预填 EntryEditor 复用 draft popover 链路，anchor 快照化防脱锚；拖拽创建 pointerdown 早退 .timeline-slot。check 发现并修复空视图幽灵插槽（M1）与 anchor 失配（m1）。72 tests + typecheck 全绿。
+## Session 23: 重构统计页面：范围切换、趋势图、分类占比与标签统计
+
+**Date**: 2026-08-29
+**Task**: 重构统计页面：范围切换、趋势图、分类占比与标签统计
+**Branch**: `refactor/statistics-page`
+
+### Summary
+
+新增 GET /api/stats/range 聚合端点（DST 安全逐日窗口、92 天上限、多标签全额计入+无标签桶，6 个测试）；前端引入 recharts 3.10，StatsPage 重构为 today/week/month/custom 四档位：每日趋势 BarChart、分类占比 donut+百分比列表、纯 CSS 标签条形（无标签桶）；仅 today 档 5s 轮询且跨午夜自动滚动；zh/en i18n 同步；spec 四处更新（component-guidelines/api-client/http-routes/time-and-timezone）。
+## Session 22: Beautify entry time picker with custom DateTimePicker
+
+**Date**: 2026-08-29
+**Task**: Beautify entry time picker with custom DateTimePicker
+**Branch**: `feat/beautify-time-picker-in-entries`
+
+### Summary
+
+Replaced native datetime-local inputs in EntryEditor with a custom DateTimePicker (Popover + Calendar + HH:MM:SS stepper TimeFields) matching the teal dual-theme picker styling. Value contract YYYY-MM-DDTHH:mm:ss unchanged; keyboard stepping/typing with clamp and auto-advance; 'Now' shortcut; i18n entry.now zh/en. Updated component-guidelines spec. typecheck+build pass.
 
 ### Git Commits
 
 | Hash | Message |
 |------|---------|
 | `3628901` | (see git log) |
+| `9799529` | (see git log) |
+| `4a7e87a` | (see git log) |
 
 ### Status
 

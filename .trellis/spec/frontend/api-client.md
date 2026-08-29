@@ -22,7 +22,7 @@ Login/register 401 (bad password) still fires `onUnauthorized`; that is harmless
 
 Keep these next to the client, not in a separate `types.ts`:
 
-- `User` (`displayName: string | null`), `Category` (`entryCount`), `Tag` (`entryCount`), `TimeEntry` (`tags: { id, name }[]`), `TodayEntries`, `TodayStats`, `ApiToken` (`lastUsedAt: string | null`), `Meta` (`registrationOpen`)
+- `User` (`displayName: string | null`), `Category` (`entryCount`), `Tag` (`entryCount`), `TimeEntry` (`tags: { id, name }[]`), `TodayEntries`, `TodayStats`, `RangeStats`, `ApiToken` (`lastUsedAt: string | null`), `Meta` (`registrationOpen`)
 
 They must match `EntryDto` / route return values on the server. Instants are `string` (ISO-Z). `stoppedAt: string | null`.
 
@@ -31,9 +31,10 @@ Today endpoints take `tz` and encode it:
 ```ts
 `/api/entries/today?tz=${encodeURIComponent(tz)}`
 `/api/stats/today?tz=${encodeURIComponent(tz)}&tagId=${encodeURIComponent(tagId)}`
+`/api/stats/range?tz=${encodeURIComponent(tz)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&tagId=${encodeURIComponent(tagId)}`
 ```
 
-`tz` comes from `browserTz()` in `format.ts`. `tagId` is optional; omit it for unfiltered stats.
+`tz` comes from `browserTz()` in `format.ts`. `tagId` is optional; omit it for unfiltered stats. `from`/`to` (`/api/stats/range`) are tz-local `YYYY-MM-DD` (closed interval, ≤ 92 days); they are derived client-side from `browserTz()` local dates, never from UTC `toISOString()`. The range DTO also lives next to the client (`RangeStats`): `days` / `categories` / `tags` (`tagId: string | null`, null = no-tag bucket) / `totalSeconds`.
 
 ## Error display
 
