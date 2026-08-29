@@ -350,3 +350,25 @@ Implemented Toggl-style drag-to-create on the timeline: new POST /api/entries re
 ### Status
 
 [OK] **Completed**
+
+
+## Session 16: 完善用户系统：资料/改密/注销/注册控制 + 设置页
+
+**Date**: 2026-08-29
+**Task**: 完善用户系统：资料/改密/注销/注册控制 + 设置页
+**Branch**: `feat/user-system`
+
+### Summary
+
+完成 user-system 任务：users 表加 display_name（幂等 ALTER 迁移）；新增 PATCH /api/profile、PATCH /api/account/password（吊销其他会话、保留 PAT）、DELETE /api/account（密码确认+级联清除）、GET /api/meta；REGISTRATION_OPEN 环境变量控制注册（默认开）；Web 端新增 SettingsPage（资料/改密/注销 dialog），Shell footer 用户条目可点入设置，AuthPage 注册 tab 随 meta 禁用；zh/en i18n 同步；新增 account.test.ts，测试 65/65 全绿；更新 backend auth/database/http-routes 与 frontend component/api-client spec。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a6f4be3` | (see git log) |
+| `af4a0ff` | (see git log) |
+
+### Status
+
+[OK] **Completed**
