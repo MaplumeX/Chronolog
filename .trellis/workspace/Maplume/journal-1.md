@@ -396,6 +396,27 @@ Replaced neutral-gray shadcn theme with teal cool-tone dual theme (light+dark) i
 [OK] **Completed**
 
 
+## Session 19: Move sidebar extras into tabbed settings page
+
+**Date**: 2026-08-29
+**Task**: Move sidebar extras into tabbed settings page
+**Branch**: `feat/sidebar-items-to-tabbed-settings`
+
+### Summary
+
+Slimmed the sidebar: nav keeps timer/stats/categories/tags only, footer keeps only the user entry. SettingsPage rebuilt as three tabs — General (language + theme), Account (profile/password/logout/danger zone), API Tokens (embedded TokensPage). Removed PageId 'tokens', synced zh/en i18n keys, updated frontend component-guidelines spec.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a95d932` | (see git log) |
+
+### Status
+
+[OK] **Completed**
+
+
 ## Session 18: 分类颜色：透明度 + light/dark 双套色板
 
 **Date**: 2026-08-29
@@ -410,7 +431,28 @@ Replaced neutral-gray shadcn theme with teal cool-tone dual theme (light+dark) i
 
 | Hash | Message |
 |------|---------|
-| `64b6ddd` | (see git log) |
+| `a95d932` | (see git log) |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 20: Fix settings tab scrollbar and split sidebar footer entries
+
+**Date**: 2026-08-29
+**Task**: Fix settings tab scrollbar and split sidebar footer entries
+**Branch**: `feat/sidebar-items-to-tabbed-settings`
+
+### Summary
+
+Removed the unnecessary overflow-x-auto on SettingsPage TabsList (permanent desktop scrollbar). Sidebar footer split per plan B: username is now a non-interactive display (pointer-events-none, tabIndex=-1), with a separate Settings-icon entry (lucide Settings + nav.settings) that navigates to settings and closes the mobile drawer. Updated component-guidelines spec accordingly.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c9ee62e` | (see git log) |
 
 ### Status
 

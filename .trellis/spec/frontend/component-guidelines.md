@@ -22,10 +22,9 @@ Nav items (fixed product IA):
 | `stats` | 统计 | Today’s **per-category** totals + tag filter |
 | `categories` | 分类 | Category table |
 | `tags` | 标签 | Tag table (create / rename / delete) |
-| `tokens` | Tokens | PAT table (create / revoke) |
-| `settings` | 设置 | Profile / change password / delete account (task 08-29-user-system) |
+| `settings` | 设置 | Tabbed settings — 通用 / 账户 / API Tokens (task 08-29-tabbed-settings) |
 
-Footer: user entry (shows `displayName ?? username`, clickable → settings page) + language switcher (`LanguageSwitcher`, shadcn `DropdownMenu` with 中文 / English) + `退出`. While a timer runs, the 计时 item shows elapsed (`formatDuration`) via `SidebarMenuBadge`. Do not add Calendar, Timesheet, week pickers, or a marketing landing page.
+Footer: two items — a non-interactive user display (`displayName ?? username`, `pointer-events-none` + `tabIndex={-1}`, first-letter avatar in icon mode) and a separate `Settings`-icon entry (lucide `Settings` + `nav.settings`, clickable → settings page, closes the mobile drawer). Language switcher, theme switcher, logout, and API tokens live in the tabbed settings page — do not re-add them to the sidebar. While a timer runs, the 计时 item shows elapsed (`formatDuration`) via `SidebarMenuBadge`. Do not add Calendar, Timesheet, week pickers, or a marketing landing page.
 
 Screen-reader copy on Sidebar/Sheet is i18n-ized (`sidebar.nav`, `sidebar.toggle`, `sidebar.close` keys).
 
@@ -33,7 +32,7 @@ Screen-reader copy on Sidebar/Sheet is i18n-ized (`sidebar.nav`, `sidebar.toggle
 
 `AuthPage`: centered `max-w-sm` form, `Tabs` for 登录/注册. No card shadow wrapper. Loads `GET /api/meta` on mount (failure = treat as open); when `registrationOpen` is false the 注册 tab is disabled with `auth.registrationClosed` copy.
 
-`SettingsPage` (task 08-29-user-system): three `max-w-md` sections separated by `border-t` — profile (username + displayName, save button disabled until something changed), change password (3 password inputs, submit blocked on mismatch), danger zone (delete account via shadcn `Dialog` password confirmation). Props `{ user, onUserUpdated, onLoggedOut }`; after `DELETE /api/account` succeeds, `App` just clears local state (server already cleared the cookie — calling `api.logout` would 401). No `<h1>`; page title renders through the Shell `header` like other non-timer pages.
+`SettingsPage` (task 08-29-tabbed-settings): shadcn `Tabs` with three tabs — 通用 (language via `LanguageSwitcher` + theme via `ThemeSwitcher`, one `Label`-annotated row each), 账户 (profile / change password / logout / danger zone), API Tokens (embeds `TokensPage`). Tab state is SettingsPage-local; default tab is 账户. `TabsList` keeps `max-w-md` only — no `overflow-x-auto` (it renders a permanent scrollbar on desktop; the three short tabs never overflow). 账户 tab content: profile (username + displayName, save disabled until something changed), change password (3 password inputs, submit blocked on mismatch), logout button, danger zone (delete account via shadcn `Dialog` password confirmation). Props `{ user, onUserUpdated, onLoggedOut, themeMode, onThemeMode, onLogout }`; after `DELETE /api/account` succeeds, `App` just clears local state (server already cleared the cookie — calling `api.logout` would 401). No `<h1>`; page title renders through the Shell `header` like other non-timer pages. `LanguageSwitcher`/`ThemeSwitcher` render plain `Button` triggers with `DropdownMenu` — they must not depend on sidebar primitives.
 
 Timer orchestration lives in the `useTimerController` hook (see [Hook Guidelines](./hook-guidelines.md)) — there is no `TimerPage`. Markup lives in:
 
