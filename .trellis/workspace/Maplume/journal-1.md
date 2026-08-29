@@ -415,3 +415,24 @@ Slimmed the sidebar: nav keeps timer/stats/categories/tags only, footer keeps on
 ### Status
 
 [OK] **Completed**
+
+
+## Session 19: Fix settings tab scrollbar and split sidebar footer entries
+
+**Date**: 2026-08-29
+**Task**: Fix settings tab scrollbar and split sidebar footer entries
+**Branch**: `feat/sidebar-items-to-tabbed-settings`
+
+### Summary
+
+Removed the unnecessary overflow-x-auto on SettingsPage TabsList (permanent desktop scrollbar). Sidebar footer split per plan B: username is now a non-interactive display (pointer-events-none, tabIndex=-1), with a separate Settings-icon entry (lucide Settings + nav.settings) that navigates to settings and closes the mobile drawer. Updated component-guidelines spec accordingly.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c9ee62e` | (see git log) |
+
+### Status
+
+[OK] **Completed**
