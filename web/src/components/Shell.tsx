@@ -1,11 +1,8 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { ChartNoAxesColumn, KeyRound, LogOut, Tag, Tags, Timer } from "lucide-react";
+import { ChartNoAxesColumn, Tag, Tags, Timer } from "lucide-react";
 import { formatDuration } from "../format";
-import { LanguageSwitcher } from "../i18n/LanguageSwitcher";
 import type { zh } from "../i18n/locales/zh";
-import type { ThemeMode } from "@/hooks/use-theme";
-import { ThemeSwitcher } from "./ThemeSwitcher";
 import {
   Sidebar,
   SidebarContent,
@@ -25,14 +22,13 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-export type PageId = "timer" | "stats" | "categories" | "tags" | "tokens" | "settings";
+export type PageId = "timer" | "stats" | "categories" | "tags" | "settings";
 
 const ITEMS: { id: PageId; labelKey: keyof typeof zh; icon: typeof Timer }[] = [
   { id: "timer", labelKey: "nav.timer", icon: Timer },
   { id: "stats", labelKey: "nav.stats", icon: ChartNoAxesColumn },
   { id: "categories", labelKey: "nav.categories", icon: Tags },
   { id: "tags", labelKey: "nav.tags", icon: Tag },
-  { id: "tokens", labelKey: "nav.tokens", icon: KeyRound },
 ];
 
 function ShellNav(props: {
@@ -115,14 +111,10 @@ export function Shell(props: {
   page: PageId;
   elapsedSeconds?: number;
   onPage: (page: PageId) => void;
-  onLogout: () => void;
-  themeMode: ThemeMode;
-  onThemeMode: (mode: ThemeMode) => void;
   /** 顶栏内容：非 Timer 页为页面大标题，Timer 页为 TimerBar */
   header?: ReactNode;
   children: ReactNode;
 }) {
-  const { t } = useTranslation();
   return (
     <SidebarProvider className="h-dvh min-h-dvh">
       <Sidebar collapsible="icon">
@@ -149,18 +141,6 @@ export function Shell(props: {
                 displayName={props.displayName}
                 onPage={props.onPage}
               />
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <LanguageSwitcher />
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton type="button" tooltip={t("shell.logout")} onClick={props.onLogout}>
-                <LogOut />
-                <span>{t("shell.logout")}</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <ThemeSwitcher mode={props.themeMode} onMode={props.onThemeMode} />
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarFooter>

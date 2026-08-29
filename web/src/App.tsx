@@ -12,13 +12,11 @@ import { CategoriesPage } from "./pages/CategoriesPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { StatsPage } from "./pages/StatsPage";
 import { TagsPage } from "./pages/TagsPage";
-import { TokensPage } from "./pages/TokensPage";
 
 const HEADER_TITLE_KEYS = {
   stats: "nav.stats",
   categories: "nav.categories",
   tags: "nav.tags",
-  tokens: "nav.tokens",
   settings: "nav.settings",
 } as const;
 
@@ -93,11 +91,6 @@ export function App() {
       page={page}
       elapsedSeconds={current ? elapsedSeconds(current.startedAt, nowMs) : undefined}
       onPage={setPage}
-      onLogout={() => {
-        void logout();
-      }}
-      themeMode={themeMode}
-      onThemeMode={setThemeMode}
       header={
         page === "timer" ? (
           <TimerBar {...timer.barProps} />
@@ -110,9 +103,17 @@ export function App() {
       {page === "stats" ? <StatsPage /> : null}
       {page === "categories" ? <CategoriesPage /> : null}
       {page === "tags" ? <TagsPage /> : null}
-      {page === "tokens" ? <TokensPage /> : null}
       {page === "settings" ? (
-        <SettingsPage user={user} onUserUpdated={setUser} onLoggedOut={onAccountDeleted} />
+        <SettingsPage
+          user={user}
+          themeMode={themeMode}
+          onThemeMode={setThemeMode}
+          onLogout={() => {
+            void logout();
+          }}
+          onUserUpdated={setUser}
+          onLoggedOut={onAccountDeleted}
+        />
       ) : null}
     </Shell>
   );

@@ -79,7 +79,7 @@ export function TokensPage() {
   }
 
   return (
-    <div className="px-6 py-6">
+    <div>
       <p className="mb-4 text-sm text-muted-foreground">{t("tokens.description")}</p>
       <div className="mb-4 flex gap-2">
         <Input

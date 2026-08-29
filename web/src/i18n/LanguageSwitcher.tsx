@@ -7,7 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { SidebarMenuButton } from "@/components/ui/sidebar";
+import { Button } from "@/components/ui/button";
 
 export function LanguageSwitcher() {
   const { t, i18n } = useTranslation();
@@ -16,10 +16,10 @@ export function LanguageSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <SidebarMenuButton type="button" className="justify-start gap-2">
+        <Button type="button" variant="outline" className="w-full justify-start gap-2">
           <Languages className="size-4" />
           <span>{t(`language.${current}`)}</span>
-        </SidebarMenuButton>
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {LANGS.map((lng) => (
