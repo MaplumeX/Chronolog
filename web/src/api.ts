@@ -45,6 +45,16 @@ export type TodayStats = {
   totalSeconds: number;
 };
 
+export type RangeStats = {
+  tz: string;
+  rangeStart: string;
+  rangeEnd: string;
+  days: { date: string; seconds: number }[];
+  categories: { categoryId: string; categoryName: string; seconds: number }[];
+  tags: { tagId: string | null; tagName: string | null; seconds: number }[];
+  totalSeconds: number;
+};
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -178,5 +188,9 @@ export const api = {
   todayStats: (tz: string, tagId?: string) =>
     request<TodayStats>(
       `/api/stats/today?tz=${encodeURIComponent(tz)}${tagId ? `&tagId=${encodeURIComponent(tagId)}` : ""}`,
+    ),
+  statsRange: (tz: string, from: string, to: string, tagId?: string) =>
+    request<RangeStats>(
+      `/api/stats/range?tz=${encodeURIComponent(tz)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}${tagId ? `&tagId=${encodeURIComponent(tagId)}` : ""}`,
     ),
 };

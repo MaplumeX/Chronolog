@@ -19,7 +19,7 @@ Nav items (fixed product IA):
 | `PageId` | Label | Main |
 |----------|--------|------|
 | `timer` | 计时 | Timer bar (in the Shell top bar via `header`) + today’s entry timeline |
-| `stats` | 统计 | Today’s **per-category** totals + tag filter |
+| `stats` | 统计 | Range stats (today/week/month/custom) — trend chart + category share + tag breakdown (task 08-29-refactor-stats-page) |
 | `categories` | 分类 | Category table |
 | `tags` | 标签 | Tag table (create / rename / delete) |
 | `settings` | 设置 | Tabbed settings — 通用 / 账户 / API Tokens (task 08-29-tabbed-settings) |
@@ -52,7 +52,9 @@ The timer page must **not** show a per-category breakdown. That is `StatsPage` o
 
 Un-layered CSS beats Tailwind v4 `@layer utilities` classes regardless of source order. Do not set `cursor: default` on a base class that also gets `cursor-pointer` from a utility — the base wins and the pointer never shows. Scope the base rule to the non-interactive state instead (e.g. `.timeline-block.running { cursor: default }`).
 
-`StatsPage` polls `/api/stats/today` every 5s. A total-logged summary card sits at the top (`stats.totalLogged` label, `text-3xl font-bold tabular-nums` value, `rounded-lg border`, value = sum of `stats.categories` seconds). Rows + category-colored bars (not shadcn `Progress`). Optional tag filter dropdown (全部标签 + each tag) re-requests with `tagId`.
+`StatsPage` (task 08-29-refactor-stats-page) is range-driven, not today-only. State: `{ kind: "today" | "week" | "custom" | "month", customFrom, customTo }` + `tagId` filter. All range presets (today/week/month) derive `from`/`to` client-side from `browserTz()` local dates (`todayIn(tz)` via `Intl.DateTimeFormat("en-CA", { timeZone })` — never `toISOString().slice(0, 10)`; week/month arithmetic happens on pure calendar labels via UTC-midnight `Date` objects, same手法 as `DateNav.tsx`) and call `api.statsRange(tz, from, to, tagId)`. Custom range uses a `Popover` + `react-day-picker` `mode="range"`; incomplete / `from > to` / >92-day ranges show a destructive hint and skip the request. Polling: only the `today` preset polls (5s); historical presets fetch once per parameter change. Cross-midnight roll: `todayIn(tz)` is cached in state (`todayKey`) and re-checked on each poll tick — updating it recomputes the query so a page left open past midnight rolls to the new day.
+
+Layout (top → bottom): range `Tabs` + tag filter dropdown → total-logged summary card (`stats.totalLogged`, `text-3xl font-bold tabular-nums`, plain `rounded-lg border` div) → daily-trend recharts `BarChart` (`ResponsiveContainer`, fixed `h-56`, bar fill `var(--primary)`, tooltip `formatDuration`) → category share as a recharts donut `PieChart` (innerRadius, `Cell` fill `categoryColor(name)`, center total) plus the horizontal bar list with a percentage column → tag breakdown as pure-CSS bars (`tagId === null` renders `stats.noTag` with muted color; do NOT show a tags total — multi-tag entries count fully under each tag, so the sum can exceed `totalSeconds`). Empty state (`totalSeconds === 0`) shows `stats.emptyRange` guidance copy. Charts must take colors from CSS variables / `categoryColor` only (dual-theme safe). `recharts` is the only chart library allowed; the >500 kB bundle warning from it is accepted (code-splitting is out of scope).
 
 `TagsPage`: shadcn `Table` like `CategoriesPage`; delete uses an inline two-click confirm (删除 → 确认删除？), no alert-dialog component.
 
