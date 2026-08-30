@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ChevronDownIcon } from "lucide-react";
 import type { Category, Goal, GoalInput, Tag } from "../api";
 import { paletteColor } from "../format";
 import { Button } from "@/components/ui/button";
@@ -252,21 +253,35 @@ export function GoalEditorDialog(props: {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="grid gap-2">
               <Label>{t("goals.direction")}</Label>
-              <div className="grid grid-cols-2 gap-2">
-                {(["lt", "gt"] as const).map((d) => (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <Button
-                    key={d}
                     type="button"
-                    variant={direction === d ? "default" : "outline"}
-                    onClick={() => setDirection(d)}
+                    variant="outline"
+                    className="w-full justify-between rounded-lg font-normal"
                   >
-                    {t(`goals.direction.${d}`)}
+                    <span>{t(`goals.direction.${direction}`)}</span>
+                    <ChevronDownIcon
+                      className="size-4 shrink-0 text-muted-foreground"
+                      aria-hidden="true"
+                    />
                   </Button>
-                ))}
-              </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  {(["lt", "gt"] as const).map((d) => (
+                    <DropdownMenuItem
+                      key={d}
+                      className={direction === d ? "bg-accent" : undefined}
+                      onClick={() => setDirection(d)}
+                    >
+                      {t(`goals.direction.${d}`)}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="goal-hours">{t("goals.hours")}</Label>
@@ -280,33 +295,45 @@ export function GoalEditorDialog(props: {
                 onChange={(e) => setHours(e.target.value)}
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label>{t("goals.periodUnit")}</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {(["day", "week", "month"] as const).map((u) => (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
                   <Button
-                    key={u}
                     type="button"
-                    variant={periodUnit === u ? "default" : "outline"}
-                    onClick={() => setPeriodUnit(u)}
+                    variant="outline"
+                    className="w-full justify-between rounded-lg font-normal"
                   >
-                    {t(`goals.period.${u}`)}
+                    <span>{t(`goals.period.${periodUnit}`)}</span>
+                    <ChevronDownIcon
+                      className="size-4 shrink-0 text-muted-foreground"
+                      aria-hidden="true"
+                    />
                   </Button>
-                ))}
-              </div>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  {(["day", "week", "month"] as const).map((u) => (
+                    <DropdownMenuItem
+                      key={u}
+                      className={periodUnit === u ? "bg-accent" : undefined}
+                      onClick={() => setPeriodUnit(u)}
+                    >
+                      {t(`goals.period.${u}`)}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor="goal-due">{t("goals.dueDate")}</Label>
-              <Input
-                id="goal-due"
-                type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-              />
-            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="goal-due">{t("goals.dueDate")}</Label>
+            <Input
+              id="goal-due"
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+            />
           </div>
 
           {validation ? (
