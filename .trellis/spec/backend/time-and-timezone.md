@@ -57,6 +57,10 @@ DST rules (both verified across 12 zones × full year):
 
 Proven fixture (`server/test/today.test.ts`): `date=2026-08-20` with `Asia/Shanghai` anchors the window to that local calendar day, independent of `now`.
 
+## Goal period bounds (`periodBounds`)
+
+`periodBounds(tz, unit: "day" | "week" | "month", now)` in `server/src/time.ts` (task 08-30-goal-feature) returns `{ windowStart, windowEnd }` as UTC ISO-Z for the current period containing `now` in `tz`: day reuses `todayBounds`, week reuses `weekBounds` (ISO Monday start), month = `zonedNow.startOf("month")` .. `plus({ months: 1 })` — luxon calendar arithmetic, never `+ 30*86400000` (DST drift). Each period is judged independently (a "week" goal resets every Monday); `dueDate` is the goal's whole expiry, compared as `dueDate < zonedNow.toISODate()` (tz-local string compare). Tests: `server/test/goals.test.ts` (Shanghai fixtures: cross-midnight day clip, running-entry clip at injected `now`, prior-week/prior-month exclusion).
+
 ## Dual implementation
 
 `web/src/format.ts` has its own `clipSeconds` / `elapsedSeconds` so the timer page can tick without refetching. Keep the two implementations numerically aligned. Do not import `server/src/time.ts` from `web/`.

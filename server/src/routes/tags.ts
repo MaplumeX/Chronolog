@@ -4,6 +4,7 @@ import { z } from "zod";
 import { newId, requireUser } from "../auth.js";
 import type { Deps } from "../db.js";
 import { AppError, isUniqueViolation, parseBody } from "../errors.js";
+import { goalReferencesTag } from "./goals.js";
 import { entryTags, tags } from "../schema.js";
 
 const colorField = z
@@ -125,6 +126,9 @@ export function registerTagRoutes(app: FastifyInstance, deps: Deps) {
     const user = requireUser(req, deps);
     const { id } = parseBody(z.object({ id: z.string().min(1) }), req.params);
     getOwnTag(deps, user.id, id);
+    if (goalReferencesTag(deps, id)) {
+      throw new AppError(409, "CONFLICT", "该标签已被目标引用");
+    }
     deps.db
       .delete(tags)
       .where(and(eq(tags.id, id), eq(tags.userId, user.id)))

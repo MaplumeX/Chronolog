@@ -66,10 +66,14 @@ Correct: one transaction + partial unique index + one unique-violation retry.
 
 ## Category occupancy
 
-`DELETE /api/categories/:id` counts `time_entries` for that category (running or stopped). Count > 0 → 409 `CONFLICT`. `time_entries.category_id` has no `ON DELETE CASCADE`; occupancy is an application rule (`server/src/routes/categories.ts`, `server/test/categories.test.ts`).
+`DELETE /api/categories/:id` counts `time_entries` for that category (running or stopped). Count > 0 → 409 `CONFLICT`. Additionally counts `goals.category_id` references — a goal referencing the category blocks deletion with 409 `CONFLICT` `"该分类已被目标引用"` (task 08-30-goal-feature; `goalReferencesCategory` in `server/src/routes/goals.ts`, called after the entries check in `server/src/routes/categories.ts`). `time_entries.category_id` has no `ON DELETE CASCADE`; occupancy is an application rule (`server/src/routes/categories.ts`, `server/test/categories.test.ts`).
 
 ## Tag occupancy
 
-`DELETE /api/tags/:id` deletes the tag directly; `entry_tags` rows are removed by `ON DELETE CASCADE` (application does not count occupancy). This differs from categories: tags are lightweight markers, deletion is always allowed (`server/src/routes/tags.ts`, `server/test/tags.test.ts`).
+`DELETE /api/tags/:id` deletes the tag directly; `entry_tags` rows are removed by `ON DELETE CASCADE`. **Exception (task 08-30-goal-feature)**: a goal referencing the tag (`goals.tag_id`) blocks deletion with 409 `CONFLICT` `"该标签已被目标引用"` (`goalReferencesTag`, checked in `server/src/routes/tags.ts` before the delete). Clearing the reference (`PATCH /api/goals/:id` with `tagId: null`) unblocks deletion.
 
 `POST /api/timer/start` accepts optional `tagIds`; each id must belong to the user (404 inside the transaction). `EntryDto.tags` is ordered by tag name (`attachTags` in `server/src/entries.ts`).
+
+## Goals
+
+`goals` (task 08-30-goal-feature): user-scoped target definitions. Columns: `id`, `user_id` (ON DELETE CASCADE), `name`, `icon` (emoji string, default 🎯), `category_id` / `tag_id` (nullable, no cascade — deletion protection is the application rules above), `direction` (`'lt' | 'gt'`), `hours` (REAL > 0), `period_unit` (`'day' | 'week' | 'month'`), `due_date` (`YYYY-MM-DD` nullable), `created_at`. Index `goals_user_id`. New table via `CREATE TABLE IF NOT EXISTS` in `SCHEMA_SQL` — no `migrate()` entry needed. Progress is computed on read (`server/src/goals.ts` `listGoalsWithProgress`), never snapshotted; see [HTTP Routes](./http-routes.md) for the API contract and [Time and Timezone](./time-and-timezone.md) for `periodBounds`.

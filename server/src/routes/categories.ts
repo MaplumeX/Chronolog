@@ -4,6 +4,7 @@ import { z } from "zod";
 import { newId, requireUser } from "../auth.js";
 import type { Deps } from "../db.js";
 import { AppError, isUniqueViolation, parseBody } from "../errors.js";
+import { goalReferencesCategory } from "./goals.js";
 import { categories, timeEntries } from "../schema.js";
 
 const colorField = z
@@ -133,6 +134,9 @@ export function registerCategoryRoutes(app: FastifyInstance, deps: Deps) {
       .get();
     if ((used?.n ?? 0) > 0) {
       throw new AppError(409, "CONFLICT", "该分类仍有时间记录，无法删除");
+    }
+    if (goalReferencesCategory(deps, id)) {
+      throw new AppError(409, "CONFLICT", "该分类已被目标引用");
     }
     deps.db
       .delete(categories)

@@ -247,4 +247,54 @@ describe("categories", () => {
     });
     assert.equal(occupied.statusCode, 409);
   });
+
+  it("category referenced by a goal cannot be deleted; unreferenced still can", async () => {
+    t = await createTestApp();
+    const { sid } = await registerUser(t.app, "cat_goal_ref");
+    const list = await t.app.inject({
+      method: "GET",
+      url: "/api/categories",
+      headers: cookieHeader(sid),
+    });
+    const study = (json(list).categories as { id: string; name: string }[]).find(
+      (c) => c.name === "学习",
+    );
+    assert.ok(study);
+
+    const goal = await t.app.inject({
+      method: "POST",
+      url: "/api/goals",
+      headers: cookieHeader(sid),
+      payload: {
+        name: "每日学习",
+        direction: "gt",
+        hours: 1,
+        periodUnit: "day",
+        categoryId: study.id,
+      },
+    });
+    assert.equal(goal.statusCode, 200);
+
+    const occupied = await t.app.inject({
+      method: "DELETE",
+      url: `/api/categories/${study.id}`,
+      headers: cookieHeader(sid),
+    });
+    assert.equal(occupied.statusCode, 409);
+    assert.equal((json(occupied).error as { code: string }).code, "CONFLICT");
+
+    const extra = await t.app.inject({
+      method: "POST",
+      url: "/api/categories",
+      headers: cookieHeader(sid),
+      payload: { name: "临时" },
+    });
+    const extraId = json(extra).id as string;
+    const deleted = await t.app.inject({
+      method: "DELETE",
+      url: `/api/categories/${extraId}`,
+      headers: cookieHeader(sid),
+    });
+    assert.equal(deleted.statusCode, 200);
+  });
 });

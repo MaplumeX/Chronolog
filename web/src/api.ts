@@ -4,11 +4,50 @@ export type User = { id: string; username: string; displayName: string | null };
 
 export type Meta = { registrationOpen: boolean };
 
-export type Category = { id: string; name: string; color: number | null; entryCount: number };
+export type Category = {
+  id: string;
+  name: string;
+  color: number | null;
+  entryCount: number;
+};
 
-export type Tag = { id: string; name: string; color: number | null; entryCount: number };
+export type Tag = {
+  id: string;
+  name: string;
+  color: number | null;
+  entryCount: number;
+};
 
-export type ApiToken = { id: string; name: string; createdAt: string; lastUsedAt: string | null };
+export type ApiToken = {
+  id: string;
+  name: string;
+  createdAt: string;
+  lastUsedAt: string | null;
+};
+
+export type GoalDirection = "lt" | "gt";
+export type GoalPeriodUnit = "day" | "week" | "month";
+
+/** goal 创建/更新请求体（镜像后端 zod createBody/updateBody 字段） */
+export type GoalInput = {
+  name: string;
+  icon: string;
+  categoryId: string | null;
+  tagId: string | null;
+  direction: GoalDirection;
+  hours: number;
+  periodUnit: GoalPeriodUnit;
+  dueDate: string | null;
+};
+
+/** 镜像后端 GoalWithProgress（server/src/goals.ts）。
+ * status 三态；lt 型超限由 direction + currentSeconds >= targetSeconds 前端判定。 */
+export type Goal = GoalInput & {
+  id: string;
+  createdAt: string;
+  status: "active" | "achieved" | "expired";
+  progress: { currentSeconds: number | null; targetSeconds: number };
+};
 
 export type TimeEntry = {
   id: string;
@@ -99,7 +138,11 @@ async function request<T>(
   if (!res.ok) {
     const err = data.error as { code?: string; message?: string } | undefined;
     if (res.status === 401 && opts.authFail !== false) onUnauthorized?.();
-    throw new ApiError(res.status, err?.code ?? "ERROR", err?.message ?? i18n.t("common.requestFailed"));
+    throw new ApiError(
+      res.status,
+      err?.code ?? "ERROR",
+      err?.message ?? i18n.t("common.requestFailed"),
+    );
   }
   return data as T;
 }
@@ -116,43 +159,68 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ username, password }),
     }),
-  logout: () => request<{ ok: boolean }>("/api/auth/logout", { method: "POST" }),
+  logout: () =>
+    request<{ ok: boolean }>("/api/auth/logout", { method: "POST" }),
   meta: () => request<Meta>("/api/meta"),
   updateProfile: (body: { username?: string; displayName?: string }) =>
-    request<User>("/api/profile", { method: "PATCH", body: JSON.stringify(body) }),
+    request<User>("/api/profile", {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
   changePassword: (body: { currentPassword: string; newPassword: string }) =>
     request<{ ok: boolean }>("/api/account/password", {
       method: "PATCH",
       body: JSON.stringify(body),
     }),
   deleteAccount: (password: string) =>
-    request<{ ok: boolean }>("/api/account", { method: "DELETE", body: JSON.stringify({ password }) }),
+    request<{ ok: boolean }>("/api/account", {
+      method: "DELETE",
+      body: JSON.stringify({ password }),
+    }),
   categories: () => request<{ categories: Category[] }>("/api/categories"),
   createCategory: (name: string, color?: number | null) =>
-    request<Category>("/api/categories", { method: "POST", body: JSON.stringify({ name, color }) }),
-  updateCategory: (id: string, body: { name?: string; color?: number | null }) =>
-    request<{ id: string; name: string; color: number | null }>(`/api/categories/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify(body),
+    request<Category>("/api/categories", {
+      method: "POST",
+      body: JSON.stringify({ name, color }),
     }),
+  updateCategory: (
+    id: string,
+    body: { name?: string; color?: number | null },
+  ) =>
+    request<{ id: string; name: string; color: number | null }>(
+      `/api/categories/${id}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      },
+    ),
   deleteCategory: (id: string) =>
     request<{ ok: boolean }>(`/api/categories/${id}`, { method: "DELETE" }),
   tags: () => request<{ tags: Tag[] }>("/api/tags"),
   createTag: (name: string, color?: number | null) =>
-    request<Tag>("/api/tags", { method: "POST", body: JSON.stringify({ name, color }) }),
-  updateTag: (id: string, body: { name?: string; color?: number | null }) =>
-    request<{ id: string; name: string; color: number | null }>(`/api/tags/${id}`, {
-      method: "PATCH",
-      body: JSON.stringify(body),
+    request<Tag>("/api/tags", {
+      method: "POST",
+      body: JSON.stringify({ name, color }),
     }),
+  updateTag: (id: string, body: { name?: string; color?: number | null }) =>
+    request<{ id: string; name: string; color: number | null }>(
+      `/api/tags/${id}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(body),
+      },
+    ),
   deleteTag: (id: string) =>
     request<{ ok: boolean }>(`/api/tags/${id}`, { method: "DELETE" }),
   tokens: () => request<{ tokens: ApiToken[] }>("/api/tokens"),
   createToken: (name: string) =>
-    request<{ id: string; name: string; token: string; createdAt: string }>("/api/tokens", {
-      method: "POST",
-      body: JSON.stringify({ name }),
-    }),
+    request<{ id: string; name: string; token: string; createdAt: string }>(
+      "/api/tokens",
+      {
+        method: "POST",
+        body: JSON.stringify({ name }),
+      },
+    ),
   deleteToken: (id: string) =>
     request<{ ok: boolean }>(`/api/tokens/${id}`, { method: "DELETE" }),
   current: () => request<{ entry: TimeEntry | null }>("/api/timer/current"),
@@ -161,8 +229,13 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ categoryId, description, tagIds }),
     }),
-  stop: () => request<{ entry: TimeEntry }>("/api/timer/stop", { method: "POST" }),
-  updateCurrent: (body: { description?: string; categoryId?: string; tagIds?: string[] }) =>
+  stop: () =>
+    request<{ entry: TimeEntry }>("/api/timer/stop", { method: "POST" }),
+  updateCurrent: (body: {
+    description?: string;
+    categoryId?: string;
+    tagIds?: string[];
+  }) =>
     request<{ entry: TimeEntry }>("/api/timer/current", {
       method: "PATCH",
       body: JSON.stringify(body),
@@ -190,13 +263,16 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
-  updateEntry: (id: string, body: {
-    description: string;
-    categoryId: string;
-    tagIds: string[];
-    startedAt: string;
-    stoppedAt: string;
-  }) =>
+  updateEntry: (
+    id: string,
+    body: {
+      description: string;
+      categoryId: string;
+      tagIds: string[];
+      startedAt: string;
+      stoppedAt: string;
+    },
+  ) =>
     request<{ entry: TimeEntry }>(`/api/entries/${id}`, {
       method: "PATCH",
       body: JSON.stringify(body),
@@ -209,4 +285,18 @@ export const api = {
     request<RangeStats>(
       `/api/stats/range?tz=${encodeURIComponent(tz)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}${tagId ? `&tagId=${encodeURIComponent(tagId)}` : ""}`,
     ),
+  goals: (tz: string) =>
+    request<{ goals: Goal[] }>(`/api/goals?tz=${encodeURIComponent(tz)}`),
+  createGoal: (body: GoalInput) =>
+    request<{ id: string }>("/api/goals", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  updateGoal: (id: string, body: Partial<GoalInput>) =>
+    request<{ id: string }>(`/api/goals/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  deleteGoal: (id: string) =>
+    request<{ ok: boolean }>(`/api/goals/${id}`, { method: "DELETE" }),
 };

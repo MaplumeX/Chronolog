@@ -242,4 +242,54 @@ describe("tags", () => {
     });
     assert.equal(stealStart.statusCode, 404);
   });
+
+  it("tag referenced by a goal cannot be deleted; unreferenced still can", async () => {
+    t = await createTestApp();
+    const { sid } = await registerUser(t.app, "tag_goal_ref");
+
+    const created = await t.app.inject({
+      method: "POST",
+      url: "/api/tags",
+      headers: cookieHeader(sid),
+      payload: { name: "专注" },
+    });
+    assert.equal(created.statusCode, 200);
+    const tagId = json(created).id as string;
+
+    const goal = await t.app.inject({
+      method: "POST",
+      url: "/api/goals",
+      headers: cookieHeader(sid),
+      payload: {
+        name: "限时娱乐",
+        direction: "lt",
+        hours: 2,
+        periodUnit: "day",
+        tagId,
+      },
+    });
+    assert.equal(goal.statusCode, 200);
+
+    const occupied = await t.app.inject({
+      method: "DELETE",
+      url: `/api/tags/${tagId}`,
+      headers: cookieHeader(sid),
+    });
+    assert.equal(occupied.statusCode, 409);
+    assert.equal((json(occupied).error as { code: string }).code, "CONFLICT");
+
+    const extra = await t.app.inject({
+      method: "POST",
+      url: "/api/tags",
+      headers: cookieHeader(sid),
+      payload: { name: "无引用" },
+    });
+    const extraId = json(extra).id as string;
+    const deleted = await t.app.inject({
+      method: "DELETE",
+      url: `/api/tags/${extraId}`,
+      headers: cookieHeader(sid),
+    });
+    assert.equal(deleted.statusCode, 200);
+  });
 });

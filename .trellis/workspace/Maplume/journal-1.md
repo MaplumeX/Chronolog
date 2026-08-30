@@ -636,3 +636,24 @@ Pushed pending commits, tagged v0.1.0 and ran the release workflow. Fixed broken
 ### Status
 
 [OK] **Completed**
+
+
+## Session 28: 目标（Goal）功能：后端 API + 前端目标页
+
+**Date**: 2026-08-30
+**Task**: 目标（Goal）功能：后端 API + 前端目标页
+**Branch**: `feat/goal-feature`
+
+### Summary
+
+完成目标功能全栈实现：goals 表 + periodBounds(day/week/month, DST 安全) + /api/goals CRUD 与 tz 感知的当前周期进度（读取时计算，clipSeconds 截断）；分类/标签被目标引用时删除 409；前端 GoalsPage 表格（进度条、状态徽标、过期置灰末尾、两步删除确认、30s 轮询）+ GoalEditorDialog（emoji 网格、可选分类/标签、方向/小时/周期/截止日期）+ 侧边栏入口 + zh/en i18n。95 测试全过（新增 13），typecheck/build 通过。关键决策：周期为独立滚动窗口（Q1-A）、单分类+单标签 AND 匹配（Q2）、emoji 图标（Q3）、截止日期可选过期置灰（Q4-A）、进度实时计算非快照。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `08ee90a` | (see git log) |
+
+### Status
+
+[OK] **Completed**

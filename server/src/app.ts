@@ -13,6 +13,7 @@ import { registerTimerRoutes } from "./routes/timer.js";
 import { registerTodayRoutes } from "./routes/today.js";
 import { registerTagRoutes } from "./routes/tags.js";
 import { registerTokenRoutes } from "./routes/tokens.js";
+import { registerGoalRoutes } from "./routes/goals.js";
 
 export type AppConfig = {
   dbPath: string;
@@ -60,6 +61,7 @@ export async function buildApp(opts: AppConfig) {
   registerTodayRoutes(app, deps);
   registerTagRoutes(app, deps);
   registerTokenRoutes(app, deps);
+  registerGoalRoutes(app, deps);
 
   const webDist = opts.webDist ? path.resolve(opts.webDist) : undefined;
   if (webDist && fs.existsSync(webDist)) {

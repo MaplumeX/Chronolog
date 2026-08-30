@@ -22,7 +22,7 @@ Login/register 401 (bad password) still fires `onUnauthorized`; that is harmless
 
 Keep these next to the client, not in a separate `types.ts`:
 
-- `User` (`displayName: string | null`), `Category` (`entryCount`, `color: number | null`), `Tag` (`entryCount`, `color: number | null`), `TimeEntry` (`tags: { id, name }[]`), `TodayEntries`, `TodayStats`, `RangeStats`, `ApiToken` (`lastUsedAt: string | null`), `Meta` (`registrationOpen`)
+- `User` (`displayName: string | null`), `Category` (`entryCount`, `color: number | null`), `Tag` (`entryCount`, `color: number | null`), `TimeEntry` (`tags: { id, name }[]`), `TodayEntries`, `TodayStats`, `RangeStats`, `ApiToken` (`lastUsedAt: string | null`), `Meta` (`registrationOpen`), `Goal` (task 08-30-goal-feature: `direction: "lt" | "gt"`, `periodUnit: "day" | "week" | "month"`, `categoryId/tagId/dueDate: string | null`, `status: "active" | "achieved" | "expired"`, `progress: { currentSeconds: number | null, targetSeconds: number }` — mirrors `GoalWithProgress`; `api.goals(tz)` / `createGoal` / `updateGoal(id, body)` / `deleteGoal(id)`)
 
 They must match `EntryDto` / route return values on the server. Instants are `string` (ISO-Z). `stoppedAt: string | null`.
 

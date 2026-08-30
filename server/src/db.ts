@@ -81,6 +81,21 @@ CREATE TABLE IF NOT EXISTS api_tokens (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS api_tokens_token_hash ON api_tokens(token_hash);
 CREATE INDEX IF NOT EXISTS api_tokens_user_id ON api_tokens(user_id);
+
+CREATE TABLE IF NOT EXISTS goals (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  icon TEXT NOT NULL DEFAULT '🎯',
+  category_id TEXT REFERENCES categories(id),
+  tag_id TEXT REFERENCES tags(id),
+  direction TEXT NOT NULL,
+  hours REAL NOT NULL,
+  period_unit TEXT NOT NULL,
+  due_date TEXT,
+  created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS goals_user_id ON goals(user_id);
 `;
 
 export function openDb(dbPath: string): { sqlite: InstanceType<typeof Database>; db: Db } {
