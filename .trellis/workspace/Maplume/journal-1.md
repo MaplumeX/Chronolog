@@ -700,3 +700,25 @@ Pushed pending commits, tagged v0.1.0 and ran the release workflow. Fixed broken
 ### Status
 
 [OK] **Completed**
+
+
+## Session 31: 跨天日属标记改为相对真实今天
+
+**Date**: 2026-08-31
+**Task**: 跨天日属标记改为相对真实今天
+**Branch**: `fix/cross-day-entry-display`
+
+### Summary
+
+按反馈把 Timeline 跨天日属标记的锚点从「被查看的列日期」改为「真实今天」（formatEntryTimeRange 新增 nowMs 参数，移除不再用的 columnDayStartMs；diff 改为与 todayOrd 相减）。例如 23:00→01:00 跨进今天，看昨天列时右端 01:00 不再显示「明天」，而是与今天同天无前缀、左端标「昨天」，读作「昨天 23:00 – 01:00」。同步更新 spec 跨天渲染契约为「相对真实今天」。typecheck+build+server105 tests 全绿。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7488a48` | (see git log) |
+| `46ecf0d` | (see git log) |
+
+### Status
+
+[OK] **Completed**
