@@ -30,6 +30,11 @@ function tagIdQuery(query: unknown): string | undefined {
   return stringQuery(query, "tagId");
 }
 
+function rollupQuery(query: unknown): boolean {
+  const v = stringQuery(query, "rollup");
+  return v === "true" || v === "1";
+}
+
 export function registerTodayRoutes(app: FastifyInstance, deps: Deps) {
   app.get("/api/entries/today", async (req) => {
     const user = requireUser(req, deps);
@@ -47,7 +52,14 @@ export function registerTodayRoutes(app: FastifyInstance, deps: Deps) {
 
   app.get("/api/stats/today", async (req) => {
     const user = requireUser(req, deps);
-    return statsToday(deps.db, user.id, tzQuery(req.query), deps.now(), tagIdQuery(req.query));
+    return statsToday(
+      deps.db,
+      user.id,
+      tzQuery(req.query),
+      deps.now(),
+      tagIdQuery(req.query),
+      rollupQuery(req.query),
+    );
   });
 
   app.get("/api/stats/range", async (req) => {
@@ -60,6 +72,7 @@ export function registerTodayRoutes(app: FastifyInstance, deps: Deps) {
       stringQuery(req.query, "to"),
       deps.now(),
       tagIdQuery(req.query),
+      rollupQuery(req.query),
     );
   });
 }

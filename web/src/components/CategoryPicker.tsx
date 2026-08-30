@@ -1,5 +1,6 @@
 import type { Category } from "../api";
 import { paletteColor } from "../format";
+import { sortHierarchical } from "../hierarchy";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -40,19 +41,38 @@ export function CategoryPicker(props: {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {props.categories.map((c) => (
-          <DropdownMenuItem
-            key={c.id}
-            onClick={() => props.onChange(c.id)}
-            className={c.id === props.value ? "bg-accent" : undefined}
-          >
-            <span
-              className="size-2 shrink-0 rounded-full"
-              style={{ background: paletteColor(c.color, c.name) }}
-              aria-hidden="true"
-            />
-            {c.name}
-          </DropdownMenuItem>
+        {sortHierarchical(props.categories).map(({ parent, children }) => (
+          <div key={parent.id}>
+            <DropdownMenuItem
+              onClick={() => props.onChange(parent.id)}
+              className={parent.id === props.value ? "bg-accent" : undefined}
+            >
+              <span
+                className="size-2 shrink-0 rounded-full"
+                style={{ background: paletteColor(parent.color, parent.name) }}
+                aria-hidden="true"
+              />
+              <span className="font-medium">{parent.name}</span>
+            </DropdownMenuItem>
+            {children.map((c) => (
+              <DropdownMenuItem
+                key={c.id}
+                onClick={() => props.onChange(c.id)}
+                className={`${c.id === props.value ? "bg-accent" : ""} pl-7 text-muted-foreground`}
+              >
+                <span
+                  className="ml-2 h-3 w-px shrink-0 bg-border"
+                  aria-hidden="true"
+                />
+                <span
+                  className="size-2 shrink-0 rounded-full"
+                  style={{ background: paletteColor(c.color, c.name) }}
+                  aria-hidden="true"
+                />
+                {c.name}
+              </DropdownMenuItem>
+            ))}
+          </div>
         ))}
       </DropdownMenuContent>
     </DropdownMenu>

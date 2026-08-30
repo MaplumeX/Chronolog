@@ -227,7 +227,14 @@ export function listBoundary(
   return { tz, prevEntry: toDto(prevRow), nextEntry: toDto(nextRow) };
 }
 
-export function statsToday(db: Db, userId: string, tzRaw: unknown, now: Date, tagId?: string) {
+export function statsToday(
+  db: Db,
+  userId: string,
+  tzRaw: unknown,
+  now: Date,
+  tagId?: string,
+  rollup?: boolean,
+) {
   if (tagId !== undefined) {
     const owned = db
       .select({ id: tags.id })
@@ -246,8 +253,9 @@ export function statsToday(db: Db, userId: string, tzRaw: unknown, now: Date, ta
     else byId.set(e.categoryId, { categoryId: e.categoryId, categoryName: e.categoryName, seconds });
   }
   const grouped = [...byId.values()].sort((a, b) => b.seconds - a.seconds);
-  const totalSeconds = grouped.reduce((sum, c) => sum + c.seconds, 0);
-  return { tz, dayStart, dayEnd, categories: grouped, totalSeconds };
+  const rolledUp = rollup ? rollupCategories(db, userId, grouped) : grouped;
+  const totalSeconds = rolledUp.reduce((sum, c) => sum + c.seconds, 0);
+  return { tz, dayStart, dayEnd, categories: rolledUp, totalSeconds };
 }
 
 export const STATS_RANGE_MAX_DAYS = 92;
@@ -261,6 +269,47 @@ export type RangeStats = {
   tags: { tagId: string | null; tagName: string | null; seconds: number }[];
   totalSeconds: number;
 };
+
+/** rollup=true 时将子分类秒数并入父分类桶（桶名用父分类名），子分类条目消失。 */
+function rollupCategories(
+  db: Db,
+  userId: string,
+  grouped: { categoryId: string; categoryName: string; seconds: number }[],
+): { categoryId: string; categoryName: string; seconds: number }[] {
+  if (grouped.length === 0) return grouped;
+  const rows = db
+    .select({ id: categories.id, parentId: categories.parentId })
+    .from(categories)
+    .where(eq(categories.userId, userId))
+    .all();
+  const parentOf = new Map(rows.map((r) => [r.id, r.parentId ?? null]));
+  const byId = new Map(grouped.map((c) => [c.categoryId, c]));
+  const merged = new Map<string, { categoryId: string; categoryName: string; seconds: number }>();
+  for (const c of grouped) {
+    const parentId = parentOf.get(c.categoryId) ?? null;
+    const bucketId = parentId ?? c.categoryId;
+    let bucket = merged.get(bucketId);
+    if (!bucket) {
+      // 桶名：父分类名（父分类可能不在本次聚合里——自身无条目——则查表）
+      const bucketName = parentId
+        ? (byId.get(parentId)?.categoryName ?? lookupCategoryName(db, userId, parentId))
+        : c.categoryName;
+      bucket = { categoryId: bucketId, categoryName: bucketName, seconds: 0 };
+      merged.set(bucketId, bucket);
+    }
+    bucket.seconds += c.seconds;
+  }
+  return [...merged.values()].sort((a, b) => b.seconds - a.seconds);
+}
+
+function lookupCategoryName(db: Db, userId: string, categoryId: string): string {
+  const row = db
+    .select({ name: categories.name })
+    .from(categories)
+    .where(and(eq(categories.id, categoryId), eq(categories.userId, userId)))
+    .get();
+  return row?.name ?? categoryId;
+}
 
 /** GET /api/stats/range：tz 本地日期闭区间 [from, to] 的多路聚合统计。
  *
@@ -277,6 +326,7 @@ export function statsRange(
   toRaw: unknown,
   now: Date,
   tagId?: string,
+  rollup?: boolean,
 ): RangeStats {
   const tz = requireTz(tzRaw);
   // 校验顺序：tz（requireTz 已抛）→ from/to 日期 → from > to → 区间过大
@@ -342,7 +392,8 @@ export function statsRange(
     else catById.set(e.categoryId, { categoryId: e.categoryId, categoryName: e.categoryName, seconds });
   }
   const categoriesGrouped = [...catById.values()].sort((a, b) => b.seconds - a.seconds);
-  const totalSeconds = categoriesGrouped.reduce((sum, c) => sum + c.seconds, 0);
+  const categoriesOut = rollup ? rollupCategories(db, userId, categoriesGrouped) : categoriesGrouped;
+  const totalSeconds = categoriesOut.reduce((sum, c) => sum + c.seconds, 0);
 
   // days：逐日窗口 clip 求和（含 0 天）
   const dayRows = days.map(({ date, dayStart, dayEnd }) => {
@@ -373,5 +424,5 @@ export function statsRange(
   }
   const tagsGrouped = [...tagById.values()].sort((a, b) => b.seconds - a.seconds);
 
-  return { tz, rangeStart, rangeEnd, days: dayRows, categories: categoriesGrouped, tags: tagsGrouped, totalSeconds };
+  return { tz, rangeStart, rangeEnd, days: dayRows, categories: categoriesOut, tags: tagsGrouped, totalSeconds };
 }

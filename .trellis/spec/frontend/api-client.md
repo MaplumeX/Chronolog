@@ -22,7 +22,7 @@ Login/register 401 (bad password) still fires `onUnauthorized`; that is harmless
 
 Keep these next to the client, not in a separate `types.ts`:
 
-- `User` (`displayName: string | null`), `Category` (`entryCount`, `color: number | null`), `Tag` (`entryCount`, `color: number | null`), `TimeEntry` (`tags: { id, name }[]`), `TodayEntries`, `TodayStats`, `RangeStats`, `ApiToken` (`lastUsedAt: string | null`), `Meta` (`registrationOpen`), `Goal` (task 08-30-goal-feature: `direction: "lt" | "gt"`, `periodUnit: "day" | "week" | "month"`, `categoryId/tagId/dueDate: string | null`, `status: "active" | "achieved" | "expired"`, `progress: { currentSeconds: number | null, targetSeconds: number }` — mirrors `GoalWithProgress`; `api.goals(tz)` / `createGoal` / `updateGoal(id, body)` / `deleteGoal(id)`)
+- `User` (`displayName: string | null`), `Category` (`entryCount`, `color: number | null`, `parentId: string | null` — null = top level, task 08-30-hierarchical-categories-tags), `Tag` (`entryCount`, `color: number | null`, `parentId: string | null`), `TimeEntry` (`tags: { id, name }[]`), `TodayEntries`, `TodayStats`, `RangeStats`, `ApiToken` (`lastUsedAt: string | null`), `Meta` (`registrationOpen`), `Goal` (task 08-30-goal-feature: `direction: "lt" | "gt"`, `periodUnit: "day" | "week" | "month"`, `categoryId/tagId/dueDate: string | null`, `status: "active" | "achieved" | "expired"`, `progress: { currentSeconds: number | null, targetSeconds: number }` — mirrors `GoalWithProgress`; `api.goals(tz)` / `createGoal` / `updateGoal(id, body)` / `deleteGoal(id)`)
 
 They must match `EntryDto` / route return values on the server. Instants are `string` (ISO-Z). `stoppedAt: string | null`.
 
@@ -35,6 +35,8 @@ Today endpoints take `tz` and encode it:
 ```
 
 `tz` comes from `browserTz()` in `format.ts`. `tagId` is optional; omit it for unfiltered stats. `from`/`to` (`/api/stats/range`) are tz-local `YYYY-MM-DD` (closed interval, ≤ 92 days); they are derived client-side from `browserTz()` local dates, never from UTC `toISOString()`. The range DTO also lives next to the client (`RangeStats`): `days` / `categories` / `tags` (`tagId: string | null`, null = no-tag bucket) / `totalSeconds`.
+
+Hierarchy (task 08-30-hierarchical-categories-tags): `createCategory` / `updateCategory` / `createTag` / `updateTag` accept an optional `parentId` (null/undefined = top level). `statsRange` / `todayStats` accept an optional `rollup: boolean` — true appends `&rollup=true` and the server merges child-category seconds into the parent bucket. Tree ordering helpers live in `web/src/hierarchy.ts` (`sortHierarchical`, `topLevel`) — reuse them, don't re-implement parent/child sorting in pages.
 
 ## Error display
 

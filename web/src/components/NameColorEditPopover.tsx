@@ -1,11 +1,17 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ColorPalettePicker } from "./ColorPalettePicker";
-import { categoryIndex } from "../format";
+import { categoryIndex, paletteColor } from "../format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 /**
  * 分类/标签「编辑」浮窗（task 08-30-category-tag-color-palette）：
@@ -13,24 +19,39 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
  * 颜色创建即固定（无「自动」）；打开时草稿颜色 = item.color，存量 NULL 回退名称 hash 色，
  * 保存时固化落库。改名不影响色板选中态（颜色不随名称重新 hash）。
  * namespaced keys：`{ns}.edit` / `{ns}.name` / `{ns}.color` / `{ns}.save` / `{ns}.cancel` / `{ns}.editFailed`。
+ * 两级层级（task 08-30-hierarchical-categories-tags）：传入 `parentOptions` 后额外支持
+ * 「所属父级」选择（无 / 各顶层节点，不含自身），保存时 parentId 一并提交；未传则保持原行为。
  */
 export function NameColorEditPopover(props: {
   namespace: "categories" | "tags";
   name: string;
   color: number | null;
-  onSave: (next: { name: string; color: number }) => Promise<void>;
+  parentOptions?: { id: string; name: string; color: number | null; parentId: string | null }[];
+  parentId?: string | null;
+  excludeId?: string;
+  onSave: (next: {
+    name: string;
+    color: number;
+    parentId: string | null;
+  }) => Promise<void>;
 }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(props.name);
   const [color, setColor] = useState<number>(initialColor(props.color, props.name));
+  const [parentId, setParentId] = useState<string | null>(props.parentId ?? null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const ns = props.namespace;
+  const selectableParents = (props.parentOptions ?? []).filter(
+    (x) => x.id !== props.excludeId,
+  );
+  const parentName = selectableParents.find((x) => x.id === parentId)?.name;
 
   function openFor() {
     setName(props.name);
     setColor(initialColor(props.color, props.name));
+    setParentId(props.parentId ?? null);
     setError("");
     setOpen(true);
   }
@@ -39,7 +60,7 @@ export function NameColorEditPopover(props: {
     setSaving(true);
     setError("");
     try {
-      await props.onSave({ name: name.trim(), color });
+      await props.onSave({ name: name.trim(), color, parentId });
       setOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : t(`${ns}.editFailed`));
@@ -78,6 +99,59 @@ export function NameColorEditPopover(props: {
             <Label>{t(`${ns}.color`)}</Label>
             <ColorPalettePicker value={color} onChange={setColor} label={t(`${ns}.color`)} />
           </div>
+          {props.parentOptions ? (
+            <div className="flex flex-col gap-1.5">
+              <Label>{t(`${ns}.parent`)}</Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="justify-start font-normal"
+                  >
+                    {parentId && parentName ? (
+                      <span className="flex items-center gap-2">
+                        <span
+                          className="size-2 shrink-0 rounded-full"
+                          style={{
+                            background: paletteColor(
+                              selectableParents.find((x) => x.id === parentId)?.color ?? null,
+                              parentName,
+                            ),
+                          }}
+                        />
+                        {parentName}
+                      </span>
+                    ) : (
+                      t(`${ns}.topLevel`)
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => setParentId(null)}
+                    className={parentId === null ? "bg-accent" : undefined}
+                  >
+                    {t(`${ns}.topLevel`)}
+                  </DropdownMenuItem>
+                  {selectableParents.map((x) => (
+                    <DropdownMenuItem
+                      key={x.id}
+                      onClick={() => setParentId(x.id)}
+                      className={x.id === parentId ? "bg-accent" : undefined}
+                    >
+                      <span
+                        className="size-2 shrink-0 rounded-full"
+                        style={{ background: paletteColor(x.color, x.name) }}
+                      />
+                      {x.name}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          ) : null}
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
           <div className="flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>

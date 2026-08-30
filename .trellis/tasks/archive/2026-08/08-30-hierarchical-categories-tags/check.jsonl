@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "后端质量检查标准"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "迁移合规检查"}
+{"file": ".trellis/spec/backend/http-routes.md", "reason": "路由合规检查"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "前端质量检查标准"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "组件合规检查"}

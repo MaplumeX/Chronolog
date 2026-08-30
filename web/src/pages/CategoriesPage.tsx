@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiError, api, type Category } from "../api";
 import { paletteColor, categoryIndex } from "../format";
+import { sortHierarchical, topLevel } from "../hierarchy";
+import { AddChildPopover } from "@/components/AddChildPopover";
 import { NameColorEditPopover } from "@/components/NameColorEditPopover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +42,12 @@ export function CategoriesPage() {
     }
   }
 
+  async function createChild(parent: Category, childName: string) {
+    setError("");
+    await api.createCategory(childName, categoryIndex(childName) + 1, parent.id);
+    await reload();
+  }
+
   async function remove(c: Category) {
     setError("");
     try {
@@ -49,6 +57,9 @@ export function CategoriesPage() {
       setError(err instanceof ApiError ? err.message : t("categories.deleteFailed"));
     }
   }
+
+  const rows = sortHierarchical(categories);
+  const topOptions = topLevel(categories);
 
   return (
     <div className="px-6 py-6">
@@ -75,26 +86,34 @@ export function CategoriesPage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {categories.map((c) => (
-            <TableRow key={c.id}>
+          {rows.flatMap(({ parent, children }) => [
+            <TableRow key={parent.id}>
               <TableCell>
                 <span className="flex items-center gap-2">
                   <span
                     className="size-2 shrink-0 rounded-full"
-                    style={{ background: paletteColor(c.color, c.name) }}
+                    style={{ background: paletteColor(parent.color, parent.name) }}
                   />
-                  {c.name}
+                  <span className="font-medium">{parent.name}</span>
                 </span>
               </TableCell>
-              <TableCell>{c.entryCount}</TableCell>
+              <TableCell>{parent.entryCount}</TableCell>
               <TableCell>
                 <div className="flex flex-wrap justify-end gap-2">
+                  <AddChildPopover
+                    namespace="categories"
+                    parentName={parent.name}
+                    onCreate={(childName) => createChild(parent, childName)}
+                  />
                   <NameColorEditPopover
                     namespace="categories"
-                    name={c.name}
-                    color={c.color}
-                    onSave={async ({ name: nextName, color }) => {
-                      await api.updateCategory(c.id, { name: nextName, color });
+                    name={parent.name}
+                    color={parent.color}
+                    parentOptions={topOptions}
+                    parentId={parent.parentId}
+                    excludeId={parent.id}
+                    onSave={async ({ name: nextName, color, parentId }) => {
+                      await api.updateCategory(parent.id, { name: nextName, color, parentId });
                       await reload();
                     }}
                   />
@@ -103,16 +122,64 @@ export function CategoriesPage() {
                     variant="ghost"
                     size="sm"
                     className="text-destructive hover:text-destructive"
-                    onClick={() => void remove(c)}
-                    disabled={c.entryCount > 0}
-                    title={c.entryCount > 0 ? t("categories.deleteBlockedTitle") : t("categories.delete")}
+                    onClick={() => void remove(parent)}
+                    disabled={parent.entryCount > 0}
+                    title={
+                      parent.entryCount > 0
+                        ? t("categories.deleteBlockedTitle")
+                        : children.length > 0
+                          ? t("categories.deleteCascadeTitle", { count: children.length })
+                          : t("categories.delete")
+                    }
                   >
                     {t("categories.delete")}
                   </Button>
                 </div>
               </TableCell>
-            </TableRow>
-          ))}
+            </TableRow>,
+            ...children.map((c) => (
+              <TableRow key={c.id}>
+                <TableCell>
+                  <span className="flex items-center gap-2 pl-6">
+                    <span className="h-4 w-px shrink-0 bg-border" aria-hidden="true" />
+                    <span
+                      className="size-2 shrink-0 rounded-full"
+                      style={{ background: paletteColor(c.color, c.name) }}
+                    />
+                    {c.name}
+                  </span>
+                </TableCell>
+                <TableCell>{c.entryCount}</TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <NameColorEditPopover
+                      namespace="categories"
+                      name={c.name}
+                      color={c.color}
+                      parentOptions={topOptions}
+                      parentId={c.parentId}
+                      excludeId={c.id}
+                      onSave={async ({ name: nextName, color, parentId }) => {
+                        await api.updateCategory(c.id, { name: nextName, color, parentId });
+                        await reload();
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => void remove(c)}
+                      disabled={c.entryCount > 0}
+                      title={c.entryCount > 0 ? t("categories.deleteBlockedTitle") : t("categories.delete")}
+                    >
+                      {t("categories.delete")}
+                    </Button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            )),
+          ])}
         </TableBody>
       </Table>
     </div>

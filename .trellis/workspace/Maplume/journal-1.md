@@ -657,3 +657,24 @@ Pushed pending commits, tagged v0.1.0 and ran the release workflow. Fixed broken
 ### Status
 
 [OK] **Completed**
+
+
+## Session 29: 分类与标签两级层级支持
+
+**Date**: 2026-08-30
+**Task**: 分类与标签两级层级支持
+**Branch**: `feat/hierarchical-categories-and-tags`
+
+### Summary
+
+分类与标签支持父子两级层级：schema/db 迁移加 parent_id（老库幂等升级、删旧唯一索引改应用层按父查重）、categories/tags CRUD 层级校验与级联删除、stats today/range 新增 rollup 参数（子分类秒数并入父分类桶）；前端管理页两级树 + 添加子级/改父级、选择器分组缩进展示、统计页独立/汇总切换。后端 105 测试全绿（含迁移回归），前端 build/typecheck 通过。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `480adf1` | (see git log) |
+
+### Status
+
+[OK] **Completed**

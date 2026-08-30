@@ -12,6 +12,31 @@ async function createTag(app: TestApp["app"], sid: string, name: string) {
   return res;
 }
 
+async function createTagWithParent(
+  t: TestApp,
+  sid: string,
+  body: { name: string; parentId?: string | null },
+) {
+  const res = await t.app.inject({
+    method: "POST",
+    url: "/api/tags",
+    headers: cookieHeader(sid),
+    payload: body,
+  });
+  assert.equal(res.statusCode, 200, JSON.stringify(res.json()));
+  return json(res) as { id: string; name: string; parentId: string | null };
+}
+
+async function listTags(t: TestApp, sid: string) {
+  const res = await t.app.inject({
+    method: "GET",
+    url: "/api/tags",
+    headers: cookieHeader(sid),
+  });
+  assert.equal(res.statusCode, 200);
+  return json(res).tags as { id: string; name: string; parentId: string | null }[];
+}
+
 describe("tags", () => {
   let t: TestApp;
   afterEach(async () => {
@@ -291,5 +316,220 @@ describe("tags", () => {
       headers: cookieHeader(sid),
     });
     assert.equal(deleted.statusCode, 200);
+  });
+
+  it("two-level hierarchy: child tags, third level rejected, self-parent rejected", async () => {
+    t = await createTestApp();
+    const { sid } = await registerUser(t.app, "tag_tree");
+
+    const parent = await createTagWithParent(t, sid, { name: "工作类" });
+    const child = await createTagWithParent(t, sid, { name: "会议", parentId: parent.id });
+    assert.equal(child.parentId, parent.id);
+
+    const listed = await listTags(t, sid);
+    assert.equal(listed.find((x) => x.id === child.id)?.parentId, parent.id);
+    assert.equal(listed.find((x) => x.id === parent.id)?.parentId, null);
+
+    // 三级拒绝：child 已是子级，不能再当 parent
+    const third = await t.app.inject({
+      method: "POST",
+      url: "/api/tags",
+      headers: cookieHeader(sid),
+      payload: { name: "三级", parentId: child.id },
+    });
+    assert.equal(third.statusCode, 409);
+    assert.equal((json(third).error as { code: string }).code, "CONFLICT");
+
+    // PATCH：已有子节点的父级不能挂为子级
+    const other = await createTagWithParent(t, sid, { name: "生活类" });
+    const demote = await t.app.inject({
+      method: "PATCH",
+      url: `/api/tags/${parent.id}`,
+      headers: cookieHeader(sid),
+      payload: { parentId: other.id },
+    });
+    assert.equal(demote.statusCode, 409);
+
+    // PATCH：自己当自己的 parent
+    const self = await t.app.inject({
+      method: "PATCH",
+      url: `/api/tags/${child.id}`,
+      headers: cookieHeader(sid),
+      payload: { parentId: child.id },
+    });
+    assert.equal(self.statusCode, 409);
+
+    // PATCH：换父 + 提升回顶层
+    const moved = await t.app.inject({
+      method: "PATCH",
+      url: `/api/tags/${child.id}`,
+      headers: cookieHeader(sid),
+      payload: { parentId: other.id },
+    });
+    assert.equal(moved.statusCode, 200);
+    assert.equal(json(moved).parentId, other.id);
+    const promoted = await t.app.inject({
+      method: "PATCH",
+      url: `/api/tags/${child.id}`,
+      headers: cookieHeader(sid),
+      payload: { parentId: null },
+    });
+    assert.equal(promoted.statusCode, 200);
+    assert.equal(json(promoted).parentId, null);
+
+    // 不存在的 parent / 他人标签 → 404
+    const missing = await t.app.inject({
+      method: "POST",
+      url: "/api/tags",
+      headers: cookieHeader(sid),
+      payload: { name: "孤儿", parentId: "no-such-id" },
+    });
+    assert.equal(missing.statusCode, 404);
+    const otherUser = await registerUser(t.app, "tag_tree_other");
+    const foreignCreated = await createTag(t.app, otherUser.sid, "别人的标签");
+    const foreign = { id: json(foreignCreated).id as string };
+    assert.ok(foreign);
+    const steal = await t.app.inject({
+      method: "POST",
+      url: "/api/tags",
+      headers: cookieHeader(sid),
+      payload: { name: "偷挂", parentId: foreign.id },
+    });
+    assert.equal(steal.statusCode, 404);
+  });
+
+  it("sibling duplicate rejected; duplicate across different parents allowed", async () => {
+    t = await createTestApp();
+    const { sid } = await registerUser(t.app, "tag_dup");
+
+    const a = await createTagWithParent(t, sid, { name: "父甲" });
+    const b = await createTagWithParent(t, sid, { name: "父乙" });
+    await createTagWithParent(t, sid, { name: "英语", parentId: a.id });
+
+    // 同父重名 → 409
+    const dup = await t.app.inject({
+      method: "POST",
+      url: "/api/tags",
+      headers: cookieHeader(sid),
+      payload: { name: "英语", parentId: a.id },
+    });
+    assert.equal(dup.statusCode, 409);
+    assert.equal((json(dup).error as { code: string }).code, "CONFLICT");
+
+    // 顶层重名 → 409
+    const dupTop = await t.app.inject({
+      method: "POST",
+      url: "/api/tags",
+      headers: cookieHeader(sid),
+      payload: { name: "父甲" },
+    });
+    assert.equal(dupTop.statusCode, 409);
+
+    // 跨父重名 → OK；子级与顶层重名也 OK
+    const cross = await createTagWithParent(t, sid, { name: "英语", parentId: b.id });
+    assert.equal(cross.parentId, b.id);
+    await createTagWithParent(t, sid, { name: "数学" });
+    await createTagWithParent(t, sid, { name: "数学", parentId: a.id });
+
+    // PATCH 改名撞同父兄弟 → 409
+    const sibling = await createTagWithParent(t, sid, { name: "法语", parentId: a.id });
+    const renameToSibling = await t.app.inject({
+      method: "PATCH",
+      url: `/api/tags/${sibling.id}`,
+      headers: cookieHeader(sid),
+      payload: { name: "英语" },
+    });
+    assert.equal(renameToSibling.statusCode, 409);
+  });
+
+  it("deleting a parent tag cascades to children; goal-referenced child blocks", async () => {
+    t = await createTestApp();
+    const { sid } = await registerUser(t.app, "tag_cascade");
+
+    const parent = await createTagWithParent(t, sid, { name: "父标签" });
+    const child1 = await createTagWithParent(t, sid, { name: "子甲", parentId: parent.id });
+    const child2 = await createTagWithParent(t, sid, { name: "子乙", parentId: parent.id });
+
+    // 子级挂有 entry_tags：级联删除时 entry_tags 自然解除关联
+    const catsRes = await t.app.inject({
+      method: "GET",
+      url: "/api/categories",
+      headers: cookieHeader(sid),
+    });
+    const work = (json(catsRes).categories as { id: string; name: string }[]).find(
+      (c) => c.name === "工作",
+    );
+    assert.ok(work);
+    const start = await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: work.id, tagIds: [child1.id] },
+    });
+    assert.equal(start.statusCode, 200);
+    await t.app.inject({
+      method: "POST",
+      url: "/api/timer/stop",
+      headers: cookieHeader(sid),
+    });
+
+    const deleted = await t.app.inject({
+      method: "DELETE",
+      url: `/api/tags/${parent.id}`,
+      headers: cookieHeader(sid),
+    });
+    assert.equal(deleted.statusCode, 200);
+    const after = await listTags(t, sid);
+    assert.ok(!after.find((x) => x.id === parent.id));
+    assert.ok(!after.find((x) => x.id === child1.id));
+    assert.ok(!after.find((x) => x.id === child2.id));
+
+    // entry 仍在，但 tags 已被级联清空
+    const today = await t.app.inject({
+      method: "GET",
+      url: "/api/entries/today?tz=UTC",
+      headers: cookieHeader(sid),
+    });
+    const entries = json(today).entries as { tags: unknown[] }[];
+    assert.equal(entries.length, 1);
+    assert.deepEqual(entries[0].tags, []);
+
+    // 子级被 goal 引用 → 父级删除被拦
+    const p2 = await createTagWithParent(t, sid, { name: "父二" });
+    const c2 = await createTagWithParent(t, sid, { name: "子二", parentId: p2.id });
+    const goal = await t.app.inject({
+      method: "POST",
+      url: "/api/goals",
+      headers: cookieHeader(sid),
+      payload: {
+        name: "子级目标",
+        direction: "lt",
+        hours: 2,
+        periodUnit: "day",
+        tagId: c2.id,
+      },
+    });
+    assert.equal(goal.statusCode, 200);
+    const blocked = await t.app.inject({
+      method: "DELETE",
+      url: `/api/tags/${p2.id}`,
+      headers: cookieHeader(sid),
+    });
+    assert.equal(blocked.statusCode, 409);
+    assert.equal((json(blocked).error as { code: string }).code, "CONFLICT");
+    // 清除引用后可删
+    const goalId = json(goal).id as string;
+    await t.app.inject({
+      method: "PATCH",
+      url: `/api/goals/${goalId}`,
+      headers: cookieHeader(sid),
+      payload: { tagId: null },
+    });
+    const unblocked = await t.app.inject({
+      method: "DELETE",
+      url: `/api/tags/${p2.id}`,
+      headers: cookieHeader(sid),
+    });
+    assert.equal(unblocked.statusCode, 200);
   });
 });

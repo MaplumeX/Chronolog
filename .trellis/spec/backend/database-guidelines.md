@@ -25,8 +25,8 @@ When adding a column or index, update **both** files in the same change. For new
 |-------|--------|
 | `users` | `username` unique with `COLLATE NOCASE`; `password_hash` Argon2id PHC; `display_name` nullable (added task 08-29-user-system) |
 | `sessions` | opaque id; `ON DELETE CASCADE` with user |
-| `categories` | unique `(user_id, name)`; `color` INTEGER nullable — palette index 1–8, NULL = auto (hash) (added task 08-30-category-tag-color-palette) |
-| `tags` | unique `(user_id, name)`; `ON DELETE CASCADE` with user; `color` INTEGER nullable — same semantics as categories |
+| `categories` | `parent_id` TEXT nullable (two-level hierarchy, task 08-30-hierarchical-categories-tags); name uniqueness is **per-parent within a user** — enforced at the API layer, the old `categories_user_id_name` unique index is dropped in `migrate()`; `color` INTEGER nullable — palette index 1–8, NULL = auto (hash) (added task 08-30-category-tag-color-palette) |
+| `tags` | `parent_id` TEXT nullable, same two-level semantics; name uniqueness per-parent at API layer (old unique index dropped); `ON DELETE CASCADE` with user; `color` INTEGER nullable — same semantics as categories |
 | `entry_tags` | composite PK `(entry_id, tag_id)`; both FKs `ON DELETE CASCADE` |
 | `time_entries` | `stopped_at` NULL = running; unique `(user_id) WHERE stopped_at IS NULL` |
 
@@ -64,9 +64,19 @@ Wrong: insert a second running row and trust the UI. Wrong: stop the old timer i
 
 Correct: one transaction + partial unique index + one unique-violation retry.
 
+## Two-level hierarchy (task 08-30-hierarchical-categories-tags)
+
+`categories` / `tags` each have nullable `parent_id` pointing at a same-user **top-level** row. No DB FK — self-referential FK plus occupancy ordering is application-controlled. `migrate()` adds the column, creates `categories_user_parent` / `tags_user_parent` indexes `(user_id, parent_id)` with `IF NOT EXISTS`, and **drops** the legacy `(user_id, name)` unique indexes — those indexes would reject cross-parent duplicate names, so name uniqueness moved to the API layer (SQLite NULL semantics cannot express "top-level unique + per-parent unique" in one index).
+
+Depth ≤ 2 is API-enforced (routes/categories.ts, routes/tags.ts): parent must itself be top-level (`409 CONFLICT "层级最多两级"`); a node with children cannot become a child (409); a node cannot be its own parent (409). Same-parent duplicate name → 409 `CONFLICT` (application-level check; `isUniqueViolation` kept as a backstop).
+
+Deleting a parent cascades its children **only after** every child passes the same occupancy checks, inside one transaction (children first, then the parent). Entries may attach to any level — occupancy checks do not care about hierarchy.
+
+Wrong: creating the `(user_id, parent_id)` index in `SCHEMA_SQL` — on an old db the column doesn't exist yet and `CREATE INDEX` fails (`no such column`). Correct: build the index in `migrate()` after the `ALTER TABLE`. Regression: `server/test/migration.test.ts`.
+
 ## Category occupancy
 
-`DELETE /api/categories/:id` counts `time_entries` for that category (running or stopped). Count > 0 → 409 `CONFLICT`. Additionally counts `goals.category_id` references — a goal referencing the category blocks deletion with 409 `CONFLICT` `"该分类已被目标引用"` (task 08-30-goal-feature; `goalReferencesCategory` in `server/src/routes/goals.ts`, called after the entries check in `server/src/routes/categories.ts`). `time_entries.category_id` has no `ON DELETE CASCADE`; occupancy is an application rule (`server/src/routes/categories.ts`, `server/test/categories.test.ts`).
+`DELETE /api/categories/:id` counts `time_entries` for that category (running or stopped). Count > 0 → 409 `CONFLICT`. Additionally counts `goals.category_id` references — a goal referencing the category blocks deletion with 409 `CONFLICT` `"该分类已被目标引用"` (task 08-30-goal-feature; `goalReferencesCategory` in `server/src/routes/goals.ts`, called after the entries check in `server/src/routes/categories.ts`). `time_entries.category_id` has no `ON DELETE CASCADE`; occupancy is an application rule (`server/src/routes/categories.ts`, `server/test/categories.test.ts`). With hierarchy (task 08-30-hierarchical-categories-tags): deleting a parent requires **all its children** to pass the same entries+goal checks too; the delete removes children then the parent in one transaction.
 
 ## Tag occupancy
 
