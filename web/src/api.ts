@@ -162,6 +162,11 @@ export const api = {
       body: JSON.stringify({ categoryId, description, tagIds }),
     }),
   stop: () => request<{ entry: TimeEntry }>("/api/timer/stop", { method: "POST" }),
+  updateCurrent: (body: { description?: string; categoryId?: string; tagIds?: string[] }) =>
+    request<{ entry: TimeEntry }>("/api/timer/current", {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
   todayEntries: (tz: string, date?: string) =>
     request<TodayEntries>(
       `/api/entries/today?tz=${encodeURIComponent(tz)}${date ? `&date=${encodeURIComponent(date)}` : ""}`,

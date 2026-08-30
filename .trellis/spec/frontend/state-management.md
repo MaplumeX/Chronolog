@@ -15,7 +15,7 @@ No Redux, Zustand, or context providers beyond React defaults.
 
 After login/register, `AuthPage` calls `onAuthed(user)`. After logout, call `api.logout` then clear local state (logout errors are ignored).
 
-When `user` becomes set, `App` loads `api.current()` into `current`. `useTimerController` can replace `current` via its `onCurrent` prop after start/stop.
+When `user` becomes set, `App` loads `api.current()` into `current`. `useTimerController` can replace `current` via its `onCurrent` prop after start/stop and after running-entry edits (description/category/tags while running → `PATCH /api/timer/current`, task 08-30-edit-while-timing).
 
 ## Page-owned state
 

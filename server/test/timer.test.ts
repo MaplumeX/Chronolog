@@ -142,6 +142,141 @@ describe("timer", () => {
     assert.equal(res.statusCode, 404);
   });
 
+  it("update running entry: description trim + categoryId + tagIds", async () => {
+    t = await createTestApp();
+    const { sid } = await registerUser(t.app, "upd_running");
+    const cats = await firstCategory(t.app, sid);
+
+    const tagA = await t.app.inject({
+      method: "POST",
+      url: "/api/tags",
+      headers: cookieHeader(sid),
+      payload: { name: "标签甲" },
+    });
+    const tagB = await t.app.inject({
+      method: "POST",
+      url: "/api/tags",
+      headers: cookieHeader(sid),
+      payload: { name: "标签乙" },
+    });
+    const tagAId = json(tagA).id as string;
+    const tagBId = json(tagB).id as string;
+
+    await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: cats[0].id, description: "old", tagIds: [tagAId] },
+    });
+
+    const upd = await t.app.inject({
+      method: "PATCH",
+      url: "/api/timer/current",
+      headers: cookieHeader(sid),
+      payload: {
+        description: "  new desc  ",
+        categoryId: cats[1].id,
+        tagIds: [tagBId, tagAId, tagBId],
+      },
+    });
+    assert.equal(upd.statusCode, 200);
+    const entry = json(upd).entry as {
+      description: string;
+      categoryId: string;
+      startedAt: string;
+      stoppedAt: string | null;
+      tags: { id: string }[];
+    };
+    assert.equal(entry.description, "new desc");
+    assert.equal(entry.categoryId, cats[1].id);
+    assert.equal(entry.stoppedAt, null);
+    assert.deepEqual(
+      entry.tags.map((x) => x.id).sort(),
+      [tagAId, tagBId].sort(),
+    );
+
+    // 时间字段未被修改
+    const current = await t.app.inject({
+      method: "GET",
+      url: "/api/timer/current",
+      headers: cookieHeader(sid),
+    });
+    const running = json(current).entry as { stoppedAt: string | null; tags: { id: string }[] };
+    assert.equal(running.stoppedAt, null);
+    assert.equal(running.tags.length, 2);
+  });
+
+  it("update running entry error paths", async () => {
+    t = await createTestApp();
+    const { sid } = await registerUser(t.app, "upd_err");
+    const cats = await firstCategory(t.app, sid);
+
+    // 无运行计时 → 409
+    const noRunning = await t.app.inject({
+      method: "PATCH",
+      url: "/api/timer/current",
+      headers: cookieHeader(sid),
+      payload: { description: "x" },
+    });
+    assert.equal(noRunning.statusCode, 409);
+    assert.equal((json(noRunning).error as { code: string }).code, "CONFLICT");
+
+    await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: cats[0].id },
+    });
+
+    // description > 200 → 400
+    const tooLong = await t.app.inject({
+      method: "PATCH",
+      url: "/api/timer/current",
+      headers: cookieHeader(sid),
+      payload: { description: "a".repeat(201) },
+    });
+    assert.equal(tooLong.statusCode, 400);
+    assert.equal((json(tooLong).error as { code: string }).code, "VALIDATION");
+
+    // 他人 categoryId → 404
+    const other = await registerUser(t.app, "upd_other");
+    const otherCats = await firstCategory(t.app, other.sid);
+    const foreignCat = await t.app.inject({
+      method: "PATCH",
+      url: "/api/timer/current",
+      headers: cookieHeader(sid),
+      payload: { categoryId: otherCats[0].id },
+    });
+    assert.equal(foreignCat.statusCode, 404);
+
+    // 他人 tagIds → 404
+    const foreignTag = await t.app.inject({
+      method: "PATCH",
+      url: "/api/timer/current",
+      headers: cookieHeader(sid),
+      payload: { tagIds: ["no-such-tag"] },
+    });
+    assert.equal(foreignTag.statusCode, 404);
+
+    // startedAt 字段被 schema 拒绝 → 400
+    const withStart = await t.app.inject({
+      method: "PATCH",
+      url: "/api/timer/current",
+      headers: cookieHeader(sid),
+      payload: { startedAt: "2025-01-01T00:00:00Z" },
+    });
+    assert.equal(withStart.statusCode, 400);
+    assert.equal((json(withStart).error as { code: string }).code, "VALIDATION");
+
+    // 未登录 → 401
+    const anon = await t.app.inject({
+      method: "PATCH",
+      url: "/api/timer/current",
+      payload: { description: "x" },
+    });
+    assert.equal(anon.statusCode, 401);
+  });
+
   it("reopening the database keeps a running timer", async () => {
     t = await createTestApp({ keepDir: true });
     const { sid } = await registerUser(t.app, "persist");

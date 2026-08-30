@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 
 export function TimerBar(props: {
   description: string;
-  descriptionReadOnly: boolean;
   onDescriptionChange: (value: string) => void;
   categoryPicker: ReactNode;
   tagPicker: ReactNode;
@@ -25,10 +24,7 @@ export function TimerBar(props: {
           className="min-w-0 flex-1 bg-transparent text-lg outline-none placeholder:text-muted-foreground"
           placeholder={t("timer.placeholder")}
           value={props.description}
-          onChange={(e) => {
-            if (!props.descriptionReadOnly) props.onDescriptionChange(e.target.value);
-          }}
-          readOnly={props.descriptionReadOnly}
+          onChange={(e) => props.onDescriptionChange(e.target.value)}
         />
         {props.categoryPicker}
         {props.running && props.runningTags.length > 0 ? (

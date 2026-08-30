@@ -519,3 +519,24 @@ Replaced native datetime-local inputs in EntryEditor with a custom DateTimePicke
 ### Status
 
 [OK] **Completed**
+
+
+## Session 23: Allow editing running timer's description, category and tags
+
+**Date**: 2026-08-30
+**Task**: Allow editing running timer's description, category and tags
+**Branch**: `feat/edit-task-while-timing`
+
+### Summary
+
+Added PATCH /api/timer/current (description/categoryId/tagIds, ownership validation, 409 without running timer) and made the TimerBar editable while running: description saves via 600ms debounce, category/tag changes save immediately and refresh timeline data; stopping cancels the pending debounce. Server tests (80 pass) and typecheck green; specs updated (http-routes, component-guidelines, state-management).
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `187d33a` | (see git log) |
+
+### Status
+
+[OK] **Completed**
