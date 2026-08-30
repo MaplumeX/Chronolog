@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 28
+- **Total Sessions**: 29
 - **Last Active**: 2026-08-30
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~659 | Active |
+| `journal-1.md` | ~680 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 29 | 2026-08-30 | 分类与标签两级层级支持 | `480adf1` | `feat/hierarchical-categories-and-tags` |
 | 28 | 2026-08-30 | 目标（Goal）功能：后端 API + 前端目标页 | `08ee90a` | `feat/goal-feature` |
 | 27 | 2026-08-30 | 色板去除自动选项，创建即固定颜色 | `104b99d` | `feat/category-tag-color-editing` |
 | 26 | 2026-08-30 | Release v0.1.0 | `d75ffb9`, `ff1e93b` | `main` |
