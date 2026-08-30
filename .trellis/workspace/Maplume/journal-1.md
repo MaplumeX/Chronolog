@@ -689,6 +689,15 @@ Pushed pending commits, tagged v0.1.0 and ran the release workflow. Fixed broken
 ### Summary
 
 修复跨天（跨午夜）条目在 Timeline 的显示：色块几何用 clipRangeMs 夹到当天窗口（昨晚→今天不再从 0:00 画过头）；块上/tooltip 时长改用整条 durationSeconds（2h 而非切片 1h）；时间范围用 formatEntryTimeRange 加日属标记（同天 HH:MM、±1天 昨天/明天、跨多天 MM-DD，相对该列日期、DST 安全）；列头当日合计仍按切片 cl 不变；新增 i18n key timeline.dayRel.prev/next（zh/en）。spec 记录跨天渲染契约。trellis-check 全绿（无 blocker/M 级），typecheck+build+server105 tests 通过。
+## Session 30: 重构整体布局结构与视觉层级（Linear 风轻卡片体系）
+
+**Date**: 2026-08-31
+**Task**: 重构整体布局结构与视觉层级（Linear 风轻卡片体系）
+**Branch**: `refactor/layout-visual-hierarchy`
+
+### Summary
+
+全应用视觉/布局重构：底—面两级表面 token（light 灰底白卡 / dark 深底亮面卡）+ 双主题 --shadow-xs；新建 ui/card 六件套与 PageContainer 三档限宽容器；Shell 顶栏标题升至 text-xl tracking-tight；6 页面统一为「工具栏行 → 模块 Card」三段式（表格入卡、统计四张模块卡、设置分组卡、Auth 表单卡）；Timeline 本体零改动；推翻 spec 的 no-card 约定并同步修订 component-guidelines 与 design-tokens。typecheck/build 全绿，WCAG AA 18 组配对验算通过，全 scope check 9/9 PASS。
 
 ### Git Commits
 
@@ -740,6 +749,7 @@ Pushed pending commits, tagged v0.1.0 and ran the release workflow. Fixed broken
 |------|---------|
 | `1f7b35a` | (see git log) |
 | `0d845a2` | (see git log) |
+| `a362bb7` | (see git log) |
 
 ### Status
 

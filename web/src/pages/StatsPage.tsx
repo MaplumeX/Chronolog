@@ -17,8 +17,10 @@ import { enUS, zhCN } from "react-day-picker/locale";
 import { ApiError, api, type Category, type RangeStats, type Tag } from "../api";
 import { browserTz, formatDuration, paletteColor } from "../format";
 import { localeFor } from "../i18n";
+import { PageContainer } from "@/components/PageContainer";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -240,15 +242,9 @@ export function StatsPage() {
   ];
 
   return (
-    <div className="px-6 py-6">
-      <div className="mb-4 rounded-lg border bg-card px-4 py-3">
-        <p className="text-sm text-muted-foreground">{t("stats.totalLogged")}</p>
-        <p className="mt-1 font-mono text-3xl font-bold tabular-nums">
-          {formatDuration(totalSeconds)}
-        </p>
-      </div>
-
-      <div className="mb-6 flex flex-wrap items-center gap-2">
+    <PageContainer size="wide">
+      {/* 工具栏行：range Tabs + custom 日期 + ml-auto tag 筛选 */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
         <Tabs value={kind} onValueChange={(v) => setKind(v as RangeKind)}>
           <TabsList>
             {rangeKinds.map((r) => (
@@ -330,13 +326,26 @@ export function StatsPage() {
       {customProblem ? <p className="mb-3 text-sm text-destructive">{customProblem}</p> : null}
       {error ? <p className="mb-3 text-sm text-destructive">{error}</p> : null}
 
+      {/* 总时长卡 */}
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-sm text-muted-foreground">{t("stats.totalLogged")}</p>
+          <p className="mt-1 font-mono text-3xl font-bold tabular-nums">
+            {formatDuration(totalSeconds)}
+          </p>
+        </CardContent>
+      </Card>
+
       {stats && stats.totalSeconds === 0 ? (
         <p className="py-12 text-center text-sm text-muted-foreground">{t("stats.emptyRange")}</p>
       ) : stats ? (
-        <>
-          <section className="mb-8">
-            <p className="mb-2 text-sm text-muted-foreground">{t("stats.dailyTrend")}</p>
-            <div className="h-56">
+        <div className="mt-6 space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("stats.dailyTrend")}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-56">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={trendData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                   <CartesianGrid vertical={false} stroke="var(--border)" />
@@ -368,12 +377,13 @@ export function StatsPage() {
                   <Bar dataKey="seconds" fill="var(--primary)" radius={[3, 3, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
-            </div>
-          </section>
+              </div>
+            </CardContent>
+          </Card>
 
-          <section className="mb-8">
-            <div className="mb-2 flex items-center gap-3">
-              <p className="text-sm text-muted-foreground">{t("stats.byCategory")}</p>
+          <Card>
+            <CardHeader className="flex-row items-center gap-3 space-y-0">
+              <CardTitle>{t("stats.byCategory")}</CardTitle>
               <div className="ml-auto flex overflow-hidden rounded-md border">
                 <Button
                   type="button"
@@ -394,9 +404,10 @@ export function StatsPage() {
                   {t("stats.rollup.rolledUp")}
                 </Button>
               </div>
-            </div>
-            <div className="flex flex-col items-center gap-6 md:flex-row md:items-start">
-              <div className="relative h-48 w-48 shrink-0">
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col items-center gap-6 md:flex-row md:items-start">
+                <div className="relative h-48 w-48 shrink-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -453,13 +464,17 @@ export function StatsPage() {
                   </div>
                 ))}
               </div>
-            </div>
-          </section>
+              </div>
+            </CardContent>
+          </Card>
 
           {stats.tags.length > 0 ? (
-            <section>
-              <p className="mb-2 text-sm text-muted-foreground">{t("stats.byTag")}</p>
-              <div className="divide-y">
+            <Card>
+              <CardHeader>
+                <CardTitle>{t("stats.byTag")}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="divide-y">
                 {stats.tags.map((x) => (
                   <div
                     className="grid grid-cols-[minmax(0,7rem)_1fr_auto] items-center gap-3 py-3 md:grid-cols-[160px_1fr_88px]"
@@ -486,11 +501,12 @@ export function StatsPage() {
                     </span>
                   </div>
                 ))}
-              </div>
-            </section>
+                </div>
+              </CardContent>
+            </Card>
           ) : null}
-        </>
+        </div>
       ) : null}
-    </div>
+    </PageContainer>
   );
 }

@@ -10,7 +10,9 @@ import {
 } from "../api";
 import { browserTz, formatDuration } from "../format";
 import { GoalEditorDialog } from "@/components/GoalEditorDialog";
+import { PageContainer } from "@/components/PageContainer";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -130,9 +132,9 @@ export function GoalsPage() {
   }
 
   return (
-    <div className="px-6 py-6">
-      <div className="mb-4 flex justify-end">
-        <Button type="button" onClick={openCreate}>
+    <PageContainer size="wide">
+      <div className="mb-4 flex">
+        <Button type="button" className="ml-auto" onClick={openCreate}>
           {t("goals.new")}
         </Button>
       </div>
@@ -145,7 +147,9 @@ export function GoalsPage() {
       ) : null}
 
       {goals.length > 0 ? (
-        <Table>
+        <Card className="overflow-hidden">
+          <CardContent className="p-0">
+            <Table>
           <TableHeader>
             <TableRow>
               <TableHead>{t("goals.name")}</TableHead>
@@ -284,7 +288,9 @@ export function GoalsPage() {
               );
             })}
           </TableBody>
-        </Table>
+            </Table>
+          </CardContent>
+        </Card>
       ) : null}
 
       <GoalEditorDialog
@@ -295,6 +301,6 @@ export function GoalsPage() {
         onOpenChange={setEditorOpen}
         onSubmit={submit}
       />
-    </div>
+    </PageContainer>
   );
 }

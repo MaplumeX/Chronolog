@@ -1,0 +1,4 @@
+{"file": ".trellis/tasks/08-31-layout-visual-hierarchy/design.md", "reason": "本任务技术设计：token 调整、Card/PageContainer 原语、Shell 与六页面改造方案、验证命令"}
+{"file": ".trellis/spec/frontend/design-tokens.md", "reason": "现有 token 约定（teal 双主题、category 色板、radius、排版）——token 微调必须与之兼容，且实现后需修订"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Shell/Pages 结构契约与 no-card 反模式——本任务推翻该约定，实现者需知道哪些条款被本任务取代"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "i18n/typecheck/Tailwind token 消费的质量门槛，视觉重构同样适用"}

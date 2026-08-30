@@ -653,7 +653,7 @@ export function Timeline(props: {
           {onDateChange ? (
             <DateNav view={mode} date={date ?? null} tz={tz} onChange={onDateChange} />
           ) : (
-            <span className="truncate font-semibold">
+            <span className="truncate text-sm font-semibold tracking-tight">
               {isDay
                 ? formatDayLabel(tz)
                 : week
@@ -662,7 +662,7 @@ export function Timeline(props: {
             </span>
           )}
         </div>
-        <span className="font-mono text-sm font-medium tabular-nums">{formatDuration(total)}</span>
+        <span className="font-mono text-sm font-semibold tabular-nums">{formatDuration(total)}</span>
       </div>
       <div className="min-h-0 flex-1 overflow-auto" ref={scrollRef}>
         {isDay ? (

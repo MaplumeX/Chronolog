@@ -5,13 +5,16 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* 冷色系 teal 主题（light）：hue 220 附近的冷白底 + 冷灰中性色，primary 用 teal */
-  --background: oklch(0.985 0.005 220);
+  /* 冷色系 teal 主题（light）：hue 220 附近的冷白底 + 冷灰中性色，primary 用 teal。
+     底—面两级：background 为冷白微灰页面底，card/popover 为近白模块面（轻卡片在灰底上呈纸面感） */
+  --background: oklch(0.975 0.005 220);
   --foreground: oklch(0.22 0.02 230);
-  --card: oklch(0.985 0.005 220);
+  --card: oklch(0.995 0.004 220);
   --card-foreground: oklch(0.22 0.02 230);
-  --popover: oklch(0.995 0.004 220);
+  --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.22 0.02 230);
+  /* 轻卡片阴影（light）：极微弱弥散，感知为「分层」而非「浮起」 */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.04);
   --primary: oklch(0.5 0.11 200);
   --primary-foreground: oklch(0.985 0.005 220);
   --secondary: oklch(0.945 0.012 225);
@@ -42,13 +45,16 @@
 }
 
 .dark {
-  /* 冷色系 teal 主题（dark）：冷深灰底 + 亮青 primary；border/input 保持半透明白 */
+  /* 冷色系 teal 主题（dark）：冷深灰底 + 亮青 primary；border/input 保持半透明白。
+     底—面两级：card/popover 比 background 亮一档，暗底上的亮面模块（分层主要靠 hairline 边框） */
   --background: oklch(0.165 0.015 230);
   --foreground: oklch(0.93 0.01 220);
-  --card: oklch(0.21 0.015 230);
+  --card: oklch(0.225 0.015 230);
   --card-foreground: oklch(0.93 0.01 220);
-  --popover: oklch(0.21 0.015 230);
+  --popover: oklch(0.225 0.015 230);
   --popover-foreground: oklch(0.93 0.01 220);
+  /* 轻卡片阴影（dark）：深底上近乎不可见，仅作轻微分层 */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.3);
   --primary: oklch(0.78 0.1 195);
   --primary-foreground: oklch(0.2 0.03 220);
   --secondary: oklch(0.26 0.015 230);
@@ -164,6 +170,8 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  /* 覆盖 Tailwind 默认 shadow-xs 刻度：轻卡片专用，双主题各一套（见 :root / .dark） */
+  --shadow-xs: var(--shadow-xs);
   --font-sans: ui-sans-serif, system-ui, "Noto Sans SC", "PingFang SC", "Microsoft YaHei",
     sans-serif;
   --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", monospace;

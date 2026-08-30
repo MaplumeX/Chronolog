@@ -1,0 +1,4 @@
+{"file": ".trellis/tasks/08-31-layout-visual-hierarchy/prd.md", "reason": "验收标准 AC1–AC7 是 check 的对照基准（视觉层级、轻卡片、限宽、token 合规、双主题、零回归、spec 同步）"}
+{"file": ".trellis/spec/frontend/design-tokens.md", "reason": "核对 token 合规：语义 token 消费、双主题成对、对比度 AA、无硬编码颜色"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "核对 Shell/页面结构契约与 i18n/Lucide/无 Router 等反模式是否仍被遵守（no-card 条款以本任务修订后为准）"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "check 的质量门槛：typecheck、build、i18n 覆盖"}
