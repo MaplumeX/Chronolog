@@ -109,12 +109,12 @@ function dayParts(ms: number, tz: string): { label: string; ord: number } {
 }
 
 /**
- * 条目时间范围文案（块上与 tooltip 共用，跨天日属标记）：
- * 日属词相对**真实今天**（nowMs 所在日历日），不是被查看的列日期：
- * - 端点与今天同一天 → 仅 `HH:MM`；
- * - ±1 天 → 相对词（`昨天 HH:MM` / `明天 HH:MM`）；
- * - 距今天 ≥2 天 → 显式日期（`MM-DD HH:MM`）。
- * 起止各自独立判断；stoppedAt=null 右端显示 `…`（运行中条目 right edge 为 now，列必有重叠）。
+ * 条目时间范围文案（块上与 tooltip 共用）：
+ * - 非跨天条目（起止同一日历日）→ `HH:MM – HH:MM`；
+ * - 跨天条目 → 起止两端都带 `MM-DD` 完整日期：`MM-DD HH:MM – MM-DD HH:MM`
+ *   （含落在今天的那端；不用「昨天/明天」相对词）。
+ * 是否跨天按起止所在 tz 日历日判断；stoppedAt=null 右端显示 `…`
+ * （运行中条目 right edge 为 now，跨天判断以 startedAt 与 now 比较）。
  */
 export function formatEntryTimeRange(
   startedAt: string,
@@ -122,18 +122,16 @@ export function formatEntryTimeRange(
   tz: string,
   nowMs: number,
 ): string {
-  const todayOrd = dayParts(nowMs, tz).ord;
+  const startMs = Date.parse(startedAt);
+  const endMs = stoppedAt ? Date.parse(stoppedAt) : nowMs;
+  const crossDay = dayParts(startMs, tz).ord !== dayParts(endMs, tz).ord;
   const formatEnd = (ms: number): string => {
     const clock = formatClock(new Date(ms).toISOString(), tz);
-    const { label, ord } = dayParts(ms, tz);
-    const diff = ord - todayOrd;
-    if (diff === 0) return clock;
-    if (diff === -1) return `${i18n.t("timeline.dayRel.prev")} ${clock}`;
-    if (diff === 1) return `${i18n.t("timeline.dayRel.next")} ${clock}`;
-    return `${label.slice(5)} ${clock}`; // MM-DD HH:MM
+    if (!crossDay) return clock;
+    return `${dayParts(ms, tz).label.slice(5)} ${clock}`; // MM-DD HH:MM
   };
-  // 运行中条目右端沿用 `…`（无日属前缀），几何右端取 nowMs 由调用方/clipRangeMs 处理
-  return `${formatEnd(Date.parse(startedAt))} – ${stoppedAt ? formatEnd(Date.parse(stoppedAt)) : "…"}`;
+  // 运行中条目右端沿用 `…`；跨天时左端带日期、右端为 `…`
+  return `${formatEnd(startMs)} – ${stoppedAt ? formatEnd(endMs) : "…"}`;
 }
 
 // 分类色板：token 引用（值定义在 web/src/styles.css 的 :root（light）/ .dark（dark）两套 --category-1..8）。

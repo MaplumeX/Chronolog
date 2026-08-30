@@ -27,8 +27,6 @@ export const zh = {
   "timeline.zoomOut": "缩小",
   "timeline.zoomIn": "放大",
   "timeline.gapTitle": "点击创建 {{range}}（{{duration}}）",
-  "timeline.dayRel.prev": "昨天",
-  "timeline.dayRel.next": "明天",
   "entry.edit": "编辑条目",
   "entry.create": "新建条目",
   "entry.description": "描述",
