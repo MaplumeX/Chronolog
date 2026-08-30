@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 24
+- **Total Sessions**: 25
 - **Last Active**: 2026-08-30
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~564 | Active |
+| `journal-1.md` | ~585 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 25 | 2026-08-30 | Change host port to 2259 | `c454a20` | `main` |
 | 24 | 2026-08-30 | Docker deployment hardening and CI/CD release automation | `12366de`, `d0cff58` | `main` |
 | 23 | 2026-08-30 | Allow editing running timer's description, category and tags | `187d33a` | `feat/edit-task-while-timing` |
 | 22 | 2026-08-29 | Beautify entry time picker with custom DateTimePicker | `4a7e87a` | `feat/beautify-time-picker-in-entries` |

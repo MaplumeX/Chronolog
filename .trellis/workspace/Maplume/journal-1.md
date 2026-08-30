@@ -562,3 +562,24 @@ Added /api/health endpoint; slimmed runtime Docker image (prod-only server deps,
 ### Status
 
 [OK] **Completed**
+
+
+## Session 25: Change host port to 2259
+
+**Date**: 2026-08-30
+**Task**: Change host port to 2259
+**Branch**: `main`
+
+### Summary
+
+Changed docker-compose host port mapping from 8080 to 2259 (container port unchanged).
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c454a20` | (see git log) |
+
+### Status
+
+[OK] **Completed**
