@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "后端代码质量与测试验收标准"}
+{"file": ".trellis/spec/backend/http-routes.md", "reason": "校验路由实现符合约定"}
+{"file": ".trellis/spec/backend/time-and-timezone.md", "reason": "校验窗口/时区/DST 处理正确"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "前端质量与 i18n 完整性验收"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "校验组件实现符合规范"}

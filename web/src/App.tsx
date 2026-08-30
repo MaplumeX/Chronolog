@@ -9,12 +9,14 @@ import { useTheme } from "./hooks/use-theme";
 import { useTimerController } from "./hooks/use-timer-controller";
 import { AuthPage } from "./pages/AuthPage";
 import { CategoriesPage } from "./pages/CategoriesPage";
+import { GoalsPage } from "./pages/GoalsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { StatsPage } from "./pages/StatsPage";
 import { TagsPage } from "./pages/TagsPage";
 
 const HEADER_TITLE_KEYS = {
   stats: "nav.stats",
+  goals: "nav.goals",
   categories: "nav.categories",
   tags: "nav.tags",
   settings: "nav.settings",
@@ -89,18 +91,23 @@ export function App() {
       username={user.username}
       displayName={user.displayName}
       page={page}
-      elapsedSeconds={current ? elapsedSeconds(current.startedAt, nowMs) : undefined}
+      elapsedSeconds={
+        current ? elapsedSeconds(current.startedAt, nowMs) : undefined
+      }
       onPage={setPage}
       header={
         page === "timer" ? (
           <TimerBar {...timer.barProps} />
         ) : (
-          <h1 className="px-2 text-lg font-semibold">{t(HEADER_TITLE_KEYS[page])}</h1>
+          <h1 className="px-2 text-lg font-semibold">
+            {t(HEADER_TITLE_KEYS[page])}
+          </h1>
         )
       }
     >
       {page === "timer" ? <Timeline {...timer.timelineProps} /> : null}
       {page === "stats" ? <StatsPage /> : null}
+      {page === "goals" ? <GoalsPage /> : null}
       {page === "categories" ? <CategoriesPage /> : null}
       {page === "tags" ? <TagsPage /> : null}
       {page === "settings" ? (

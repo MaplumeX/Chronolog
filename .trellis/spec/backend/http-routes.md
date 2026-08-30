@@ -63,6 +63,21 @@ New endpoints belong in an existing file if they share the resource, or a new `r
 | POST | `/api/entries` | yes | create: `{ description, categoryId, tagIds, startedAt, stoppedAt }` → 201 + `EntryDto`; overlap → 409 `OVERLAP` |
 | PATCH | `/api/entries/:id` | yes | full update: `{ description, categoryId, tagIds, startedAt, stoppedAt }`; stopped entries only; overlap → 409 `OVERLAP` |
 
+### Goals API (task 08-30-goal-feature)
+
+Routes in `server/src/routes/goals.ts`; progress math in `server/src/goals.ts` (`listGoalsWithProgress`); tests in `server/test/goals.test.ts`.
+
+| Method | Path | Auth | Notes |
+|--------|------|------|-------|
+| GET | `/api/goals?tz=` | yes | list + per-goal current-period progress. Returns `{ goals: GoalWithProgress[] }` — goal fields (`id, name, icon, categoryId: string\|null, tagId: string\|null, direction: "lt"\|"gt", hours, periodUnit: "day"\|"week"\|"month", dueDate: "YYYY-MM-DD"\|null, createdAt`) + `status: "active"\|"achieved"\|"expired"` + `progress: { currentSeconds: number\|null, targetSeconds }`. `tz` required (400 via `requireTz`). |
+| POST | `/api/goals` | yes | `{ name, icon?, categoryId?, tagId?, direction, hours, periodUnit, dueDate? }` → 201 + goal |
+| PATCH | `/api/goals/:id` | yes | partial update; `categoryId/tagId/dueDate: null` clears; at least one field else 400 |
+| DELETE | `/api/goals/:id` | yes | hard delete |
+
+Validation matrix: name trim 1..32 (400); icon 1..8 UTF-16 code units, default 🎯 (400); hours > 0 and ≤ 1000 (400); `direction`/`periodUnit` enums (400); `dueDate` real calendar date `YYYY-MM-DD` (luxon `fromISO` + `toISODate()` round-trip rejects `2026-02-30`, 400); `categoryId`/`tagId` must belong to the user (404); foreign goal id (PATCH/DELETE) → 404.
+
+Progress semantics (R2/R5): matching = categoryId set → `time_entries.category_id = goal.category_id`; tagId set → `exists(entry_tags ...)` subquery (same pattern as `statsRange`'s tagFilter); both set → AND; neither → all entries. Window = `periodBounds(tz, periodUnit, now)`; sum `clipSeconds` over the window (running entries clip at `now`). `status`: expired when `dueDate < tz-local today` (`currentSeconds: null`, no aggregation); achieved = (gt && current ≥ target) || (lt && current < target); else active. "lt exceeded" is not a server state — the frontend derives it (lt && active && current ≥ target → red "已超限" badge).
+
 `POST /api/entries` and `PATCH /api/entries/:id` (`server/src/routes/entries.ts`) are the only endpoints that accept client-sent `startedAt` / `stoppedAt` (PATCH is a full update, stopped entries only; POST creates a stopped entry directly — the timeline drag-to-create flow, task 08-27-timeline-drag-create). Both reuse the same zod `updateBody` and shared validators (`checkTimeOrder` / `checkCategory` / `checkTags` / `checkOverlap`).
 
 Validation order inside the transaction — PATCH: entry owned (404) → stopped (409 `CONFLICT`) → category owned (404) → tags owned (404) → `stoppedAt > startedAt` (400) → overlap check (409 `OVERLAP`). POST: `stoppedAt > startedAt` (400) → category (404) → tags (404) → overlap (409) → insert with `newId()` → 201 + `getEntry(...)`. Overlap is half-open `[start, end)`: `other.startedAt < newStoppedAt AND (other.stoppedAt IS NULL OR other.stoppedAt > newStartedAt)`, excluding self (PATCH only); running entries (`stoppedAt IS NULL`) extend to infinity and participate; touching boundaries (`==`) do not conflict. Tags are replaced wholesale (delete + insert) on PATCH and inserted once on POST; `tagIds` are deduped (`[...new Set]`) in both.

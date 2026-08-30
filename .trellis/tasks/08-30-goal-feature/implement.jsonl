@@ -1,0 +1,11 @@
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "goals 路由/模块放置位置与命名约定"}
+{"file": ".trellis/spec/backend/http-routes.md", "reason": "Fastify 路由注册、zod parseBody、错误码约定"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "AppError/404/409 语义，越权处理"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "schema.ts/db.ts 建表与索引规范"}
+{"file": ".trellis/spec/backend/time-and-timezone.md", "reason": "tz 校验、周期窗口、clipSeconds/DST 约定"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "页面/组件文件位置"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "GoalsPage/对话框组件写法"}
+{"file": ".trellis/spec/frontend/api-client.md", "reason": "api.ts 新增 Goal 类型与方法约定"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "页面数据加载/刷新状态模式"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "类型定义与 i18n key 类型"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "跨层（API DTO↔前端类型）一致性"}

@@ -20,6 +20,7 @@ Nav items (fixed product IA):
 |----------|--------|------|
 | `timer` | 计时 | Timer bar (in the Shell top bar via `header`) + today’s entry timeline |
 | `stats` | 统计 | Range stats (today/week/month/custom) — trend chart + category share + tag breakdown (task 08-29-refactor-stats-page) |
+| `goals` | 目标 | Goal list + progress (`GoalsPage`, task 08-30-goal-feature) — lucide `Target` icon, placed after 统计 |
 | `categories` | 分类 | Category table |
 | `tags` | 标签 | Tag table (create / rename / delete) |
 | `settings` | 设置 | Tabbed settings — 通用 / 账户 / API Tokens (task 08-29-tabbed-settings) |
@@ -59,6 +60,8 @@ Un-layered CSS beats Tailwind v4 `@layer utilities` classes regardless of source
 Layout (top → bottom): range `Tabs` + tag filter dropdown → total-logged summary card (`stats.totalLogged`, `text-3xl font-bold tabular-nums`, plain `rounded-lg border` div) → daily-trend recharts `BarChart` (`ResponsiveContainer`, fixed `h-56`, bar fill `var(--primary)`, tooltip `formatDuration`) → category share as a recharts donut `PieChart` (innerRadius, `Cell` fill `categoryColor(name)`, center total) plus the horizontal bar list with a percentage column → tag breakdown as pure-CSS bars (`tagId === null` renders `stats.noTag` with muted color; do NOT show a tags total — multi-tag entries count fully under each tag, so the sum can exceed `totalSeconds`). Empty state (`totalSeconds === 0`) shows `stats.emptyRange` guidance copy. Charts must take colors from CSS variables / `categoryColor` only (dual-theme safe). `recharts` is the only chart library allowed; the >500 kB bundle warning from it is accepted (code-splitting is out of scope).
 
 `TagsPage`: shadcn `Table` like `CategoriesPage`; delete uses an inline two-click confirm (删除 → 确认删除？), no alert-dialog component.
+
+`GoalsPage` (task 08-30-goal-feature): shadcn `Table` — columns: icon (emoji string stored as-is) + name + due date, match-condition summary (category name / tag name / AND combo / `goals.allEntries` fallback to id when the name lookup misses), condition summary (direction + hours + periodUnit via i18n), status badge, progress bar + `formatDuration` values. Sorting: expired rows last (`opacity-50`, `currentSeconds` null renders —), others by `createdAt`. "lt exceeded" is frontend-derived (lt && active && current ≥ target): destructive red badge + destructive progress bar — the server only emits `active | achieved | expired`. Deletes use the TagsPage-style inline two-click confirm. Data: `api.goals(browserTz())` + categories + tags on mount, 30s polling (interval cleanup) to refresh progress. `GoalEditorDialog` (`web/src/components/GoalEditorDialog.tsx`) is create/edit-shared: name Input, emoji grid (local constant array, default 🎯, `aria-pressed`), category/tag optional DropdownMenu ("不限" → null), direction/periodUnit as Button group toggles (no `ui/select` exists — keep this pattern), hours number input (step 0.5), native `<input type="date">` due date (clearable). Submit failure: `ApiError.message`, non-ApiError fallback picks `goals.editFailed` vs `goals.createFailed` by edit mode.
 
 `CategoriesPage`: shadcn `Table`. Occupied categories: disable delete; keep the 409 explanation as `title`.
 

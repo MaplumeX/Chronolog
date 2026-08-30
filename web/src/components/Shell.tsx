@@ -1,6 +1,13 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { ChartNoAxesColumn, Settings, Tag, Tags, Timer } from "lucide-react";
+import {
+  ChartNoAxesColumn,
+  Settings,
+  Tag,
+  Tags,
+  Target,
+  Timer,
+} from "lucide-react";
 import { formatDuration } from "../format";
 import type { zh } from "../i18n/locales/zh";
 import {
@@ -22,11 +29,13 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-export type PageId = "timer" | "stats" | "categories" | "tags" | "settings";
+export type PageId =
+  "timer" | "stats" | "goals" | "categories" | "tags" | "settings";
 
 const ITEMS: { id: PageId; labelKey: keyof typeof zh; icon: typeof Timer }[] = [
   { id: "timer", labelKey: "nav.timer", icon: Timer },
   { id: "stats", labelKey: "nav.stats", icon: ChartNoAxesColumn },
+  { id: "goals", labelKey: "nav.goals", icon: Target },
   { id: "categories", labelKey: "nav.categories", icon: Tags },
   { id: "tags", labelKey: "nav.tags", icon: Tag },
 ];
@@ -82,7 +91,10 @@ function ShellNav(props: {
   );
 }
 
-function ShellUserButton(props: { username: string; displayName?: string | null }) {
+function ShellUserButton(props: {
+  username: string;
+  displayName?: string | null;
+}) {
   return (
     <SidebarMenuButton className="pointer-events-none" tabIndex={-1}>
       <span className="flex size-4 items-center justify-center text-xs font-medium">
@@ -103,7 +115,11 @@ function ShellSettingsButton(props: { onPage: (page: PageId) => void }) {
   }
 
   return (
-    <SidebarMenuButton type="button" tooltip={t("nav.settings")} onClick={goSettings}>
+    <SidebarMenuButton
+      type="button"
+      tooltip={t("nav.settings")}
+      onClick={goSettings}
+    >
       <Settings />
       <span>{t("nav.settings")}</span>
     </SidebarMenuButton>
@@ -136,7 +152,11 @@ export function Shell(props: {
           </SidebarMenu>
         </SidebarHeader>
         <SidebarContent>
-          <ShellNav page={props.page} elapsedSeconds={props.elapsedSeconds} onPage={props.onPage} />
+          <ShellNav
+            page={props.page}
+            elapsedSeconds={props.elapsedSeconds}
+            onPage={props.onPage}
+          />
         </SidebarContent>
         <SidebarFooter>
           <SidebarMenu>
@@ -158,7 +178,9 @@ export function Shell(props: {
           <SidebarTrigger />
           {props.header}
         </header>
-        <div className="flex min-h-0 flex-1 flex-col overflow-auto">{props.children}</div>
+        <div className="flex min-h-0 flex-1 flex-col overflow-auto">
+          {props.children}
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

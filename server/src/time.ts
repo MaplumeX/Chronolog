@@ -126,6 +126,30 @@ export function rangeDayBounds(
   };
 }
 
+/** 目标周期窗口：day/week 复用现有边界逻辑，month 为自然月（月初到下月月初，半开区间）。
+ * 月末窗口从月首 plus({ months: 1 }) 推导（与 weekBoundsFrom 同构的 DST 安全写法：
+ * luxon 的 plus 在本地日历上运算，避开毫秒加法在 DST 跳变日偏移一小时的问题）。 */
+export function periodBounds(
+  tz: string,
+  unit: "day" | "week" | "month",
+  now: Date,
+): { windowStart: string; windowEnd: string } {
+  if (unit === "day") {
+    const { dayStart, dayEnd } = todayBounds(tz, now);
+    return { windowStart: dayStart, windowEnd: dayEnd };
+  }
+  if (unit === "week") {
+    const { weekStart, weekEnd } = weekBounds(tz, now);
+    return { windowStart: weekStart, windowEnd: weekEnd };
+  }
+  const start = zonedNow(tz, now).startOf("month");
+  const end = start.plus({ months: 1 });
+  return {
+    windowStart: start.toUTC().toJSDate().toISOString(),
+    windowEnd: end.toUTC().toJSDate().toISOString(),
+  };
+}
+
 export function clipSeconds(
   startedAt: string,
   stoppedAt: string | null,

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, primaryKey, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const users = sqliteTable(
   "users",
@@ -111,6 +111,26 @@ export const apiTokens = sqliteTable(
     uniqueIndex("api_tokens_token_hash").on(t.tokenHash),
     index("api_tokens_user_id").on(t.userId),
   ],
+);
+
+export const goals = sqliteTable(
+  "goals",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    icon: text("icon").notNull().default("🎯"),
+    categoryId: text("category_id").references(() => categories.id),
+    tagId: text("tag_id").references(() => tags.id),
+    direction: text("direction").notNull(), // 'lt' | 'gt'
+    hours: real("hours").notNull(),
+    periodUnit: text("period_unit").notNull(), // 'day' | 'week' | 'month'
+    dueDate: text("due_date"), // 'YYYY-MM-DD'，tz 相关语义，存原样
+    createdAt: text("created_at").notNull(),
+  },
+  (t) => [index("goals_user_id").on(t.userId)],
 );
 
 export const DEFAULT_CATEGORIES = ["工作", "学习", "休息", "事务"] as const;
