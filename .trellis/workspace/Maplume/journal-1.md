@@ -540,3 +540,25 @@ Added PATCH /api/timer/current (description/categoryId/tagIds, ownership validat
 ### Status
 
 [OK] **Completed**
+
+
+## Session 24: Docker deployment hardening and CI/CD release automation
+
+**Date**: 2026-08-30
+**Task**: Docker deployment hardening and CI/CD release automation
+**Branch**: `main`
+
+### Summary
+
+Added /api/health endpoint; slimmed runtime Docker image (prod-only server deps, non-root user, tini, HEALTHCHECK); compose healthcheck + log rotation; CI workflow (typecheck/tests); release workflow pushing multi-arch images to GHCR and creating conventional-changelog GitHub Releases on version tags; README deploy/release docs. Local build and runtime verified, 80/80 tests pass.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `12366de` | (see git log) |
+| `d0cff58` | (see git log) |
+
+### Status
+
+[OK] **Completed**
