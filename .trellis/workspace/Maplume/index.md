@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 27
+- **Total Sessions**: 28
 - **Last Active**: 2026-08-30
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~638 | Active |
+| `journal-1.md` | ~659 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 28 | 2026-08-30 | 目标（Goal）功能：后端 API + 前端目标页 | `08ee90a` | `feat/goal-feature` |
 | 27 | 2026-08-30 | 色板去除自动选项，创建即固定颜色 | `104b99d` | `feat/category-tag-color-editing` |
 | 26 | 2026-08-30 | Release v0.1.0 | `d75ffb9`, `ff1e93b` | `main` |
 | 26 | 2026-08-30 | 分类/标签色板配色编辑 | `24e68dc` | `feat/category-tag-color-editing` |
