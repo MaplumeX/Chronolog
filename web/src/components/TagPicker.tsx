@@ -1,7 +1,7 @@
 import { Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { Tag } from "../api";
-import { categoryColor } from "../format";
+import { paletteColor } from "../format";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -53,7 +53,7 @@ export function TagPicker(props: {
               >
                 <span
                   className="size-2 shrink-0 rounded-full"
-                  style={{ background: categoryColor(tag.name) }}
+                  style={{ background: paletteColor(tag.color, tag.name) }}
                 />
                 {tag.name}
                 {selected ? <Check className="ml-auto size-4" /> : null}

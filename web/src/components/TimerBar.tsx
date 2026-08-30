@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Play, Square } from "lucide-react";
-import { categoryColor, formatDuration } from "../format";
+import { formatDuration, paletteColor } from "../format";
 import { Button } from "@/components/ui/button";
 
 export function TimerBar(props: {
@@ -10,6 +10,8 @@ export function TimerBar(props: {
   categoryPicker: ReactNode;
   tagPicker: ReactNode;
   runningTags: { id: string; name: string }[];
+  /** 运行中标签的显式色（按 tagId 查自标签列表），未设定回退 hash 色 */
+  runningTagColors: (id: string) => number | null;
   elapsed: number;
   running: boolean;
   canStart: boolean;
@@ -37,7 +39,8 @@ export function TimerBar(props: {
               >
                 <span
                   className="size-1.5 shrink-0 rounded-full"
-                  style={{ background: categoryColor(tag.name) }}
+                  style={{ background: paletteColor(props.runningTagColors(tag.id), tag.name) }}
+                  aria-hidden="true"
                 />
                 {tag.name}
               </span>

@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "server 测试与质量要求"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "web 构建与质量要求"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "检查前后端契约一致性"}
+{"file": ".trellis/spec/frontend/design-tokens.md", "reason": "检查色板使用是否走 token 而非硬编码色值"}
+{"file": ".trellis/tasks/08-30-category-tag-color-palette/prd.md", "reason": "验收标准清单"}

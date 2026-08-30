@@ -25,8 +25,8 @@ When adding a column or index, update **both** files in the same change. For new
 |-------|--------|
 | `users` | `username` unique with `COLLATE NOCASE`; `password_hash` Argon2id PHC; `display_name` nullable (added task 08-29-user-system) |
 | `sessions` | opaque id; `ON DELETE CASCADE` with user |
-| `categories` | unique `(user_id, name)` |
-| `tags` | unique `(user_id, name)`; `ON DELETE CASCADE` with user |
+| `categories` | unique `(user_id, name)`; `color` INTEGER nullable — palette index 1–8, NULL = auto (hash) (added task 08-30-category-tag-color-palette) |
+| `tags` | unique `(user_id, name)`; `ON DELETE CASCADE` with user; `color` INTEGER nullable — same semantics as categories |
 | `entry_tags` | composite PK `(entry_id, tag_id)`; both FKs `ON DELETE CASCADE` |
 | `time_entries` | `stopped_at` NULL = running; unique `(user_id) WHERE stopped_at IS NULL` |
 

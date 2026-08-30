@@ -1,5 +1,5 @@
 import type { Category } from "../api";
-import { categoryColor } from "../format";
+import { paletteColor } from "../format";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -12,10 +12,16 @@ export function CategoryPicker(props: {
   categories: Category[];
   value: string;
   label: string;
+  /** 选中分类的名称（无选中时传空串），未显式设色时按名称 hash 回退 */
   colorName: string;
   disabled?: boolean;
   onChange: (id: string) => void;
 }) {
+  const selected = props.categories.find((c) => c.id === props.value);
+  const color = selected
+    ? paletteColor(selected.color, selected.name)
+    : paletteColor(null, props.colorName);
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -27,7 +33,8 @@ export function CategoryPicker(props: {
         >
           <span
             className="size-2 shrink-0 rounded-full"
-            style={{ background: categoryColor(props.colorName) }}
+            style={{ background: color }}
+            aria-hidden="true"
           />
           {props.label}
         </Button>
@@ -41,7 +48,8 @@ export function CategoryPicker(props: {
           >
             <span
               className="size-2 shrink-0 rounded-full"
-              style={{ background: categoryColor(c.name) }}
+              style={{ background: paletteColor(c.color, c.name) }}
+              aria-hidden="true"
             />
             {c.name}
           </DropdownMenuItem>

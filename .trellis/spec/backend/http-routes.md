@@ -44,12 +44,12 @@ New endpoints belong in an existing file if they share the resource, or a new `r
 | PATCH | `/api/account/password` | yes | revokes other sessions, keeps PATs |
 | DELETE | `/api/account` | yes | password confirmation; FK cascade; clears cookie |
 | GET | `/api/categories` | yes | includes `entryCount` |
-| POST | `/api/categories` | yes | `{ name }` |
-| PATCH | `/api/categories/:id` | yes | `{ name }` |
+| POST | `/api/categories` | yes | `{ name, color? }`; `color` = palette index 1–8 or null (auto). Invalid (0/9/"red"/1.5) → 400 |
+| PATCH | `/api/categories/:id` | yes | `{ name?, color? }` at least one (empty → 400); `color: null` clears the explicit color |
 | DELETE | `/api/categories/:id` | yes | occupied → 409 |
 | GET | `/api/tags` | yes | includes `entryCount` |
-| POST | `/api/tags` | yes | `{ name }`; duplicate → 409 |
-| PATCH | `/api/tags/:id` | yes | `{ name }`; duplicate → 409 |
+| POST | `/api/tags` | yes | `{ name, color? }`; duplicate → 409; color same as categories |
+| PATCH | `/api/tags/:id` | yes | `{ name?, color? }` at least one; duplicate → 409 |
 | DELETE | `/api/tags/:id` | yes | direct delete; cascade unlinks entries |
 | GET | `/api/timer/current` | yes | `{ entry: EntryDto \| null }` |
 | POST | `/api/timer/start` | yes | `{ categoryId, description?, tagIds? }` |

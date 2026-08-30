@@ -4,9 +4,9 @@ export type User = { id: string; username: string; displayName: string | null };
 
 export type Meta = { registrationOpen: boolean };
 
-export type Category = { id: string; name: string; entryCount: number };
+export type Category = { id: string; name: string; color: number | null; entryCount: number };
 
-export type Tag = { id: string; name: string; entryCount: number };
+export type Tag = { id: string; name: string; color: number | null; entryCount: number };
 
 export type ApiToken = { id: string; name: string; createdAt: string; lastUsedAt: string | null };
 
@@ -128,22 +128,22 @@ export const api = {
   deleteAccount: (password: string) =>
     request<{ ok: boolean }>("/api/account", { method: "DELETE", body: JSON.stringify({ password }) }),
   categories: () => request<{ categories: Category[] }>("/api/categories"),
-  createCategory: (name: string) =>
-    request<Category>("/api/categories", { method: "POST", body: JSON.stringify({ name }) }),
-  renameCategory: (id: string, name: string) =>
-    request<{ id: string; name: string }>(`/api/categories/${id}`, {
+  createCategory: (name: string, color?: number | null) =>
+    request<Category>("/api/categories", { method: "POST", body: JSON.stringify({ name, color }) }),
+  updateCategory: (id: string, body: { name?: string; color?: number | null }) =>
+    request<{ id: string; name: string; color: number | null }>(`/api/categories/${id}`, {
       method: "PATCH",
-      body: JSON.stringify({ name }),
+      body: JSON.stringify(body),
     }),
   deleteCategory: (id: string) =>
     request<{ ok: boolean }>(`/api/categories/${id}`, { method: "DELETE" }),
   tags: () => request<{ tags: Tag[] }>("/api/tags"),
-  createTag: (name: string) =>
-    request<Tag>("/api/tags", { method: "POST", body: JSON.stringify({ name }) }),
-  renameTag: (id: string, name: string) =>
-    request<{ id: string; name: string }>(`/api/tags/${id}`, {
+  createTag: (name: string, color?: number | null) =>
+    request<Tag>("/api/tags", { method: "POST", body: JSON.stringify({ name, color }) }),
+  updateTag: (id: string, body: { name?: string; color?: number | null }) =>
+    request<{ id: string; name: string; color: number | null }>(`/api/tags/${id}`, {
       method: "PATCH",
-      body: JSON.stringify({ name }),
+      body: JSON.stringify(body),
     }),
   deleteTag: (id: string) =>
     request<{ ok: boolean }>(`/api/tags/${id}`, { method: "DELETE" }),
