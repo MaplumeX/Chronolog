@@ -604,3 +604,24 @@ Changed docker-compose host port mapping from 8080 to 2259 (container port uncha
 ### Status
 
 [OK] **Completed**
+
+
+## Session 27: 色板去除自动选项，创建即固定颜色
+
+**Date**: 2026-08-30
+**Task**: 色板去除自动选项，创建即固定颜色
+**Branch**: `feat/category-tag-color-editing`
+
+### Summary
+
+去除色板「自动」选项：创建分类/标签时用 trim 后名称 hash 生成颜色直接随 POST 落库；编辑浮窗 8 色点必选其一（无自动），旧 NULL 数据打开时默认选中 hash 回退色、保存固化；改名不重新 hash。后端零改动，82 测试全绿，spec 已更新。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `104b99d` | (see git log) |
+
+### Status
+
+[OK] **Completed**
