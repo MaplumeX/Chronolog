@@ -73,16 +73,36 @@ jobs:
         with:
           fetch-depth: 0 # full history for changelog generation
 
-      - name: Generate changelog
-        id: changelog
-        uses: bcoe/conventional-changelog-action@v3
+      - uses: actions/setup-node@v4
         with:
-          # The tag already exists, so we don't let the action create/overwrite it
-          git-push: false
-          output-file: false
+          node-version: 22
+
+      - name: Generate changelog
+        run: |
+          npm install --no-save conventional-changelog-cli
+          # List releases including this tag; take only the section for this tag
+          npx conventional-changelog-cli -p conventionalcommits \
+            -u "https://github.com/${{ github.repository }}" \
+            -t v -r 2 > FULL_CHANGELOG.md
+          # Keep only the section for the current tag (last released section
+          # is at the top, "Unreleased" may precede it)
+          TAG="${{ github.ref_name }}"
+          # strip the leading "v" for section matching (changelog headings use bare versions)
+          VERSION="${TAG#v}"
+          python3 - "$TAG" "$VERSION" <<'EOF'
+          import re, sys
+          tag, version = sys.argv[1], sys.argv[2]
+          text = open('FULL_CHANGELOG.md').read()
+          # Find the section heading for this version (bare, without "v")
+          m = re.search(rf'^## \[{re.escape(version)}\][^\n]*\n(.*?)(?=^## \[|\Z)', text, re.M | re.S)
+          body = m.group(1).strip() if m else ''
+          header = f'# {tag}\n\n'
+          open('RELEASE_BODY.md', 'w').write(header + body + '\n')
+          EOF
+          cat RELEASE_BODY.md
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          body: ${{ steps.changelog.outputs.changelog }}
+          body_path: RELEASE_BODY.md
           generate_release_notes: false
