@@ -307,6 +307,7 @@ export function useTimerController(props: {
       />
     ),
     runningTags: running?.tags ?? [],
+    runningTagColors: (id: string) => tags.find((x) => x.id === id)?.color ?? null,
     elapsed,
     running: Boolean(running),
     canStart: Boolean(categoryId),

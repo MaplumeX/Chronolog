@@ -2,14 +2,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { BoundaryEntries, Category, Tag, TimeEntry, TodayEntries, WeekEntries } from "../api";
 import {
-  categoryColor,
-  categoryIndex,
   clipSeconds,
   formatClock,
   formatDayLabel,
   formatDuration,
   formatWeekLabel,
   formatWeekdayHeader,
+  paletteColor,
+  paletteForegroundColor,
 } from "../format";
 import { DateNav } from "./DateNav";
 import { EntryEditor } from "./EntryEditor";
@@ -128,6 +128,9 @@ function DayColumn(props: {
   onGapClick?: (gap: Gap, vis: { startMs: number; endMs: number }) => void;
   /** gap 草稿锚点：被点击 slot 可见段的固化快照，作为 draft popover 的定位 anchor（不随 gap 重算移动） */
   gapAnchor?: { startMs: number; endMs: number } | null;
+  /** 分类/标签列表（含显式色），条目块/tag 徽章优先用用户设定色，未设定回退 hash 色 */
+  categories: Category[];
+  tags: Tag[];
 }) {
   const { t } = useTranslation();
   const {
@@ -144,6 +147,8 @@ function DayColumn(props: {
     gaps,
     onGapClick,
     gapAnchor,
+    categories,
+    tags,
   } = props;
 
   const trackRef = useRef<HTMLDivElement>(null);
@@ -299,8 +304,10 @@ function DayColumn(props: {
               const timeRange = `${formatClock(e.startedAt, tz)} – ${
                 e.stoppedAt ? formatClock(e.stoppedAt, tz) : "…"
               }`;
-              const color = categoryColor(e.categoryName);
-              const textColor = `var(--category-${categoryIndex(e.categoryName) + 1}-foreground)`;
+              // 颜色：分类显式色优先，未设定回退名称 hash 色（hash 逻辑不可改动）
+              const categoryColor = categories.find((c) => c.id === e.categoryId)?.color ?? null;
+              const color = paletteColor(categoryColor, e.categoryName);
+              const textColor = paletteForegroundColor(categoryColor, e.categoryName);
               const desc = e.description || t("timeline.noDescription");
 
               // tier 阈值按像素校准（60 档下 2.5% ≈ 24px、1% ≈ 10px），细档位下不因高度放大而失真
@@ -322,15 +329,18 @@ function DayColumn(props: {
                       <div className="block-meta">{e.categoryName}</div>
                       {e.tags.length > 0 ? (
                         <div className="block-tags">
-                          {e.tags.map((tag) => (
-                            <span key={tag.id} className="block-tag">
-                              <span
-                                className="size-1.5 shrink-0 rounded-full"
-                                style={{ background: categoryColor(tag.name) }}
-                              />
-                              {tag.name}
-                            </span>
-                          ))}
+                          {e.tags.map((tag) => {
+                            const tagColor = tags.find((x) => x.id === tag.id)?.color ?? null;
+                            return (
+                              <span key={tag.id} className="block-tag">
+                                <span
+                                  className="size-1.5 shrink-0 rounded-full"
+                                  style={{ background: paletteColor(tagColor, tag.name) }}
+                                />
+                                {tag.name}
+                              </span>
+                            );
+                          })}
                         </div>
                       ) : null}
                       <div className="block-time">{timeRange}</div>
@@ -671,6 +681,8 @@ export function Timeline(props: {
             gapAnchor={
               gapDraft && gapDraft.anchor.dayStart === today?.dayStart ? gapDraft.anchor : null
             }
+            categories={categories}
+            tags={tags}
           />
         ) : week ? (
           <div className="flex min-w-full flex-col">
@@ -728,6 +740,8 @@ export function Timeline(props: {
                     gaps={weekGaps[i]}
                     onGapClick={handleGapClick(d.dayStart)}
                     gapAnchor={gapDraft?.anchor.dayStart === d.dayStart ? gapDraft.anchor : null}
+                    categories={categories}
+                    tags={tags}
                   />
                 </div>
               ))}

@@ -97,3 +97,36 @@ export function categoryIndex(name: string): number {
 export function categoryColor(name: string): string {
   return CATEGORY_VARS[categoryIndex(name)];
 }
+
+const CATEGORY_FOREGROUND_VARS = [
+  "var(--category-1-foreground)",
+  "var(--category-2-foreground)",
+  "var(--category-3-foreground)",
+  "var(--category-4-foreground)",
+  "var(--category-5-foreground)",
+  "var(--category-6-foreground)",
+  "var(--category-7-foreground)",
+  "var(--category-8-foreground)",
+];
+
+/** 名称 hash → 前景色 token（色块上文字用，随主题翻转）。hash 逻辑不可改动。 */
+export function categoryForegroundColor(name: string): string {
+  return CATEGORY_FOREGROUND_VARS[categoryIndex(name)];
+}
+
+/** 显式色板索引优先（1–8），未设定（null/undefined/越界）回退名称 hash 色。 */
+export function paletteColor(color: number | null | undefined, fallbackName: string): string {
+  return color != null && color >= 1 && color <= 8
+    ? `var(--category-${color})`
+    : categoryColor(fallbackName);
+}
+
+/** 同 paletteColor，但返回配套前景色（色块上文字用）。 */
+export function paletteForegroundColor(
+  color: number | null | undefined,
+  fallbackName: string,
+): string {
+  return color != null && color >= 1 && color <= 8
+    ? `var(--category-${color}-foreground)`
+    : categoryForegroundColor(fallbackName);
+}

@@ -38,6 +38,7 @@ CREATE TABLE IF NOT EXISTS categories (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
+  color INTEGER,
   created_at TEXT NOT NULL
 );
 CREATE UNIQUE INDEX IF NOT EXISTS categories_user_id_name ON categories(user_id, name);
@@ -58,6 +59,7 @@ CREATE TABLE IF NOT EXISTS tags (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
+  color INTEGER,
   created_at TEXT NOT NULL
 );
 CREATE UNIQUE INDEX IF NOT EXISTS tags_user_id_name ON tags(user_id, name);
@@ -101,5 +103,19 @@ function migrate(sqlite: InstanceType<typeof Database>) {
   );
   if (!userCols.includes("display_name")) {
     sqlite.exec("ALTER TABLE users ADD COLUMN display_name TEXT");
+  }
+
+  const categoryCols = (sqlite.pragma("table_info(categories)") as { name: string }[]).map(
+    (c) => c.name,
+  );
+  if (!categoryCols.includes("color")) {
+    sqlite.exec("ALTER TABLE categories ADD COLUMN color INTEGER");
+  }
+
+  const tagCols = (sqlite.pragma("table_info(tags)") as { name: string }[]).map(
+    (c) => c.name,
+  );
+  if (!tagCols.includes("color")) {
+    sqlite.exec("ALTER TABLE tags ADD COLUMN color INTEGER");
   }
 }

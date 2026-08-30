@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiError, api, type Tag } from "../api";
-import { categoryColor } from "../format";
+import { paletteColor, categoryIndex } from "../format";
+import { NameColorEditPopover } from "@/components/NameColorEditPopover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,8 +18,6 @@ export function TagsPage() {
   const { t } = useTranslation();
   const [tags, setTags] = useState<Tag[]>([]);
   const [name, setName] = useState("");
-  const [editing, setEditing] = useState<string | null>(null);
-  const [editName, setEditName] = useState("");
   const [confirming, setConfirming] = useState<string | null>(null);
   const [error, setError] = useState("");
 
@@ -34,22 +33,11 @@ export function TagsPage() {
   async function create() {
     setError("");
     try {
-      await api.createTag(name);
+      await api.createTag(name.trim(), categoryIndex(name.trim()) + 1);
       setName("");
       await reload();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("tags.createFailed"));
-    }
-  }
-
-  async function save(id: string) {
-    setError("");
-    try {
-      await api.renameTag(id, editName);
-      setEditing(null);
-      await reload();
-    } catch (err) {
-      setError(err instanceof ApiError ? err.message : t("tags.renameFailed"));
     }
   }
 
@@ -92,45 +80,26 @@ export function TagsPage() {
           {tags.map((tag) => (
             <TableRow key={tag.id}>
               <TableCell>
-                {editing === tag.id ? (
-                  <div className="flex items-center gap-2">
-                    <Input value={editName} onChange={(e) => setEditName(e.target.value)} />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => void save(tag.id)}
-                      disabled={!editName.trim()}
-                    >
-                      {t("tags.save")}
-                    </Button>
-                    <Button type="button" variant="outline" onClick={() => setEditing(null)}>
-                      {t("tags.cancel")}
-                    </Button>
-                  </div>
-                ) : (
-                  <span className="flex items-center gap-2">
-                    <span
-                      className="size-2 shrink-0 rounded-full"
-                      style={{ background: categoryColor(tag.name) }}
-                    />
-                    {tag.name}
-                  </span>
-                )}
+                <span className="flex items-center gap-2">
+                  <span
+                    className="size-2 shrink-0 rounded-full"
+                    style={{ background: paletteColor(tag.color, tag.name) }}
+                  />
+                  {tag.name}
+                </span>
               </TableCell>
               <TableCell>{tag.entryCount}</TableCell>
               <TableCell>
                 <div className="flex flex-wrap justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setEditing(tag.id);
-                      setEditName(tag.name);
+                  <NameColorEditPopover
+                    namespace="tags"
+                    name={tag.name}
+                    color={tag.color}
+                    onSave={async ({ name: nextName, color }) => {
+                      await api.updateTag(tag.id, { name: nextName, color });
+                      await reload();
                     }}
-                  >
-                    {t("tags.rename")}
-                  </Button>
+                  />
                   {confirming === tag.id ? (
                     <Button
                       type="button"

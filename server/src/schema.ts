@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { index, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import { index, integer, primaryKey, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const users = sqliteTable(
   "users",
@@ -37,6 +37,7 @@ export const categories = sqliteTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
+    color: integer("color"),
     createdAt: text("created_at").notNull(),
   },
   (t) => [uniqueIndex("categories_user_id_name").on(t.userId, t.name)],
@@ -72,6 +73,7 @@ export const tags = sqliteTable(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
+    color: integer("color"),
     createdAt: text("created_at").notNull(),
   },
   (t) => [uniqueIndex("tags_user_id_name").on(t.userId, t.name)],

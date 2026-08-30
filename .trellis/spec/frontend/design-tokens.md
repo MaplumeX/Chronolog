@@ -27,7 +27,7 @@
 - **185–225 hue 区间留给 primary**，分类色避开，防止混淆。
 - 每色配套 `--category-N-foreground`（light 下深色文字、dark 下近白略带色相），随主题翻转；Timeline 色块文字/派生色（tag 徽章底、running 轮廓）消费它。
 - `web/src/format.ts` 仅持有 token 名：`categoryIndex(name)`（hash → 0–7）+ `categoryColor(name)` 返回 `var(--category-N)`。具体数值只在 styles.css 一处定义，无需两边同步。
-- 分类颜色不落库，始终由名称 hash 分配（`categoryColor`）；hash 逻辑不可改动，否则既有映射漂移。
+- 分类/标签颜色可落库（`color` = 1–8 色板索引，任务 08-30-category-tag-color-palette）：展示位用 `paletteColor(color, fallbackName)` / `paletteForegroundColor(color, fallbackName)`（format.ts）——显式色优先返回 `var(--category-N)`，NULL 回退 hash 色（旧数据兼容）。**创建即固定**（任务 08-30-palette-auto-to-fixed）：新建时前端用 trim 后名称 hash（`categoryIndex(name)+1`）作为 color 随 POST 落库，编辑色板 8 色点必选其一（无「自动」选项）；旧 NULL 数据编辑时默认选中 hash 回退色、保存固化。**`categoryIndex`/`categoryColor` hash 逻辑不可改动**，否则既有回退映射漂移。色板 UI 复用 `web/src/components/ColorPalettePicker.tsx`（8 色点，radiogroup），编辑浮窗复用 `NameColorEditPopover.tsx`。
 - Timeline 时间块底色用 `color-mix(in srgb, <categoryColor> 80%, transparent)` 半透明透出轨道背景；小色点/条形（picker、列表、Stats）用实色 `categoryColor()`。
 
 ## 圆角

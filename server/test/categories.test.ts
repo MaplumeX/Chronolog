@@ -47,6 +47,132 @@ describe("categories", () => {
     assert.equal(json(rename).name, "深度阅读");
   });
 
+  it("color: create/list/patch round-trip; invalid values are rejected", async () => {
+    t = await createTestApp();
+    const { sid } = await registerUser(t.app, "cat_color");
+
+    const created = await t.app.inject({
+      method: "POST",
+      url: "/api/categories",
+      headers: cookieHeader(sid),
+      payload: { name: "阅读", color: 3 },
+    });
+    assert.equal(created.statusCode, 200);
+    const id = json(created).id as string;
+    assert.equal(json(created).color, 3);
+
+    const list = await t.app.inject({
+      method: "GET",
+      url: "/api/categories",
+      headers: cookieHeader(sid),
+    });
+    assert.equal(list.statusCode, 200);
+    const found = (json(list).categories as { id: string; color: number | null }[]).find(
+      (c) => c.id === id,
+    );
+    assert.ok(found);
+    assert.equal(found.color, 3);
+
+    const defaultCreated = await t.app.inject({
+      method: "POST",
+      url: "/api/categories",
+      headers: cookieHeader(sid),
+      payload: { name: "默认" },
+    });
+    assert.equal(defaultCreated.statusCode, 200);
+    assert.equal(json(defaultCreated).color, null);
+
+    const setColor = await t.app.inject({
+      method: "PATCH",
+      url: `/api/categories/${id}`,
+      headers: cookieHeader(sid),
+      payload: { color: 8 },
+    });
+    assert.equal(setColor.statusCode, 200);
+    assert.equal(json(setColor).color, 8);
+    assert.equal(json(setColor).name, "阅读");
+
+    const setBoth = await t.app.inject({
+      method: "PATCH",
+      url: `/api/categories/${id}`,
+      headers: cookieHeader(sid),
+      payload: { name: "泛读", color: 1 },
+    });
+    assert.equal(setBoth.statusCode, 200);
+    assert.equal(json(setBoth).name, "泛读");
+    assert.equal(json(setBoth).color, 1);
+
+    const clearColor = await t.app.inject({
+      method: "PATCH",
+      url: `/api/categories/${id}`,
+      headers: cookieHeader(sid),
+      payload: { color: null },
+    });
+    assert.equal(clearColor.statusCode, 200);
+    assert.equal(json(clearColor).color, null);
+    assert.equal(json(clearColor).name, "泛读");
+
+    const after = await t.app.inject({
+      method: "GET",
+      url: "/api/categories",
+      headers: cookieHeader(sid),
+    });
+    const afterFound = (json(after).categories as { id: string; color: number | null }[]).find(
+      (c) => c.id === id,
+    );
+    assert.ok(afterFound);
+    assert.equal(afterFound.color, null);
+
+    for (const invalid of [0, 9, -1]) {
+      const badPost = await t.app.inject({
+        method: "POST",
+        url: "/api/categories",
+        headers: cookieHeader(sid),
+        payload: { name: `坏${invalid}`, color: invalid },
+      });
+      assert.equal(badPost.statusCode, 400);
+      assert.equal((json(badPost).error as { code: string }).code, "VALIDATION");
+
+      const badPatch = await t.app.inject({
+        method: "PATCH",
+        url: `/api/categories/${id}`,
+        headers: cookieHeader(sid),
+        payload: { color: invalid },
+      });
+      assert.equal(badPatch.statusCode, 400);
+      assert.equal((json(badPatch).error as { code: string }).code, "VALIDATION");
+    }
+
+    for (const invalid of ["red", 1.5]) {
+      const badPost = await t.app.inject({
+        method: "POST",
+        url: "/api/categories",
+        headers: cookieHeader(sid),
+        payload: { name: `坏${invalid}`, color: invalid },
+      });
+      assert.equal(badPost.statusCode, 400);
+      assert.equal((json(badPost).error as { code: string }).code, "VALIDATION");
+
+      const badPatch = await t.app.inject({
+        method: "PATCH",
+        url: `/api/categories/${id}`,
+        headers: cookieHeader(sid),
+        payload: { color: invalid },
+      });
+      assert.equal(badPatch.statusCode, 400);
+      assert.equal((json(badPatch).error as { code: string }).code, "VALIDATION");
+    }
+
+    const emptyPatch = await t.app.inject({
+      method: "PATCH",
+      url: `/api/categories/${id}`,
+      headers: cookieHeader(sid),
+      payload: {},
+    });
+    assert.equal(emptyPatch.statusCode, 400);
+    assert.equal((json(emptyPatch).error as { code: string }).code, "VALIDATION");
+  });
+
   it("cannot delete a category that is in use; unused can be deleted", async () => {
     t = await createTestApp();
     const { sid } = await registerUser(t.app, "cat_del");

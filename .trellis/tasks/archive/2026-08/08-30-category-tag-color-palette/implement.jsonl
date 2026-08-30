@@ -1,0 +1,7 @@
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "加 color 列、幂等迁移与 drizzle schema 修改须遵循"}
+{"file": ".trellis/spec/backend/http-routes.md", "reason": "categories/tags 路由改动须遵循 /api 形状与 Deps 约定"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "color 校验 400 VALIDATION 与 ownership 404 约定"}
+{"file": ".trellis/spec/frontend/design-tokens.md", "reason": "色板即 --category-1..8 token，前端取色必须走 token"}
+{"file": ".trellis/spec/frontend/api-client.md", "reason": "api.ts 类型与 PATCH 载荷扩展约定"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "新增 payload 字段的类型同步要求"}
+{"file": ".trellis/spec/guides/cross-layer-thinking-guide.md", "reason": "API 契约前后端同步（加 JSON 字段场景）"}

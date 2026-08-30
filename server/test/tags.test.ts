@@ -53,6 +53,95 @@ describe("tags", () => {
     assert.equal(tags[0].entryCount, 0);
   });
 
+  it("color: create/list/patch round-trip; invalid values are rejected", async () => {
+    t = await createTestApp();
+    const { sid } = await registerUser(t.app, "tag_color");
+
+    const created = await createTag(t.app, sid, "会议");
+    assert.equal(created.statusCode, 200);
+    assert.equal(json(created).color, null);
+    const id = json(created).id as string;
+
+    const colored = await t.app.inject({
+      method: "POST",
+      url: "/api/tags",
+      headers: cookieHeader(sid),
+      payload: { name: "专注", color: 5 },
+    });
+    assert.equal(colored.statusCode, 200);
+    assert.equal(json(colored).color, 5);
+    const coloredId = json(colored).id as string;
+
+    const list = await t.app.inject({
+      method: "GET",
+      url: "/api/tags",
+      headers: cookieHeader(sid),
+    });
+    assert.equal(list.statusCode, 200);
+    const items = json(list).tags as { id: string; color: number | null }[];
+    assert.equal(items.find((x) => x.id === id)?.color, null);
+    assert.equal(items.find((x) => x.id === coloredId)?.color, 5);
+
+    const setColor = await t.app.inject({
+      method: "PATCH",
+      url: `/api/tags/${id}`,
+      headers: cookieHeader(sid),
+      payload: { color: 2 },
+    });
+    assert.equal(setColor.statusCode, 200);
+    assert.equal(json(setColor).color, 2);
+    assert.equal(json(setColor).name, "会议");
+
+    const setBoth = await t.app.inject({
+      method: "PATCH",
+      url: `/api/tags/${id}`,
+      headers: cookieHeader(sid),
+      payload: { name: "例会", color: 7 },
+    });
+    assert.equal(setBoth.statusCode, 200);
+    assert.equal(json(setBoth).name, "例会");
+    assert.equal(json(setBoth).color, 7);
+
+    const clearColor = await t.app.inject({
+      method: "PATCH",
+      url: `/api/tags/${id}`,
+      headers: cookieHeader(sid),
+      payload: { color: null },
+    });
+    assert.equal(clearColor.statusCode, 200);
+    assert.equal(json(clearColor).color, null);
+    assert.equal(json(clearColor).name, "例会");
+
+    for (const invalid of [0, 9, -1, "red", 1.5]) {
+      const badPost = await t.app.inject({
+        method: "POST",
+        url: "/api/tags",
+        headers: cookieHeader(sid),
+        payload: { name: `坏${invalid}`, color: invalid },
+      });
+      assert.equal(badPost.statusCode, 400);
+      assert.equal((json(badPost).error as { code: string }).code, "VALIDATION");
+
+      const badPatch = await t.app.inject({
+        method: "PATCH",
+        url: `/api/tags/${id}`,
+        headers: cookieHeader(sid),
+        payload: { color: invalid },
+      });
+      assert.equal(badPatch.statusCode, 400);
+      assert.equal((json(badPatch).error as { code: string }).code, "VALIDATION");
+    }
+
+    const emptyPatch = await t.app.inject({
+      method: "PATCH",
+      url: `/api/tags/${id}`,
+      headers: cookieHeader(sid),
+      payload: {},
+    });
+    assert.equal(emptyPatch.statusCode, 400);
+    assert.equal((json(emptyPatch).error as { code: string }).code, "VALIDATION");
+  });
+
   it("deleting a tag removes its entry associations (cascade)", async () => {
     t = await createTestApp();
     const { sid } = await registerUser(t.app, "tag_del");

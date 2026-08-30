@@ -6,12 +6,34 @@ import type { Deps } from "../db.js";
 import { AppError, isUniqueViolation, parseBody } from "../errors.js";
 import { categories, timeEntries } from "../schema.js";
 
-const nameBody = z.object({
+const colorField = z
+  .number({ message: "颜色须为 1–8 的整数" })
+  .int("颜色须为 1–8 的整数")
+  .min(1, "颜色须为 1–8 的整数")
+  .max(8, "颜色须为 1–8 的整数")
+  .nullable()
+  .optional();
+
+const createBody = z.object({
   name: z
     .string()
     .transform((s) => s.trim())
     .pipe(z.string().min(1, "分类名不能为空").max(32, "分类名过长")),
+  color: colorField,
 });
+
+const updateBody = z
+  .object({
+    name: z
+      .string()
+      .transform((s) => s.trim())
+      .pipe(z.string().min(1, "分类名不能为空").max(32, "分类名过长"))
+      .optional(),
+    color: colorField,
+  })
+  .refine((body) => body.name !== undefined || body.color !== undefined, {
+    message: "至少提供一个字段",
+  });
 
 function getOwnCategory(deps: Deps, userId: string, id: string) {
   const row = deps.db
@@ -46,6 +68,7 @@ export function registerCategoryRoutes(app: FastifyInstance, deps: Deps) {
       categories: rows.map((c) => ({
         id: c.id,
         name: c.name,
+        color: c.color ?? null,
         entryCount: byId.get(c.id) ?? 0,
       })),
     };
@@ -53,7 +76,7 @@ export function registerCategoryRoutes(app: FastifyInstance, deps: Deps) {
 
   app.post("/api/categories", async (req) => {
     const user = requireUser(req, deps);
-    const body = parseBody(nameBody, req.body);
+    const body = parseBody(createBody, req.body);
     const id = newId();
     try {
       deps.db
@@ -62,6 +85,7 @@ export function registerCategoryRoutes(app: FastifyInstance, deps: Deps) {
           id,
           userId: user.id,
           name: body.name,
+          color: body.color ?? null,
           createdAt: deps.now().toISOString(),
         })
         .run();
@@ -71,18 +95,21 @@ export function registerCategoryRoutes(app: FastifyInstance, deps: Deps) {
       }
       throw err;
     }
-    return { id, name: body.name, entryCount: 0 };
+    return { id, name: body.name, color: body.color ?? null, entryCount: 0 };
   });
 
   app.patch("/api/categories/:id", async (req) => {
     const user = requireUser(req, deps);
     const { id } = parseBody(z.object({ id: z.string().min(1) }), req.params);
-    const body = parseBody(nameBody, req.body);
+    const body = parseBody(updateBody, req.body);
     getOwnCategory(deps, user.id, id);
+    const set: { name?: string; color?: number | null } = {};
+    if (body.name !== undefined) set.name = body.name;
+    if (body.color !== undefined) set.color = body.color;
     try {
       deps.db
         .update(categories)
-        .set({ name: body.name })
+        .set(set)
         .where(and(eq(categories.id, id), eq(categories.userId, user.id)))
         .run();
     } catch (err) {
@@ -92,7 +119,7 @@ export function registerCategoryRoutes(app: FastifyInstance, deps: Deps) {
       throw err;
     }
     const updated = getOwnCategory(deps, user.id, id);
-    return { id: updated.id, name: updated.name };
+    return { id: updated.id, name: updated.name, color: updated.color ?? null };
   });
 
   app.delete("/api/categories/:id", async (req) => {

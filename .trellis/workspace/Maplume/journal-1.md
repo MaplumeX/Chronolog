@@ -583,3 +583,45 @@ Changed docker-compose host port mapping from 8080 to 2259 (container port uncha
 ### Status
 
 [OK] **Completed**
+
+
+## Session 26: 分类/标签色板配色编辑
+
+**Date**: 2026-08-30
+**Task**: 分类/标签色板配色编辑
+**Branch**: `feat/category-tag-color-editing`
+
+### Summary
+
+为分类/标签新增可编辑配色：DB 加可空 color 列（1–8 色板索引，幂等迁移），POST/PATCH 支持可选 color（至少其一，非法值 400），前端管理页重命名改为编辑 Popover（名称+8色板+自动），全部展示位（Timeline/Stats/Picker/TimerBar）显式色优先、hash 回退。82 测试全绿，spec 四处已更新。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `24e68dc` | (see git log) |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 27: 色板去除自动选项，创建即固定颜色
+
+**Date**: 2026-08-30
+**Task**: 色板去除自动选项，创建即固定颜色
+**Branch**: `feat/category-tag-color-editing`
+
+### Summary
+
+去除色板「自动」选项：创建分类/标签时用 trim 后名称 hash 生成颜色直接随 POST 落库；编辑浮窗 8 色点必选其一（无自动），旧 NULL 数据打开时默认选中 hash 回退色、保存固化；改名不重新 hash。后端零改动，82 测试全绿，spec 已更新。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `104b99d` | (see git log) |
+
+### Status
+
+[OK] **Completed**

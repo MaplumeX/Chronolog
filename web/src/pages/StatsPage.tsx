@@ -14,8 +14,8 @@ import {
 } from "recharts";
 import { enUS, zhCN } from "react-day-picker/locale";
 
-import { ApiError, api, type RangeStats, type Tag } from "../api";
-import { browserTz, categoryColor, formatDuration } from "../format";
+import { ApiError, api, type Category, type RangeStats, type Tag } from "../api";
+import { browserTz, formatDuration, paletteColor } from "../format";
 import { localeFor } from "../i18n";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -105,12 +105,19 @@ export function StatsPage() {
   const [customTo, setCustomTo] = useState<string | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [stats, setStats] = useState<RangeStats | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [tagId, setTagId] = useState<string | undefined>(undefined);
   const [error, setError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
+    api
+      .categories()
+      .then((res) => {
+        if (!cancelled) setCategories(res.categories);
+      })
+      .catch(() => undefined);
     api
       .tags()
       .then((res) => {
@@ -186,6 +193,13 @@ export function StatsPage() {
 
   const selectedTag = tags.find((x) => x.id === tagId);
   const locale = localeFor(i18n.language);
+
+  // 颜色查表：聚合数据只有 id/name，按 id 查页面已加载的分类/标签列表拿显式色；
+  // 查不到或未显式设色时 paletteColor 回退名称 hash 色（与升级前视觉一致）
+  const categoryColorOf = (categoryId: string, categoryName: string) =>
+    paletteColor(categories.find((c) => c.id === categoryId)?.color ?? null, categoryName);
+  const tagColorOf = (tagId: string | null, tagName: string | null) =>
+    tagId ? paletteColor(tags.find((x) => x.id === tagId)?.color ?? null, tagName ?? "") : "var(--muted-foreground)";
 
   const totalSeconds = stats?.totalSeconds ?? 0;
   const maxCategory = Math.max(1, ...(stats?.categories.map((c) => c.seconds) ?? [1]));
@@ -278,7 +292,9 @@ export function StatsPage() {
                 <span
                   className="size-2 shrink-0 rounded-full"
                   style={{
-                    background: selectedTag ? categoryColor(selectedTag.name) : "transparent",
+                    background: selectedTag
+                      ? paletteColor(selectedTag.color, selectedTag.name)
+                      : "transparent",
                   }}
                 />
                 {selectedTag ? selectedTag.name : t("stats.allTags")}
@@ -299,7 +315,7 @@ export function StatsPage() {
                 >
                   <span
                     className="size-2 shrink-0 rounded-full"
-                    style={{ background: categoryColor(tag.name) }}
+                    style={{ background: paletteColor(tag.color, tag.name) }}
                   />
                   {tag.name}
                 </DropdownMenuItem>
@@ -369,7 +385,7 @@ export function StatsPage() {
                       strokeWidth={0}
                     >
                       {pieData.map((c) => (
-                        <Cell key={c.categoryId} fill={categoryColor(c.categoryName)} />
+                        <Cell key={c.categoryId} fill={categoryColorOf(c.categoryId, c.categoryName)} />
                       ))}
                     </Pie>
                   </PieChart>
@@ -389,7 +405,7 @@ export function StatsPage() {
                     <span className="flex items-center gap-2">
                       <span
                         className="size-2 shrink-0 rounded-full"
-                        style={{ background: categoryColor(c.categoryName) }}
+                        style={{ background: categoryColorOf(c.categoryId, c.categoryName) }}
                       />
                       {c.categoryName}
                     </span>
@@ -398,7 +414,7 @@ export function StatsPage() {
                         className="block h-full rounded-full"
                         style={{
                           width: `${(c.seconds / maxCategory) * 100}%`,
-                          background: categoryColor(c.categoryName),
+                          background: categoryColorOf(c.categoryId, c.categoryName),
                         }}
                       />
                     </div>
@@ -428,9 +444,7 @@ export function StatsPage() {
                     <span className="flex items-center gap-2">
                       <span
                         className="size-2 shrink-0 rounded-full"
-                        style={{
-                          background: x.tagId ? categoryColor(x.tagName ?? "") : "var(--muted-foreground)",
-                        }}
+                        style={{ background: tagColorOf(x.tagId, x.tagName) }}
                       />
                       {x.tagId ? x.tagName : t("stats.noTag")}
                     </span>
@@ -439,9 +453,7 @@ export function StatsPage() {
                         className="block h-full rounded-full"
                         style={{
                           width: `${(x.seconds / maxTag) * 100}%`,
-                          background: x.tagId
-                            ? categoryColor(x.tagName ?? "")
-                            : "var(--muted-foreground)",
+                          background: tagColorOf(x.tagId, x.tagName),
                         }}
                       />
                     </div>
