@@ -43,14 +43,14 @@ New endpoints belong in an existing file if they share the resource, or a new `r
 | PATCH | `/api/profile` | yes | `{ username?, displayName? }`; username dup → 409; empty update → 400 |
 | PATCH | `/api/account/password` | yes | revokes other sessions, keeps PATs |
 | DELETE | `/api/account` | yes | password confirmation; FK cascade; clears cookie |
-| GET | `/api/categories` | yes | includes `entryCount` |
-| POST | `/api/categories` | yes | `{ name, color? }`; `color` = palette index 1–8 or null (auto). Invalid (0/9/"red"/1.5) → 400 |
-| PATCH | `/api/categories/:id` | yes | `{ name?, color? }` at least one (empty → 400); `color: null` clears the explicit color |
-| DELETE | `/api/categories/:id` | yes | occupied → 409 |
-| GET | `/api/tags` | yes | includes `entryCount` |
-| POST | `/api/tags` | yes | `{ name, color? }`; duplicate → 409; color same as categories |
-| PATCH | `/api/tags/:id` | yes | `{ name?, color? }` at least one; duplicate → 409 |
-| DELETE | `/api/tags/:id` | yes | direct delete; cascade unlinks entries |
+| GET | `/api/categories` | yes | includes `entryCount`, `parentId` (null = top level) |
+| POST | `/api/categories` | yes | `{ name, color?, parentId? }`; `color` = palette index 1–8 or null (auto). Invalid (0/9/"red"/1.5) → 400. `parentId` hierarchy rules below |
+| PATCH | `/api/categories/:id` | yes | `{ name?, color?, parentId? }` at least one (empty → 400); `color: null` clears the explicit color; `parentId: null` promotes to top level |
+| DELETE | `/api/categories/:id` | yes | occupied (self or any child) → 409; cascades children in one transaction |
+| GET | `/api/tags` | yes | includes `entryCount`, `parentId` |
+| POST | `/api/tags` | yes | `{ name, color?, parentId? }`; duplicate under same parent → 409; color same as categories |
+| PATCH | `/api/tags/:id` | yes | `{ name?, color?, parentId? }` at least one; duplicate under same parent → 409 |
+| DELETE | `/api/tags/:id` | yes | cascades children (goal refs block) and unlinks entries |
 | GET | `/api/timer/current` | yes | `{ entry: EntryDto \| null }` |
 | POST | `/api/timer/start` | yes | `{ categoryId, description?, tagIds? }` |
 | POST | `/api/timer/stop` | yes | no running → 409 |
@@ -58,8 +58,8 @@ New endpoints belong in an existing file if they share the resource, or a new `r
 | GET | `/api/entries/today?tz=` | yes | overlapping entries + `clippedSeconds` |
 | GET | `/api/entries/week?tz=` | yes | ISO week (Mon–Sun) as 7 day buckets: `{ tz, weekStart, weekEnd, days: TodayEntries[] }` |
 | GET | `/api/entries/boundary?tz=&start=&end=` | yes | entries adjacent to the `[start, end)` window: `{ tz, prevEntry: EntryDto \| null, nextEntry: EntryDto \| null }` (gap-slot feature). `start`/`end` are ISO instants (zod `z.iso.datetime()`, `start < end` else 400 `VALIDATION`); `tz` is validated with `requireTz` but does not drive window math — the frontend converts the day/week view window to absolute instants. `prevEntry` = latest right edge (`stoppedAt ?? ∞`) among entries with `startedAt < start` and (`stoppedAt IS NULL` or `stoppedAt <= start`); `nextEntry` = min `startedAt >= end`. Query lives in `listBoundary` (`server/src/entries.ts`), route in `routes/entries.ts`. |
-| GET | `/api/stats/today?tz=&tagId=` | yes | per-category clipped seconds; optional `tagId` filter (legacy — StatsPage now uses `/api/stats/range`; endpoint kept) |
-| GET | `/api/stats/range?tz=&from=&to=&tagId=` | yes | range aggregation (task 08-29-refactor-stats-page): `days` (per-day clipped seconds incl. zero days, tz-local `YYYY-MM-DD`), `categories` (range-clipped, desc), `tags` (multi-tag entries count fully under each tag; `tagId: null` = no-tag bucket), `totalSeconds` |
+| GET | `/api/stats/today?tz=&tagId=&rollup=` | yes | per-category clipped seconds; optional `tagId` filter (legacy — StatsPage now uses `/api/stats/range`; endpoint kept); `rollup=true|1` merges child-category seconds into the parent bucket (task 08-30-hierarchical-categories-tags) |
+| GET | `/api/stats/range?tz=&from=&to=&tagId=&rollup=` | yes | range aggregation (task 08-29-refactor-stats-page): `days` (per-day clipped seconds incl. zero days, tz-local `YYYY-MM-DD`), `categories` (range-clipped, desc), `tags` (multi-tag entries count fully under each tag; `tagId: null` = no-tag bucket), `totalSeconds`; `rollup=true|1` merges child-category seconds into the parent bucket (`rollupCategories` in `server/src/entries.ts`; tags are **not** rolled up) |
 | POST | `/api/entries` | yes | create: `{ description, categoryId, tagIds, startedAt, stoppedAt }` → 201 + `EntryDto`; overlap → 409 `OVERLAP` |
 | PATCH | `/api/entries/:id` | yes | full update: `{ description, categoryId, tagIds, startedAt, stoppedAt }`; stopped entries only; overlap → 409 `OVERLAP` |
 
@@ -94,6 +94,20 @@ When `WEB_DIST` exists, `@fastify/static` serves it. `setNotFoundHandler`:
 - other GET → `index.html` (client page switch has no URL router)
 
 Dev: Vite `:5173` proxies `/api` to `:8080` (`web/vite.config.ts`). Cookie stays same-origin via the proxy.
+
+## Hierarchy validation matrix (task 08-30-hierarchical-categories-tags)
+
+Applies symmetrically to categories and tags (`routes/categories.ts` / `routes/tags.ts`):
+
+| Check | Error |
+|-------|-------|
+| `parentId` not found or owned by another user | 404 `NOT_FOUND` |
+| `parentId` refers to a non-top-level node | 409 `CONFLICT` `"层级最多两级"` |
+| `parentId === id` (self-parent) | 409 `CONFLICT` |
+| node has children and PATCH tries to make it a child | 409 `CONFLICT` `"层级最多两级"` |
+| same name under the same parent (incl. top level) | 409 `CONFLICT` `"分类名已存在"` / `"标签名已存在"` |
+
+`parentId: null` on PATCH promotes to top level; `undefined` leaves it unchanged. Default categories seed as top level. Tests: `server/test/categories.test.ts`, `tags.test.ts`, `migration.test.ts`.
 
 ## Anti-patterns
 

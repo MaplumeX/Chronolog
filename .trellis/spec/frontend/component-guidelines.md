@@ -69,6 +69,8 @@ Layout (top → bottom): range `Tabs` + tag filter dropdown → total-logged sum
 
 `CategoriesPage`: shadcn `Table`. Occupied categories: disable delete; keep the 409 explanation as `title`.
 
+Two-level hierarchy (task 08-30-hierarchical-categories-tags): `CategoriesPage` / `TagsPage` render top-level rows followed by indented child rows (`pl-6` + `bg-border` guide line), "添加子级" opens `AddChildPopover` (creates with `parentId`), and `NameColorEditPopover` takes optional `parentOptions` / `parentId` / `excludeId` to move a node between parents (dropdown 无(顶层) + top-level nodes). Deleting a parent shows the cascade in `title` (`deleteCascadeTitle` with child count). `CategoryPicker` / `TagPicker` render grouped items — top-level `font-medium`, children indented (`pl-7` + guide line, muted); every level is selectable. `StatsPage` has an 独立/汇总 segmented toggle on the category section that refetches `statsRange` with `rollup` (default 独立 = legacy behavior). Tree ordering comes from `web/src/hierarchy.ts`.
+
 Do not `shadcn add card` to wrap these pages.
 
 ## Copy and controls
