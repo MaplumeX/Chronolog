@@ -678,3 +678,24 @@ Pushed pending commits, tagged v0.1.0 and ran the release workflow. Fixed broken
 ### Status
 
 [OK] **Completed**
+
+
+## Session 30: 重构整体布局结构与视觉层级（Linear 风轻卡片体系）
+
+**Date**: 2026-08-31
+**Task**: 重构整体布局结构与视觉层级（Linear 风轻卡片体系）
+**Branch**: `refactor/layout-visual-hierarchy`
+
+### Summary
+
+全应用视觉/布局重构：底—面两级表面 token（light 灰底白卡 / dark 深底亮面卡）+ 双主题 --shadow-xs；新建 ui/card 六件套与 PageContainer 三档限宽容器；Shell 顶栏标题升至 text-xl tracking-tight；6 页面统一为「工具栏行 → 模块 Card」三段式（表格入卡、统计四张模块卡、设置分组卡、Auth 表单卡）；Timeline 本体零改动；推翻 spec 的 no-card 约定并同步修订 component-guidelines 与 design-tokens。typecheck/build 全绿，WCAG AA 18 组配对验算通过，全 scope check 9/9 PASS。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a362bb7` | (see git log) |
+
+### Status
+
+[OK] **Completed**

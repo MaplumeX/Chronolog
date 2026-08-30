@@ -139,14 +139,15 @@ export function Shell(props: {
   return (
     <SidebarProvider className="h-dvh min-h-dvh">
       <Sidebar collapsible="icon">
-        <SidebarHeader>
+        {/* 品牌区：lg 按钮 p-2 与 p-1 容器合成 px-3，与 nav 项（p-2 容器 + px-2 按钮）左缘对齐 */}
+        <SidebarHeader className="p-1">
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton size="lg" className="pointer-events-none">
                 <span className="flex size-8 items-center justify-center rounded-md bg-sidebar-primary text-sm font-semibold text-sidebar-primary-foreground">
                   C
                 </span>
-                <span className="truncate font-semibold">Chronolog</span>
+                <span className="truncate font-semibold tracking-tight">Chronolog</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

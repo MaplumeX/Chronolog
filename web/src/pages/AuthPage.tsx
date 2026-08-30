@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiError, api, type User } from "../api";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -41,12 +42,15 @@ export function AuthPage(props: { onAuthed: (user: User) => void }) {
   }
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-background p-6">
-      <form className="w-full max-w-sm space-y-4" onSubmit={onSubmit}>
-        <div>
-          <h1 className="text-2xl font-semibold">Chronolog</h1>
+    <div className="grid min-h-dvh place-items-center bg-background p-6">
+      <div className="w-full max-w-sm">
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-semibold tracking-tight">Chronolog</h1>
           <p className="mt-1 text-sm text-muted-foreground">{t("auth.tagline")}</p>
         </div>
+        <Card>
+          <CardContent className="p-6">
+            <form className="space-y-4" onSubmit={onSubmit}>
         <Tabs
           value={mode}
           onValueChange={(v) => {
@@ -88,7 +92,10 @@ export function AuthPage(props: { onAuthed: (user: User) => void }) {
         <Button className="w-full" type="submit" disabled={busy}>
           {mode === "login" ? t("auth.login") : t("auth.register")}
         </Button>
-      </form>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

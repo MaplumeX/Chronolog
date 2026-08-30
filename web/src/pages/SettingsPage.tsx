@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiError, api, type User } from "../api";
+import { PageContainer } from "@/components/PageContainer";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -106,7 +108,7 @@ export function SettingsPage(props: {
   }
 
   return (
-    <div className="px-6 py-6">
+    <PageContainer size="default">
       <Tabs defaultValue="account">
         <TabsList className="max-w-md">
           <TabsTrigger value="general">{t("settings.tabGeneral")}</TabsTrigger>
@@ -114,21 +116,28 @@ export function SettingsPage(props: {
           <TabsTrigger value="tokens">{t("settings.tabTokens")}</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="general" className="mt-6">
-          <div className="mb-8 max-w-md space-y-2">
-            <Label>{t("settings.language")}</Label>
-            <LanguageSwitcher />
-          </div>
-          <div className="max-w-md space-y-2">
-            <Label>{t("settings.theme")}</Label>
-            <ThemeSwitcher mode={props.themeMode} onMode={props.onThemeMode} />
-          </div>
+        <TabsContent value="general" className="mt-4">
+          <Card>
+            <CardContent className="space-y-6 p-6">
+              <div className="max-w-md space-y-2">
+                <Label>{t("settings.language")}</Label>
+                <LanguageSwitcher />
+              </div>
+              <div className="max-w-md space-y-2">
+                <Label>{t("settings.theme")}</Label>
+                <ThemeSwitcher mode={props.themeMode} onMode={props.onThemeMode} />
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        <TabsContent value="account" className="mt-6">
+        <TabsContent value="account" className="mt-4 space-y-6">
           {/* 资料 */}
-          <section className="mb-8 max-w-md space-y-3">
-            <h2 className="text-sm font-semibold">{t("settings.profile")}</h2>
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("settings.profile")}</CardTitle>
+            </CardHeader>
+            <CardContent className="max-w-md space-y-3">
             <div className="space-y-2">
               <Label htmlFor="settings-username">{t("settings.username")}</Label>
               <Input
@@ -163,11 +172,15 @@ export function SettingsPage(props: {
             >
               {t("settings.save")}
             </Button>
-          </section>
+            </CardContent>
+          </Card>
 
           {/* 修改密码 */}
-          <section className="mb-8 max-w-md space-y-3 border-t pt-6">
-            <h2 className="text-sm font-semibold">{t("settings.changePassword")}</h2>
+          <Card>
+            <CardHeader>
+              <CardTitle>{t("settings.changePassword")}</CardTitle>
+            </CardHeader>
+            <CardContent className="max-w-md space-y-3">
             <div className="space-y-2">
               <Label htmlFor="settings-current-password">{t("settings.currentPassword")}</Label>
               <Input
@@ -219,18 +232,19 @@ export function SettingsPage(props: {
             >
               {t("settings.changePasswordButton")}
             </Button>
-          </section>
+            </CardContent>
+          </Card>
 
-          {/* 退出登录 */}
-          <section className="mb-8 max-w-md border-t pt-6">
+          {/* 危险区：退出登录 + 注销账户 */}
+          <Card className="border-destructive/30">
+            <CardHeader>
+              <CardTitle className="text-destructive">{t("settings.dangerZone")}</CardTitle>
+            </CardHeader>
+            <CardContent className="max-w-md space-y-3">
             <Button type="button" variant="outline" onClick={props.onLogout}>
               {t("settings.logout")}
             </Button>
-          </section>
-
-          {/* 注销账户 */}
-          <section className="max-w-md space-y-3 border-t pt-6">
-            <h2 className="text-sm font-semibold text-destructive">{t("settings.dangerZone")}</h2>
+            <div className="space-y-3 border-t pt-3">
             <p className="text-sm text-muted-foreground">{t("settings.deleteDescription")}</p>
             {deleteError ? <p className="text-sm text-destructive">{deleteError}</p> : null}
             <Button
@@ -244,10 +258,12 @@ export function SettingsPage(props: {
             >
               {t("settings.deleteAccount")}
             </Button>
-          </section>
+            </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        <TabsContent value="tokens" className="mt-6">
+        <TabsContent value="tokens" className="mt-4">
           <TokensPage />
         </TabsContent>
       </Tabs>
@@ -289,6 +305,6 @@ export function SettingsPage(props: {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageContainer>
   );
 }

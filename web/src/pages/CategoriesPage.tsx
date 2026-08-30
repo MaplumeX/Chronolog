@@ -5,7 +5,9 @@ import { paletteColor, categoryIndex } from "../format";
 import { sortHierarchical, topLevel } from "../hierarchy";
 import { AddChildPopover } from "@/components/AddChildPopover";
 import { NameColorEditPopover } from "@/components/NameColorEditPopover";
+import { PageContainer } from "@/components/PageContainer";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -62,7 +64,7 @@ export function CategoriesPage() {
   const topOptions = topLevel(categories);
 
   return (
-    <div className="px-6 py-6">
+    <PageContainer size="wide">
       <div className="mb-4 flex gap-2">
         <Input
           value={name}
@@ -77,7 +79,9 @@ export function CategoriesPage() {
         </Button>
       </div>
       {error ? <p className="mb-3 text-sm text-destructive">{error}</p> : null}
-      <Table>
+      <Card className="overflow-hidden">
+        <CardContent className="p-0">
+          <Table>
         <TableHeader>
           <TableRow>
             <TableHead>{t("categories.name")}</TableHead>
@@ -181,7 +185,9 @@ export function CategoriesPage() {
             )),
           ])}
         </TableBody>
-      </Table>
-    </div>
+          </Table>
+        </CardContent>
+      </Card>
+    </PageContainer>
   );
 }
