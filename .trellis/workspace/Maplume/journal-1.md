@@ -678,3 +678,25 @@ Pushed pending commits, tagged v0.1.0 and ran the release workflow. Fixed broken
 ### Status
 
 [OK] **Completed**
+
+
+## Session 30: 修复跨天条目时间线几何裁剪与信息展示
+
+**Date**: 2026-08-31
+**Task**: 修复跨天条目时间线几何裁剪与信息展示
+**Branch**: `fix/cross-day-entry-display`
+
+### Summary
+
+修复跨天（跨午夜）条目在 Timeline 的显示：色块几何用 clipRangeMs 夹到当天窗口（昨晚→今天不再从 0:00 画过头）；块上/tooltip 时长改用整条 durationSeconds（2h 而非切片 1h）；时间范围用 formatEntryTimeRange 加日属标记（同天 HH:MM、±1天 昨天/明天、跨多天 MM-DD，相对该列日期、DST 安全）；列头当日合计仍按切片 cl 不变；新增 i18n key timeline.dayRel.prev/next（zh/en）。spec 记录跨天渲染契约。trellis-check 全绿（无 blocker/M 级），typecheck+build+server105 tests 通过。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `8b60813` | (see git log) |
+| `a0b9865` | (see git log) |
+
+### Status
+
+[OK] **Completed**
