@@ -8,7 +8,22 @@ async function getCategories(t: TestApp, sid: string) {
     url: "/api/categories",
     headers: cookieHeader(sid),
   });
-  return json(res).categories as { id: string; name: string }[];
+  return json(res).categories as { id: string; name: string; parentId: string | null }[];
+}
+
+async function createCategory(
+  t: TestApp,
+  sid: string,
+  body: { name: string; parentId?: string | null },
+) {
+  const res = await t.app.inject({
+    method: "POST",
+    url: "/api/categories",
+    headers: cookieHeader(sid),
+    payload: body,
+  });
+  assert.equal(res.statusCode, 200, JSON.stringify(res.json()));
+  return json(res) as { id: string; name: string; parentId: string | null };
 }
 
 async function createTag(t: TestApp, sid: string, name: string) {
@@ -256,5 +271,113 @@ describe("stats range aggregation", () => {
     assert.deepEqual(body.categories, []);
     assert.deepEqual(body.tags, []);
     assert.equal(body.totalSeconds, 0);
+  });
+
+  it("rollup=true merges child category seconds into parent; default keeps them separate", async () => {
+    const now = new Date("2026-08-25T02:00:00.000Z");
+    t = await createTestApp({ now: () => now });
+    const { sid } = await registerUser(t.app, "range_rollup");
+
+    // 建 seed「学习」的子分类「英语」和「数学」
+    const study = (await getCategories(t, sid)).find((c) => c.name === "学习");
+    assert.ok(study);
+    assert.equal(study.parentId, null);
+    const english = await createCategory(t, sid, { name: "英语", parentId: study.id });
+    const math = await createCategory(t, sid, { name: "数学", parentId: study.id });
+    const work = (await getCategories(t, sid)).find((c) => c.name === "工作");
+    assert.ok(work);
+
+    // 周二 +08：英语 1h、数学 30m、学习（父级自身）15m、工作 45m
+    await createEntry(t, sid, {
+      categoryId: english.id,
+      description: "english",
+      tagIds: [],
+      startedAt: "2026-08-24T16:00:00.000Z",
+      stoppedAt: "2026-08-24T17:00:00.000Z",
+    });
+    await createEntry(t, sid, {
+      categoryId: math.id,
+      description: "math",
+      tagIds: [],
+      startedAt: "2026-08-24T17:00:00.000Z",
+      stoppedAt: "2026-08-24T17:30:00.000Z",
+    });
+    await createEntry(t, sid, {
+      categoryId: study.id,
+      description: "study own",
+      tagIds: [],
+      startedAt: "2026-08-24T17:30:00.000Z",
+      stoppedAt: "2026-08-24T17:45:00.000Z",
+    });
+    await createEntry(t, sid, {
+      categoryId: work.id,
+      description: "work",
+      tagIds: [],
+      startedAt: "2026-08-24T18:00:00.000Z",
+      stoppedAt: "2026-08-24T18:45:00.000Z",
+    });
+
+    // 默认（独立模式）：四个分类各自出现（按秒数降序）
+    const independent = await getRange(t, sid, "tz=Asia/Shanghai&from=2026-08-25&to=2026-08-25");
+    assert.ok(independent.body);
+    assert.deepEqual(
+      independent.body.categories.map((c) => [c.categoryName, c.seconds]),
+      [
+        ["英语", 3600],
+        ["工作", 2700],
+        ["数学", 1800],
+        ["学习", 900],
+      ],
+    );
+    assert.equal(independent.body.totalSeconds, 9000);
+
+    // rollup=true：子分类秒数并入父分类，桶名用父分类名，子分类条目消失
+    const rolled = await getRange(t, sid, "tz=Asia/Shanghai&from=2026-08-25&to=2026-08-25&rollup=true");
+    assert.ok(rolled.body);
+    assert.deepEqual(
+      rolled.body.categories.map((c) => [c.categoryId, c.categoryName, c.seconds]),
+      [
+        [study.id, "学习", 3600 + 1800 + 900],
+        [work.id, "工作", 2700],
+      ],
+    );
+    assert.equal(rolled.body.totalSeconds, 9000);
+    // days / tags 不受 rollup 影响
+    assert.deepEqual(rolled.body.days, [{ date: "2026-08-25", seconds: 9000 }]);
+
+    // rollup=1 等价于 true
+    const rolled1 = await getRange(t, sid, "tz=Asia/Shanghai&from=2026-08-25&to=2026-08-25&rollup=1");
+    assert.ok(rolled1.body);
+    assert.equal(rolled1.body.categories.length, 2);
+
+    // rollup=false 等同默认
+    const explicit = await getRange(t, sid, "tz=Asia/Shanghai&from=2026-08-25&to=2026-08-25&rollup=false");
+    assert.ok(explicit.body);
+    assert.equal(explicit.body.categories.length, 4);
+  });
+
+  it("rollup with parent that has no own entries still shows the parent bucket", async () => {
+    const now = new Date("2026-08-25T02:00:00.000Z");
+    t = await createTestApp({ now: () => now });
+    const { sid } = await registerUser(t.app, "range_rollup_empty");
+
+    // 父级「临时」自身无条目，只有子级有条目
+    const parent = await createCategory(t, sid, { name: "临时" });
+    const child = await createCategory(t, sid, { name: "杂项", parentId: parent.id });
+    await createEntry(t, sid, {
+      categoryId: child.id,
+      description: "misc",
+      tagIds: [],
+      startedAt: "2026-08-24T16:00:00.000Z",
+      stoppedAt: "2026-08-24T17:00:00.000Z",
+    });
+
+    const rolled = await getRange(t, sid, "tz=Asia/Shanghai&from=2026-08-25&to=2026-08-25&rollup=true");
+    assert.ok(rolled.body);
+    assert.deepEqual(
+      rolled.body.categories.map((c) => [c.categoryId, c.categoryName, c.seconds]),
+      [[parent.id, "临时", 3600]],
+    );
+    assert.equal(rolled.body.totalSeconds, 3600);
   });
 });

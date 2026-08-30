@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiError, api, type Tag } from "../api";
 import { paletteColor, categoryIndex } from "../format";
+import { sortHierarchical, topLevel } from "../hierarchy";
+import { AddChildPopover } from "@/components/AddChildPopover";
 import { NameColorEditPopover } from "@/components/NameColorEditPopover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +43,12 @@ export function TagsPage() {
     }
   }
 
+  async function createChild(parent: Tag, childName: string) {
+    setError("");
+    await api.createTag(childName, categoryIndex(childName) + 1, parent.id);
+    await reload();
+  }
+
   async function remove(id: string) {
     setError("");
     try {
@@ -51,6 +59,9 @@ export function TagsPage() {
       setError(err instanceof ApiError ? err.message : t("tags.deleteFailed"));
     }
   }
+
+  const rows = sortHierarchical(tags);
+  const topOptions = topLevel(tags);
 
   return (
     <div className="px-6 py-6">
@@ -77,35 +88,43 @@ export function TagsPage() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {tags.map((tag) => (
-            <TableRow key={tag.id}>
+          {rows.flatMap(({ parent, children }) => [
+            <TableRow key={parent.id}>
               <TableCell>
                 <span className="flex items-center gap-2">
                   <span
                     className="size-2 shrink-0 rounded-full"
-                    style={{ background: paletteColor(tag.color, tag.name) }}
+                    style={{ background: paletteColor(parent.color, parent.name) }}
                   />
-                  {tag.name}
+                  <span className="font-medium">{parent.name}</span>
                 </span>
               </TableCell>
-              <TableCell>{tag.entryCount}</TableCell>
+              <TableCell>{parent.entryCount}</TableCell>
               <TableCell>
                 <div className="flex flex-wrap justify-end gap-2">
+                  <AddChildPopover
+                    namespace="tags"
+                    parentName={parent.name}
+                    onCreate={(childName) => createChild(parent, childName)}
+                  />
                   <NameColorEditPopover
                     namespace="tags"
-                    name={tag.name}
-                    color={tag.color}
-                    onSave={async ({ name: nextName, color }) => {
-                      await api.updateTag(tag.id, { name: nextName, color });
+                    name={parent.name}
+                    color={parent.color}
+                    parentOptions={topOptions}
+                    parentId={parent.parentId}
+                    excludeId={parent.id}
+                    onSave={async ({ name: nextName, color, parentId }) => {
+                      await api.updateTag(parent.id, { name: nextName, color, parentId });
                       await reload();
                     }}
                   />
-                  {confirming === tag.id ? (
+                  {confirming === parent.id ? (
                     <Button
                       type="button"
                       variant="destructive"
                       size="sm"
-                      onClick={() => void remove(tag.id)}
+                      onClick={() => void remove(parent.id)}
                     >
                       {t("tags.confirmDelete")}
                     </Button>
@@ -115,15 +134,71 @@ export function TagsPage() {
                       variant="ghost"
                       size="sm"
                       className="text-destructive hover:text-destructive"
-                      onClick={() => setConfirming(tag.id)}
+                      title={
+                        children.length > 0
+                          ? t("tags.deleteCascadeTitle", { count: children.length })
+                          : t("tags.delete")
+                      }
+                      onClick={() => setConfirming(parent.id)}
                     >
                       {t("tags.delete")}
                     </Button>
                   )}
                 </div>
               </TableCell>
-            </TableRow>
-          ))}
+            </TableRow>,
+            ...children.map((tag) => (
+              <TableRow key={tag.id}>
+                <TableCell>
+                  <span className="flex items-center gap-2 pl-6">
+                    <span className="h-4 w-px shrink-0 bg-border" aria-hidden="true" />
+                    <span
+                      className="size-2 shrink-0 rounded-full"
+                      style={{ background: paletteColor(tag.color, tag.name) }}
+                    />
+                    {tag.name}
+                  </span>
+                </TableCell>
+                <TableCell>{tag.entryCount}</TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <NameColorEditPopover
+                      namespace="tags"
+                      name={tag.name}
+                      color={tag.color}
+                      parentOptions={topOptions}
+                      parentId={tag.parentId}
+                      excludeId={tag.id}
+                      onSave={async ({ name: nextName, color, parentId }) => {
+                        await api.updateTag(tag.id, { name: nextName, color, parentId });
+                        await reload();
+                      }}
+                    />
+                    {confirming === tag.id ? (
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => void remove(tag.id)}
+                      >
+                        {t("tags.confirmDelete")}
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                        onClick={() => setConfirming(tag.id)}
+                      >
+                        {t("tags.delete")}
+                      </Button>
+                    )}
+                  </div>
+                </TableCell>
+              </TableRow>
+            )),
+          ])}
         </TableBody>
       </Table>
     </div>

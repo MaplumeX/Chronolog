@@ -38,9 +38,10 @@ export const categories = sqliteTable(
       .references(() => users.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     color: integer("color"),
+    parentId: text("parent_id"), // 两级层级：指向同表同用户顶层节点；NULL = 顶层。唯一性（同父下重名）由应用层校验
     createdAt: text("created_at").notNull(),
   },
-  (t) => [uniqueIndex("categories_user_id_name").on(t.userId, t.name)],
+  (t) => [index("categories_user_parent").on(t.userId, t.parentId)],
 );
 
 export const timeEntries = sqliteTable(
@@ -74,9 +75,10 @@ export const tags = sqliteTable(
       .references(() => users.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     color: integer("color"),
+    parentId: text("parent_id"), // 两级层级：指向同表同用户顶层节点；NULL = 顶层
     createdAt: text("created_at").notNull(),
   },
-  (t) => [uniqueIndex("tags_user_id_name").on(t.userId, t.name)],
+  (t) => [index("tags_user_parent").on(t.userId, t.parentId)],
 );
 
 export const entryTags = sqliteTable(

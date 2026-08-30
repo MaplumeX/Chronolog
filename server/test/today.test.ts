@@ -322,4 +322,100 @@ describe("today clip and timezone", () => {
       assert.equal(err.code, "VALIDATION", url);
     }
   });
+
+  it("stats/today rollup=true merges child category seconds into parent", async () => {
+    let now = new Date("2026-08-25T02:00:00.000Z");
+    t = await createTestApp({ now: () => now });
+    const { sid } = await registerUser(t.app, "today_rollup");
+
+    // 建 seed「学习」的子分类「英语」
+    const catsRes = await t.app.inject({
+      method: "GET",
+      url: "/api/categories",
+      headers: cookieHeader(sid),
+    });
+    const cats = json(catsRes).categories as { id: string; name: string; parentId: string | null }[];
+    const study = cats.find((c) => c.name === "学习");
+    const work = cats.find((c) => c.name === "工作");
+    assert.ok(study && work);
+    const english = await t.app.inject({
+      method: "POST",
+      url: "/api/categories",
+      headers: cookieHeader(sid),
+      payload: { name: "英语", parentId: study.id },
+    });
+    assert.equal(english.statusCode, 200);
+    const englishId = json(english).id as string;
+
+    // 周二 +08：英语 20m、学习（父级自身）10m、工作 5m（用 timer 走 start/stop，now 递进）
+    now = new Date("2026-08-25T01:00:00.000Z"); // 09:00 +08
+    await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: englishId },
+    });
+    now = new Date("2026-08-25T01:20:00.000Z"); // 09:20
+    await t.app.inject({ method: "POST", url: "/api/timer/stop", headers: cookieHeader(sid) });
+    await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: study.id },
+    });
+    now = new Date("2026-08-25T01:30:00.000Z"); // 09:30
+    await t.app.inject({ method: "POST", url: "/api/timer/stop", headers: cookieHeader(sid) });
+    await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: work.id },
+    });
+    now = new Date("2026-08-25T01:35:00.000Z"); // 09:35
+    await t.app.inject({ method: "POST", url: "/api/timer/stop", headers: cookieHeader(sid) });
+
+    // 默认（独立模式）
+    const independent = await t.app.inject({
+      method: "GET",
+      url: "/api/stats/today?tz=Asia/Shanghai",
+      headers: cookieHeader(sid),
+    });
+    assert.equal(independent.statusCode, 200);
+    const indepRows = json(independent).categories as { categoryId: string; categoryName: string; seconds: number }[];
+    assert.deepEqual(
+      indepRows.map((r) => [r.categoryName, r.seconds]),
+      [
+        ["英语", 1200],
+        ["学习", 600],
+        ["工作", 300],
+      ],
+    );
+    assert.equal(json(independent).totalSeconds, 2100);
+
+    // rollup=true：英语并入学习
+    const rolled = await t.app.inject({
+      method: "GET",
+      url: "/api/stats/today?tz=Asia/Shanghai&rollup=true",
+      headers: cookieHeader(sid),
+    });
+    assert.equal(rolled.statusCode, 200);
+    const rolledRows = json(rolled).categories as { categoryId: string; categoryName: string; seconds: number }[];
+    assert.deepEqual(
+      rolledRows.map((r) => [r.categoryId, r.categoryName, r.seconds]),
+      [
+        [study.id, "学习", 1800],
+        [work.id, "工作", 300],
+      ],
+    );
+    assert.equal(json(rolled).totalSeconds, 2100);
+
+    // rollup=1 等价
+    const rolled1 = await t.app.inject({
+      method: "GET",
+      url: "/api/stats/today?tz=Asia/Shanghai&rollup=1",
+      headers: cookieHeader(sid),
+    });
+    assert.equal(rolled1.statusCode, 200);
+    assert.equal((json(rolled1).categories as unknown[]).length, 2);
+  });
 });

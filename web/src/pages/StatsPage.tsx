@@ -108,6 +108,8 @@ export function StatsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [tagId, setTagId] = useState<string | undefined>(undefined);
+  // 分类聚合模式：独立（默认，与现状一致）或汇总（子分类时长并入父分类；仅影响 statsRange 请求）
+  const [rollup, setRollup] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -161,7 +163,7 @@ export function StatsPage() {
     let cancelled = false;
     async function load() {
       try {
-        const next = await api.statsRange(tz, from, to, tagId);
+        const next = await api.statsRange(tz, from, to, tagId, rollup);
         if (!cancelled) setStats(next);
       } catch (err) {
         if (!cancelled) setError(err instanceof ApiError ? err.message : t("common.loadFailed"));
@@ -189,7 +191,7 @@ export function StatsPage() {
       cancelled = true;
       clearInterval(id);
     };
-  }, [tz, query, tagId, kind, t]);
+  }, [tz, query, tagId, rollup, kind, t]);
 
   const selectedTag = tags.find((x) => x.id === tagId);
   const locale = localeFor(i18n.language);
@@ -370,7 +372,29 @@ export function StatsPage() {
           </section>
 
           <section className="mb-8">
-            <p className="mb-2 text-sm text-muted-foreground">{t("stats.byCategory")}</p>
+            <div className="mb-2 flex items-center gap-3">
+              <p className="text-sm text-muted-foreground">{t("stats.byCategory")}</p>
+              <div className="ml-auto flex overflow-hidden rounded-md border">
+                <Button
+                  type="button"
+                  variant={rollup ? "ghost" : "secondary"}
+                  size="sm"
+                  className="h-7 rounded-none px-2 text-xs"
+                  onClick={() => setRollup(false)}
+                >
+                  {t("stats.rollup.independent")}
+                </Button>
+                <Button
+                  type="button"
+                  variant={rollup ? "secondary" : "ghost"}
+                  size="sm"
+                  className="h-7 rounded-none px-2 text-xs"
+                  onClick={() => setRollup(true)}
+                >
+                  {t("stats.rollup.rolledUp")}
+                </Button>
+              </div>
+            </div>
             <div className="flex flex-col items-center gap-6 md:flex-row md:items-start">
               <div className="relative h-48 w-48 shrink-0">
                 <ResponsiveContainer width="100%" height="100%">

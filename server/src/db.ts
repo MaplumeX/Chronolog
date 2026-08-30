@@ -39,9 +39,9 @@ CREATE TABLE IF NOT EXISTS categories (
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   color INTEGER,
+  parent_id TEXT,
   created_at TEXT NOT NULL
 );
-CREATE UNIQUE INDEX IF NOT EXISTS categories_user_id_name ON categories(user_id, name);
 
 CREATE TABLE IF NOT EXISTS time_entries (
   id TEXT PRIMARY KEY,
@@ -60,9 +60,9 @@ CREATE TABLE IF NOT EXISTS tags (
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   color INTEGER,
+  parent_id TEXT,
   created_at TEXT NOT NULL
 );
-CREATE UNIQUE INDEX IF NOT EXISTS tags_user_id_name ON tags(user_id, name);
 
 CREATE TABLE IF NOT EXISTS entry_tags (
   entry_id TEXT NOT NULL REFERENCES time_entries(id) ON DELETE CASCADE,
@@ -126,6 +126,13 @@ function migrate(sqlite: InstanceType<typeof Database>) {
   if (!categoryCols.includes("color")) {
     sqlite.exec("ALTER TABLE categories ADD COLUMN color INTEGER");
   }
+  if (!categoryCols.includes("parent_id")) {
+    sqlite.exec("ALTER TABLE categories ADD COLUMN parent_id TEXT");
+  }
+  // 新库（SCHEMA_SQL 已建列）与老库（ALTER 后）都在这里建索引，幂等
+  sqlite.exec("CREATE INDEX IF NOT EXISTS categories_user_parent ON categories(user_id, parent_id)");
+  // 唯一性放宽为「同父下重名」由应用层校验；旧库的 (user_id, name) 唯一索引必须删除，否则跨父重名会撞索引
+  sqlite.exec("DROP INDEX IF EXISTS categories_user_id_name");
 
   const tagCols = (sqlite.pragma("table_info(tags)") as { name: string }[]).map(
     (c) => c.name,
@@ -133,4 +140,9 @@ function migrate(sqlite: InstanceType<typeof Database>) {
   if (!tagCols.includes("color")) {
     sqlite.exec("ALTER TABLE tags ADD COLUMN color INTEGER");
   }
+  if (!tagCols.includes("parent_id")) {
+    sqlite.exec("ALTER TABLE tags ADD COLUMN parent_id TEXT");
+  }
+  sqlite.exec("CREATE INDEX IF NOT EXISTS tags_user_parent ON tags(user_id, parent_id)");
+  sqlite.exec("DROP INDEX IF EXISTS tags_user_id_name");
 }

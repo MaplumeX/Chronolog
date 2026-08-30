@@ -9,6 +9,7 @@ export type Category = {
   name: string;
   color: number | null;
   entryCount: number;
+  parentId: string | null;
 };
 
 export type Tag = {
@@ -16,6 +17,7 @@ export type Tag = {
   name: string;
   color: number | null;
   entryCount: number;
+  parentId: string | null;
 };
 
 export type ApiToken = {
@@ -178,14 +180,14 @@ export const api = {
       body: JSON.stringify({ password }),
     }),
   categories: () => request<{ categories: Category[] }>("/api/categories"),
-  createCategory: (name: string, color?: number | null) =>
+  createCategory: (name: string, color?: number | null, parentId?: string | null) =>
     request<Category>("/api/categories", {
       method: "POST",
-      body: JSON.stringify({ name, color }),
+      body: JSON.stringify({ name, color, parentId }),
     }),
   updateCategory: (
     id: string,
-    body: { name?: string; color?: number | null },
+    body: { name?: string; color?: number | null; parentId?: string | null },
   ) =>
     request<{ id: string; name: string; color: number | null }>(
       `/api/categories/${id}`,
@@ -197,12 +199,15 @@ export const api = {
   deleteCategory: (id: string) =>
     request<{ ok: boolean }>(`/api/categories/${id}`, { method: "DELETE" }),
   tags: () => request<{ tags: Tag[] }>("/api/tags"),
-  createTag: (name: string, color?: number | null) =>
+  createTag: (name: string, color?: number | null, parentId?: string | null) =>
     request<Tag>("/api/tags", {
       method: "POST",
-      body: JSON.stringify({ name, color }),
+      body: JSON.stringify({ name, color, parentId }),
     }),
-  updateTag: (id: string, body: { name?: string; color?: number | null }) =>
+  updateTag: (
+    id: string,
+    body: { name?: string; color?: number | null; parentId?: string | null },
+  ) =>
     request<{ id: string; name: string; color: number | null }>(
       `/api/tags/${id}`,
       {
@@ -277,13 +282,19 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify(body),
     }),
-  todayStats: (tz: string, tagId?: string) =>
+  todayStats: (tz: string, tagId?: string, rollup?: boolean) =>
     request<TodayStats>(
-      `/api/stats/today?tz=${encodeURIComponent(tz)}${tagId ? `&tagId=${encodeURIComponent(tagId)}` : ""}`,
+      `/api/stats/today?tz=${encodeURIComponent(tz)}${tagId ? `&tagId=${encodeURIComponent(tagId)}` : ""}${rollup ? "&rollup=true" : ""}`,
     ),
-  statsRange: (tz: string, from: string, to: string, tagId?: string) =>
+  statsRange: (
+    tz: string,
+    from: string,
+    to: string,
+    tagId?: string,
+    rollup?: boolean,
+  ) =>
     request<RangeStats>(
-      `/api/stats/range?tz=${encodeURIComponent(tz)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}${tagId ? `&tagId=${encodeURIComponent(tagId)}` : ""}`,
+      `/api/stats/range?tz=${encodeURIComponent(tz)}&from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}${tagId ? `&tagId=${encodeURIComponent(tagId)}` : ""}${rollup ? "&rollup=true" : ""}`,
     ),
   goals: (tz: string) =>
     request<{ goals: Goal[] }>(`/api/goals?tz=${encodeURIComponent(tz)}`),
