@@ -1,0 +1,8 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "后端规范入口"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "schema/迁移改动需遵循数据库规范"}
+{"file": ".trellis/spec/backend/http-routes.md", "reason": "categories/tags/stats 路由改动需遵循路由规范"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "层级校验错误需遵循错误处理规范"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "前端规范入口"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "树形管理页/选择器组件需遵循组件规范"}
+{"file": ".trellis/spec/frontend/api-client.md", "reason": "api.ts 变更需遵循 API client 规范"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "Category/Tag 类型扩展需遵循类型规范"}
