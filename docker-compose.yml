@@ -1,6 +1,7 @@
 services:
   app:
     build: .
+    image: ghcr.io/maplumex/chronolog:latest
     ports:
       - "8080:8080"
     environment:
@@ -9,9 +10,21 @@ services:
       SESSION_TTL_SECONDS: "604800"
       WEB_DIST: /app/web/dist
       PORT: "8080"
+      # REGISTRATION_OPEN: "false" # Set to "false" after creating your account
     volumes:
       - chronolog-data:/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/api/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   chronolog-data:
