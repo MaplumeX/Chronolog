@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Timeline/DayColumn 几何契约（PX_PER_TICK、刻度、tier 像素阈值）、块内文案与 i18n key 约定，裁剪与日属改动须保持一致"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "前端质量/测试/i18n 约定，决定纯逻辑放 format.ts、文案走 locale key 及是否需要测试"}
+{"file": ".trellis/spec/frontend/design-tokens.md", "reason": "色块颜色沿用 token，改动不得引入硬编码颜色"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "前端层总览与约定入口"}
+{"file": ".trellis/spec/backend/time-and-timezone.md", "reason": "clipSeconds/overlap 语义与跨午夜裁剪口径，确认前后端一致"}
