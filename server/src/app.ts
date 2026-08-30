@@ -50,6 +50,8 @@ export async function buildApp(opts: AppConfig) {
     });
   });
 
+  app.get("/api/health", async () => ({ status: "ok" }));
+
   registerAuthRoutes(app, deps);
   registerAccountRoutes(app, deps);
   registerCategoryRoutes(app, deps);
