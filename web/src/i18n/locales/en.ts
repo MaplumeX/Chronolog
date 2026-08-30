@@ -138,7 +138,6 @@ export const en: Record<keyof typeof zh, string> = {
   "common.operationFailed": "Operation failed",
   "common.requestFailed": "Request failed",
   "common.color": "Color",
-  "common.colorAuto": "Auto",
   "errors.network": "Cannot connect to the server",
   "sidebar.nav": "Navigation",
   "sidebar.navDescription": "Timer, stats, categories and tags",

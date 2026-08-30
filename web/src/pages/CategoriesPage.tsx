@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiError, api, type Category } from "../api";
-import { paletteColor } from "../format";
+import { paletteColor, categoryIndex } from "../format";
 import { NameColorEditPopover } from "@/components/NameColorEditPopover";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,7 +32,7 @@ export function CategoriesPage() {
   async function create() {
     setError("");
     try {
-      await api.createCategory(name);
+      await api.createCategory(name.trim(), categoryIndex(name.trim()) + 1);
       setName("");
       await reload();
     } catch (err) {

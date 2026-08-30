@@ -136,7 +136,6 @@ export const zh = {
   "common.operationFailed": "操作失败",
   "common.requestFailed": "请求失败",
   "common.color": "颜色",
-  "common.colorAuto": "自动",
   "errors.network": "无法连接服务器",
   "sidebar.nav": "导航",
   "sidebar.navDescription": "计时、统计、分类和标签",
