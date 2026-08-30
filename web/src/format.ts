@@ -74,6 +74,66 @@ export function clipSeconds(
   return Math.max(0, Math.floor((end - start) / 1000));
 }
 
+/** 把条目起止（ms）夹到当天窗口 [dayStartMs, dayEndMs)。stoppedAtMs 传 null 表示运行中，用 nowMs。 */
+export function clipRangeMs(
+  startedAtMs: number,
+  stoppedAtMs: number | null,
+  dayStartMs: number,
+  dayEndMs: number,
+  nowMs: number,
+): { startMs: number; endMs: number } {
+  return {
+    startMs: Math.max(startedAtMs, dayStartMs),
+    endMs: Math.min(stoppedAtMs ?? nowMs, dayEndMs),
+  };
+}
+
+/** 日历标签缓存（tz 下瞬时的 YYYY-MM-DD 与日序数）：避免每次渲染重复构造 Intl.DateTimeFormat。 */
+const dayPartsFmtCache = new Map<string, Intl.DateTimeFormat>();
+const dayLabelCache = new Map<string, { label: string; ord: number }>();
+
+/** tz 下某瞬时所在日历日：label = "YYYY-MM-DD"，ord = 日序数（UTC 午夜 ms / 86400000，同 tz 内相减得天数差）。 */
+function dayParts(ms: number, tz: string): { label: string; ord: number } {
+  const key = `${ms}|${tz}`;
+  const cached = dayLabelCache.get(key);
+  if (cached) return cached;
+  let fmt = dayPartsFmtCache.get(tz);
+  if (!fmt) {
+    fmt = new Intl.DateTimeFormat("en-CA", { timeZone: tz });
+    dayPartsFmtCache.set(tz, fmt);
+  }
+  const label = fmt.format(new Date(ms)); // "YYYY-MM-DD"
+  const parts = { label, ord: Date.parse(`${label}T00:00:00.000Z`) / 86_400_000 };
+  dayLabelCache.set(key, parts);
+  return parts;
+}
+
+/**
+ * 条目时间范围文案（块上与 tooltip 共用）：
+ * - 非跨天条目（起止同一日历日）→ `HH:MM – HH:MM`；
+ * - 跨天条目 → 起止两端都带 `MM-DD` 完整日期：`MM-DD HH:MM – MM-DD HH:MM`
+ *   （含落在今天的那端；不用「昨天/明天」相对词）。
+ * 是否跨天按起止所在 tz 日历日判断；stoppedAt=null 右端显示 `…`
+ * （运行中条目 right edge 为 now，跨天判断以 startedAt 与 now 比较）。
+ */
+export function formatEntryTimeRange(
+  startedAt: string,
+  stoppedAt: string | null,
+  tz: string,
+  nowMs: number,
+): string {
+  const startMs = Date.parse(startedAt);
+  const endMs = stoppedAt ? Date.parse(stoppedAt) : nowMs;
+  const crossDay = dayParts(startMs, tz).ord !== dayParts(endMs, tz).ord;
+  const formatEnd = (ms: number): string => {
+    const clock = formatClock(new Date(ms).toISOString(), tz);
+    if (!crossDay) return clock;
+    return `${dayParts(ms, tz).label.slice(5)} ${clock}`; // MM-DD HH:MM
+  };
+  // 运行中条目右端沿用 `…`；跨天时左端带日期、右端为 `…`
+  return `${formatEnd(startMs)} – ${stoppedAt ? formatEnd(endMs) : "…"}`;
+}
+
 // 分类色板：token 引用（值定义在 web/src/styles.css 的 :root（light）/ .dark（dark）两套 --category-1..8）。
 // 色相绕色环均匀分布；185–225 青色区间留给 primary，避免混淆。分类颜色不落库，始终由名称 hash 分配。
 const CATEGORY_VARS = [

@@ -680,6 +680,15 @@ Pushed pending commits, tagged v0.1.0 and ran the release workflow. Fixed broken
 [OK] **Completed**
 
 
+## Session 30: 修复跨天条目时间线几何裁剪与信息展示
+
+**Date**: 2026-08-31
+**Task**: 修复跨天条目时间线几何裁剪与信息展示
+**Branch**: `fix/cross-day-entry-display`
+
+### Summary
+
+修复跨天（跨午夜）条目在 Timeline 的显示：色块几何用 clipRangeMs 夹到当天窗口（昨晚→今天不再从 0:00 画过头）；块上/tooltip 时长改用整条 durationSeconds（2h 而非切片 1h）；时间范围用 formatEntryTimeRange 加日属标记（同天 HH:MM、±1天 昨天/明天、跨多天 MM-DD，相对该列日期、DST 安全）；列头当日合计仍按切片 cl 不变；新增 i18n key timeline.dayRel.prev/next（zh/en）。spec 记录跨天渲染契约。trellis-check 全绿（无 blocker/M 级），typecheck+build+server105 tests 通过。
 ## Session 30: 重构整体布局结构与视觉层级（Linear 风轻卡片体系）
 
 **Date**: 2026-08-31
@@ -694,6 +703,52 @@ Pushed pending commits, tagged v0.1.0 and ran the release workflow. Fixed broken
 
 | Hash | Message |
 |------|---------|
+| `8b60813` | (see git log) |
+| `a0b9865` | (see git log) |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 31: 跨天日属标记改为相对真实今天
+
+**Date**: 2026-08-31
+**Task**: 跨天日属标记改为相对真实今天
+**Branch**: `fix/cross-day-entry-display`
+
+### Summary
+
+按反馈把 Timeline 跨天日属标记的锚点从「被查看的列日期」改为「真实今天」（formatEntryTimeRange 新增 nowMs 参数，移除不再用的 columnDayStartMs；diff 改为与 todayOrd 相减）。例如 23:00→01:00 跨进今天，看昨天列时右端 01:00 不再显示「明天」，而是与今天同天无前缀、左端标「昨天」，读作「昨天 23:00 – 01:00」。同步更新 spec 跨天渲染契约为「相对真实今天」。typecheck+build+server105 tests 全绿。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7488a48` | (see git log) |
+| `46ecf0d` | (see git log) |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 32: 跨天时间范围改为两端完整日期
+
+**Date**: 2026-08-31
+**Task**: 跨天时间范围改为两端完整日期
+**Branch**: `fix/cross-day-entry-display`
+
+### Summary
+
+按反馈放弃「昨天/明天」相对词方案：formatEntryTimeRange 改为——非跨天条目 HH:MM – HH:MM；跨天条目起止两端都带 MM-DD 完整日期（含落在今天的那端），如 08-30 23:00 – 08-31 01:00；跨多天同理；运行中条目右端仍为 …（跨天判断以 startedAt 与 nowMs 比较）。移除不再用的 i18n key timeline.dayRel.prev/next（zh/en）。node 内联验证 5 种场景输出正确；typecheck+build+server105 tests 全绿；spec 跨天契约同步更新。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `1f7b35a` | (see git log) |
+| `0d845a2` | (see git log) |
 | `a362bb7` | (see git log) |
 
 ### Status

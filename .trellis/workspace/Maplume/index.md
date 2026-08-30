@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 30
+- **Total Sessions**: 33
 - **Last Active**: 2026-08-31
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~701 | Active |
+| `journal-1.md` | ~756 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,9 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 33 | 2026-08-31 | 跨天时间范围改为两端完整日期 | `1f7b35a`, `0d845a2` | `fix/cross-day-entry-display` |
+| 32 | 2026-08-31 | 跨天日属标记改为相对真实今天 | `7488a48`, `46ecf0d` | `fix/cross-day-entry-display` |
+| 31 | 2026-08-31 | 修复跨天条目时间线几何裁剪与信息展示 | `8b60813`, `a0b9865` | `fix/cross-day-entry-display` |
 | 30 | 2026-08-31 | 重构整体布局结构与视觉层级（Linear 风轻卡片体系） | `a362bb7` | `refactor/layout-visual-hierarchy` |
 | 29 | 2026-08-30 | 分类与标签两级层级支持 | `480adf1` | `feat/hierarchical-categories-and-tags` |
 | 28 | 2026-08-30 | 目标（Goal）功能：后端 API + 前端目标页 | `08ee90a` | `feat/goal-feature` |
