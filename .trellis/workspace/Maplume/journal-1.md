@@ -594,6 +594,15 @@ Changed docker-compose host port mapping from 8080 to 2259 (container port uncha
 ### Summary
 
 为分类/标签新增可编辑配色：DB 加可空 color 列（1–8 色板索引，幂等迁移），POST/PATCH 支持可选 color（至少其一，非法值 400），前端管理页重命名改为编辑 Popover（名称+8色板+自动），全部展示位（Timeline/Stats/Picker/TimerBar）显式色优先、hash 回退。82 测试全绿，spec 四处已更新。
+## Session 26: Release v0.1.0
+
+**Date**: 2026-08-30
+**Task**: Release v0.1.0
+**Branch**: `main`
+
+### Summary
+
+Pushed pending commits, tagged v0.1.0 and ran the release workflow. Fixed broken changelog action references (docker/ and bcoe/conventional-changelog-action both removed upstream) by generating the changelog inline via conventional-changelog-cli and extracting the tag's section. Result: multi-arch (amd64/arm64) image pushed to ghcr.io/maplumex/chronolog with 0.1.0/0.1/latest tags, GitHub Release v0.1.0 created with conventional-changelog body.
 
 ### Git Commits
 
@@ -621,6 +630,8 @@ Changed docker-compose host port mapping from 8080 to 2259 (container port uncha
 | Hash | Message |
 |------|---------|
 | `104b99d` | (see git log) |
+| `d75ffb9` | (see git log) |
+| `ff1e93b` | (see git log) |
 
 ### Status
 

@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~627 | Active |
+| `journal-1.md` | ~638 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -30,6 +30,7 @@
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
 | 27 | 2026-08-30 | 色板去除自动选项，创建即固定颜色 | `104b99d` | `feat/category-tag-color-editing` |
+| 26 | 2026-08-30 | Release v0.1.0 | `d75ffb9`, `ff1e93b` | `main` |
 | 26 | 2026-08-30 | 分类/标签色板配色编辑 | `24e68dc` | `feat/category-tag-color-editing` |
 | 25 | 2026-08-30 | Change host port to 2259 | `c454a20` | `main` |
 | 24 | 2026-08-30 | Docker deployment hardening and CI/CD release automation | `12366de`, `d0cff58` | `main` |
