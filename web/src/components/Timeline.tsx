@@ -303,12 +303,7 @@ function DayColumn(props: {
               const isRunning = !e.stoppedAt;
               // 块上/tooltip 时长用整条总时长（后端已算，running 随 now 增长），列头合计仍按切片
               const secs = e.durationSeconds;
-              const timeRange = formatEntryTimeRange(
-                e.startedAt,
-                e.stoppedAt,
-                dayStartMs,
-                tz,
-              );
+              const timeRange = formatEntryTimeRange(e.startedAt, e.stoppedAt, tz, nowMs);
               // 颜色：分类显式色优先，未设定回退名称 hash 色（hash 逻辑不可改动）
               const categoryColor = categories.find((c) => c.id === e.categoryId)?.color ?? null;
               const color = paletteColor(categoryColor, e.categoryName);

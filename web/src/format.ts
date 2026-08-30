@@ -109,23 +109,24 @@ function dayParts(ms: number, tz: string): { label: string; ord: number } {
 }
 
 /**
- * 条目时间范围文案（块上与 tooltip 共用，跨天日属方案 A）：
- * - 端点与该列同一天 → 仅 `HH:MM`；
- * - ±1 天 → 相对词（`昨天 HH:MM` / `明天 HH:MM`，相对于该列日期，week 视图亦同）；
- * - 跨更多天 → 显式日期（`MM-DD HH:MM`）。
+ * 条目时间范围文案（块上与 tooltip 共用，跨天日属标记）：
+ * 日属词相对**真实今天**（nowMs 所在日历日），不是被查看的列日期：
+ * - 端点与今天同一天 → 仅 `HH:MM`；
+ * - ±1 天 → 相对词（`昨天 HH:MM` / `明天 HH:MM`）；
+ * - 距今天 ≥2 天 → 显式日期（`MM-DD HH:MM`）。
  * 起止各自独立判断；stoppedAt=null 右端显示 `…`（运行中条目 right edge 为 now，列必有重叠）。
  */
 export function formatEntryTimeRange(
   startedAt: string,
   stoppedAt: string | null,
-  columnDayStartMs: number,
   tz: string,
+  nowMs: number,
 ): string {
-  const columnOrd = dayParts(columnDayStartMs, tz).ord;
+  const todayOrd = dayParts(nowMs, tz).ord;
   const formatEnd = (ms: number): string => {
     const clock = formatClock(new Date(ms).toISOString(), tz);
     const { label, ord } = dayParts(ms, tz);
-    const diff = ord - columnOrd;
+    const diff = ord - todayOrd;
     if (diff === 0) return clock;
     if (diff === -1) return `${i18n.t("timeline.dayRel.prev")} ${clock}`;
     if (diff === 1) return `${i18n.t("timeline.dayRel.next")} ${clock}`;
