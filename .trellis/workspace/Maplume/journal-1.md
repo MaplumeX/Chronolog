@@ -722,3 +722,25 @@ Pushed pending commits, tagged v0.1.0 and ran the release workflow. Fixed broken
 ### Status
 
 [OK] **Completed**
+
+
+## Session 32: 跨天时间范围改为两端完整日期
+
+**Date**: 2026-08-31
+**Task**: 跨天时间范围改为两端完整日期
+**Branch**: `fix/cross-day-entry-display`
+
+### Summary
+
+按反馈放弃「昨天/明天」相对词方案：formatEntryTimeRange 改为——非跨天条目 HH:MM – HH:MM；跨天条目起止两端都带 MM-DD 完整日期（含落在今天的那端），如 08-30 23:00 – 08-31 01:00；跨多天同理；运行中条目右端仍为 …（跨天判断以 startedAt 与 nowMs 比较）。移除不再用的 i18n key timeline.dayRel.prev/next（zh/en）。node 内联验证 5 种场景输出正确；typecheck+build+server105 tests 全绿；spec 跨天契约同步更新。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `1f7b35a` | (see git log) |
+| `0d845a2` | (see git log) |
+
+### Status
+
+[OK] **Completed**
