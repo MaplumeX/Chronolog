@@ -4,6 +4,7 @@ import { Check, Copy, X } from "lucide-react";
 import { ApiError, api, type ApiToken } from "../api";
 import i18n, { localeFor } from "../i18n";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -95,7 +96,9 @@ export function TokensPage() {
         </Button>
       </div>
       {error ? <p className="mb-3 text-sm text-destructive">{error}</p> : null}
-      <Table>
+      <Card className="overflow-hidden">
+        <CardContent className="p-0">
+          <Table>
         <TableHeader>
           <TableRow>
             <TableHead>{t("tokens.name")}</TableHead>
@@ -139,7 +142,9 @@ export function TokensPage() {
             </TableRow>
           ))}
         </TableBody>
-      </Table>
+          </Table>
+        </CardContent>
+      </Card>
 
       {created ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4">

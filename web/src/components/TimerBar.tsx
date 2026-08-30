@@ -23,7 +23,7 @@ export function TimerBar(props: {
     <div className="shrink-0 px-4 py-3">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-3">
         <input
-          className="min-w-0 flex-1 bg-transparent text-lg outline-none placeholder:text-muted-foreground"
+          className="min-w-0 flex-1 bg-transparent text-lg tracking-tight outline-none placeholder:text-muted-foreground"
           placeholder={t("timer.placeholder")}
           value={props.description}
           onChange={(e) => props.onDescriptionChange(e.target.value)}
