@@ -74,6 +74,67 @@ export function clipSeconds(
   return Math.max(0, Math.floor((end - start) / 1000));
 }
 
+/** 把条目起止（ms）夹到当天窗口 [dayStartMs, dayEndMs)。stoppedAtMs 传 null 表示运行中，用 nowMs。 */
+export function clipRangeMs(
+  startedAtMs: number,
+  stoppedAtMs: number | null,
+  dayStartMs: number,
+  dayEndMs: number,
+  nowMs: number,
+): { startMs: number; endMs: number } {
+  return {
+    startMs: Math.max(startedAtMs, dayStartMs),
+    endMs: Math.min(stoppedAtMs ?? nowMs, dayEndMs),
+  };
+}
+
+/** 日历标签缓存（tz 下瞬时的 YYYY-MM-DD 与日序数）：避免每次渲染重复构造 Intl.DateTimeFormat。 */
+const dayPartsFmtCache = new Map<string, Intl.DateTimeFormat>();
+const dayLabelCache = new Map<string, { label: string; ord: number }>();
+
+/** tz 下某瞬时所在日历日：label = "YYYY-MM-DD"，ord = 日序数（UTC 午夜 ms / 86400000，同 tz 内相减得天数差）。 */
+function dayParts(ms: number, tz: string): { label: string; ord: number } {
+  const key = `${ms}|${tz}`;
+  const cached = dayLabelCache.get(key);
+  if (cached) return cached;
+  let fmt = dayPartsFmtCache.get(tz);
+  if (!fmt) {
+    fmt = new Intl.DateTimeFormat("en-CA", { timeZone: tz });
+    dayPartsFmtCache.set(tz, fmt);
+  }
+  const label = fmt.format(new Date(ms)); // "YYYY-MM-DD"
+  const parts = { label, ord: Date.parse(`${label}T00:00:00.000Z`) / 86_400_000 };
+  dayLabelCache.set(key, parts);
+  return parts;
+}
+
+/**
+ * 条目时间范围文案（块上与 tooltip 共用，跨天日属方案 A）：
+ * - 端点与该列同一天 → 仅 `HH:MM`；
+ * - ±1 天 → 相对词（`昨天 HH:MM` / `明天 HH:MM`，相对于该列日期，week 视图亦同）；
+ * - 跨更多天 → 显式日期（`MM-DD HH:MM`）。
+ * 起止各自独立判断；stoppedAt=null 右端显示 `…`（运行中条目 right edge 为 now，列必有重叠）。
+ */
+export function formatEntryTimeRange(
+  startedAt: string,
+  stoppedAt: string | null,
+  columnDayStartMs: number,
+  tz: string,
+): string {
+  const columnOrd = dayParts(columnDayStartMs, tz).ord;
+  const formatEnd = (ms: number): string => {
+    const clock = formatClock(new Date(ms).toISOString(), tz);
+    const { label, ord } = dayParts(ms, tz);
+    const diff = ord - columnOrd;
+    if (diff === 0) return clock;
+    if (diff === -1) return `${i18n.t("timeline.dayRel.prev")} ${clock}`;
+    if (diff === 1) return `${i18n.t("timeline.dayRel.next")} ${clock}`;
+    return `${label.slice(5)} ${clock}`; // MM-DD HH:MM
+  };
+  // 运行中条目右端沿用 `…`（无日属前缀），几何右端取 nowMs 由调用方/clipRangeMs 处理
+  return `${formatEnd(Date.parse(startedAt))} – ${stoppedAt ? formatEnd(Date.parse(stoppedAt)) : "…"}`;
+}
+
 // 分类色板：token 引用（值定义在 web/src/styles.css 的 :root（light）/ .dark（dark）两套 --category-1..8）。
 // 色相绕色环均匀分布；185–225 青色区间留给 primary，避免混淆。分类颜色不落库，始终由名称 hash 分配。
 const CATEGORY_VARS = [

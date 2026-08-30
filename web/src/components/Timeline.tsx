@@ -2,10 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { BoundaryEntries, Category, Tag, TimeEntry, TodayEntries, WeekEntries } from "../api";
 import {
-  clipSeconds,
+  clipRangeMs,
   formatClock,
   formatDayLabel,
   formatDuration,
+  formatEntryTimeRange,
   formatWeekLabel,
   formatWeekdayHeader,
   paletteColor,
@@ -286,24 +287,28 @@ function DayColumn(props: {
 
         {day
           ? day.entries.map((e) => {
-              const start = Date.parse(e.startedAt);
-              const end = e.stoppedAt ? Date.parse(e.stoppedAt) : nowMs;
-              const top = posPercent(start);
-              const heightPct = Math.max(
-                0,
-                Math.min(100 - top, ((end - start) / dayMs) * 100),
-              );
-              const isRunning = !e.stoppedAt;
-              const secs = clipSeconds(
-                e.startedAt,
-                e.stoppedAt,
-                day.dayStart,
-                day.dayEnd,
+              // 几何：起止夹到当天窗口（跨天条目昨晚→今天 在本列从 00:00 起，不多画）
+              const { startMs, endMs } = clipRangeMs(
+                Date.parse(e.startedAt),
+                e.stoppedAt ? Date.parse(e.stoppedAt) : null,
+                dayStartMs,
+                dayEndMs,
                 nowMs,
               );
-              const timeRange = `${formatClock(e.startedAt, tz)} – ${
-                e.stoppedAt ? formatClock(e.stoppedAt, tz) : "…"
-              }`;
+              const top = posPercent(startMs);
+              const heightPct = Math.max(
+                0,
+                Math.min(100 - top, ((endMs - startMs) / dayMs) * 100),
+              );
+              const isRunning = !e.stoppedAt;
+              // 块上/tooltip 时长用整条总时长（后端已算，running 随 now 增长），列头合计仍按切片
+              const secs = e.durationSeconds;
+              const timeRange = formatEntryTimeRange(
+                e.startedAt,
+                e.stoppedAt,
+                dayStartMs,
+                tz,
+              );
               // 颜色：分类显式色优先，未设定回退名称 hash 色（hash 逻辑不可改动）
               const categoryColor = categories.find((c) => c.id === e.categoryId)?.color ?? null;
               const color = paletteColor(categoryColor, e.categoryName);
