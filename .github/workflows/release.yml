@@ -75,7 +75,7 @@ jobs:
 
       - name: Generate changelog
         id: changelog
-        uses: docker/conventional-changelog-action@v3
+        uses: bcoe/conventional-changelog-action@v3
         with:
           # The tag already exists, so we don't let the action create/overwrite it
           git-push: false
