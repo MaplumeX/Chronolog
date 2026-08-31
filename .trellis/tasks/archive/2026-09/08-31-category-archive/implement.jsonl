@@ -1,0 +1,13 @@
+{"file": ".trellis/spec/backend/index.md", "reason": "backend spec index: which guidelines apply"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "sqlite schema/migration rules for archived_at column and time_entries table rebuild"}
+{"file": ".trellis/spec/backend/http-routes.md", "reason": "route registration and body validation conventions for archive/unarchive endpoints"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "AppError/isUniqueViolation/parseBody usage"}
+{"file": ".trellis/spec/backend/directory-structure.md", "reason": "where route/domain code lives in server/src"}
+{"file": ".trellis/spec/frontend/index.md", "reason": "frontend spec index"}
+{"file": ".trellis/spec/frontend/api-client.md", "reason": "api client conventions for new archive/unarchive methods and nullable categoryId types"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "HierarchicalListCard/ConfirmDialog conventions for archive actions"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "page-level reload/state flow after archive/unarchive"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "nullable type widening rules (categoryId: string | null)"}
+{"file": ".trellis/tasks/08-31-category-archive/prd.md", "reason": "requirements and acceptance criteria"}
+{"file": ".trellis/tasks/08-31-category-archive/design.md", "reason": "technical design: migration steps, cascade semantics, leftJoin changes"}
+{"file": ".trellis/tasks/08-31-category-archive/implement.md", "reason": "ordered execution checklist with validation commands"}
