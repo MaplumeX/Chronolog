@@ -1,0 +1,4 @@
+{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python3 .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "DateTimePicker/EntryEditor 段落定义了 value 契约与组件现状，实现后需同步更新"}
+{"file": ".trellis/spec/frontend/design-tokens.md", "reason": "原生 time input 样式定制需使用语义 token，贴合 teal 双主题"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "改动需过 typecheck/build 等质量门槛"}
