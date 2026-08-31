@@ -7,7 +7,22 @@ npm run typecheck -w web
 npm run build -w web
 ```
 
-Root `npm run typecheck` includes web. There is no frontend unit-test runner.
+Root `npm run typecheck` includes web.
+
+## Tests
+
+Frontend unit/component tests use **Vitest 3 + jsdom + @testing-library/react 16 + @testing-library/jest-dom + @testing-library/user-event**; coverage via `@vitest/coverage-v8`.
+
+```bash
+npm test -w web                 # vitest run
+npm run test:coverage -w web    # vitest run --coverage (v8)
+```
+
+- Config: `web/vitest.config.ts` (react plugin, `@` → `./src` alias, jsdom, `setupFiles: ./src/test/setup.ts`, coverage `include: src/**`, excludes `main.tsx` / `i18n/locales/**` / `components/ui/**` / `test/**`).
+- Shared setup `web/src/test/setup.ts`: registers jest-dom matchers, pins i18n to `en` (`i18n.changeLanguage("en")`, not languagedetector), and per-test clears `localStorage` + `vi.unstubAllGlobals()` + `vi.restoreAllMocks()`.
+- Tests are deterministic: fetch is stubbed (`vi.stubGlobal`), system time uses fake timers (restored in the file's own `afterEach`), no real network/timers.
+- Scope is depth-A: pure logic + hooks fully covered, plus one representative component smoke test (`CategoryPicker`). No full component/visual snapshots, no recharts internals.
+- radix portal content (`DropdownMenu`) mounts on `document.body`; clean it up manually (`cleanup()` + clear `document.body`) and use `userEvent.setup({ pointerEventsCheck: PointerEventsCheckLevel.Never })` for modal menus in jsdom.
 
 ## Product constraints
 

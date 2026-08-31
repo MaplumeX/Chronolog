@@ -796,3 +796,24 @@ Added DELETE /api/entries/:id (owner 404, running 409, cascade-cleaned entry_tag
 ### Status
 
 [OK] **Completed**
+
+
+## Session 36: 建立完善的测试体系（web 测试基建 + server 补强）
+
+**Date**: 2026-08-31
+**Task**: 建立完善的测试体系（web 测试基建 + server 补强）
+**Branch**: `feat/testing-system`
+
+### Summary
+
+为 web 从零引入 Vitest3+jsdom+Testing Library 测试栈，覆盖纯逻辑/hooks/CategoryPicker 组件冒烟（96 用例，hierarchy/lib/utils/use-mobile 100%、format 92.8%）；server 补 Node 原生覆盖率（98% 行覆盖）与全局错误处理测试 errors.test.ts（6 用例，共 114）；根 npm test/test:coverage 串联两端，CI 无需改动。同步更新 frontend/backend quality-guidelines 与 api-client spec。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `dd14c31` | (see git log) |
+
+### Status
+
+[OK] **Completed**

@@ -10,7 +10,7 @@ All browser HTTP goes through `web/src/api.ts`. Pages import `api`, `ApiError`, 
 - Sets `Content-Type: application/json` when there is a body
 - Parses JSON; empty body becomes `{}`
 - Network failure → `ApiError(0, "NETWORK", "无法连接服务器")`
-- Non-OK → `ApiError(status, error.code, error.message)` from `{ error: { code, message } }`
+- Non-OK → `ApiError(status, error.code, error.message)` from `{ error: { code, message } }`; if the body has no `error` field, `code` falls back to `"ERROR"` and `message` falls back to the i18n `common.requestFailed` copy.
 
 ## 401 handling
 

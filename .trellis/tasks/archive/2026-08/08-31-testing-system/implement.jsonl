@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "i18n/localStorage 约束（chronolog.lang、try/catch 降级、默认 zh、localeFor）直接决定 web 测试 setup 的 i18n 固定与 localStorage 清理策略；且本文件声明 'no frontend unit-test runner'，实施时需同步推翻此假设"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "server 测试规范（node:test + inject、helpers.ts 用法、冻结时钟、cookieHeader 认证、断言 error.code）是 errors.test.ts 编写与覆盖率脚本扩展的准绳"}
+{"file": ".trellis/spec/frontend/api-client.md", "reason": "api.ts 的 ApiError/onUnauthorized/请求封装契约需与 spec 一致，api.test.ts 的断言以其为依据"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "use-timer-controller/use-theme 的测试写法须遵循 hooks 规范"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "errors.test.ts 断言的错误结构（AppError/VALIDATION/INTERNAL/NOT_FOUND）以错误处理 spec 为契约"}
