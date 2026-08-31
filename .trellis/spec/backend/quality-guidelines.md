@@ -4,7 +4,10 @@
 
 ```bash
 npm run typecheck          # server + web
-npm test                   # server only: tsx --test test/*.test.ts
+npm test                   # server + web (root chains both workspaces)
+npm test -w server         # server only: tsx --test test/*.test.ts
+npm run test:coverage      # server + web coverage
+npm run test:coverage -w server  # server only: tsx --test --experimental-test-coverage --test-coverage-include='src/**' test/*.test.ts
 ```
 
 Server `tsconfig`: `strict`, `verbatimModuleSyntax`, `noUnusedLocals`, `noUnusedParameters`. ESM, Node 22+.

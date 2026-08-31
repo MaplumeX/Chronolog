@@ -9,7 +9,8 @@
     "dev": "concurrently -n server,web -c blue,green \"npm run dev -w server\" \"npm run dev -w web\"",
     "build": "npm run build -w web",
     "typecheck": "npm run typecheck -w server && npm run typecheck -w web",
-    "test": "npm test -w server",
+    "test": "npm test -w server && npm test -w web",
+    "test:coverage": "npm run test:coverage -w server && npm run test:coverage -w web",
     "start": "npm start -w server"
   },
   "devDependencies": {

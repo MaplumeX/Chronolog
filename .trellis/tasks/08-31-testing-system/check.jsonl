@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "验收时核对 web 测试不违反 i18n/localStorage 产品约束；并确认本文件 'no frontend unit-test runner' 表述需在 Phase 3.3 更新"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "核对 server 测试遵循既有规范（helpers.ts、error.code 断言、覆盖率脚本与文档一致）；确认 'npm test # server only' 表述需在 Phase 3.3 更新"}
+{"file": ".trellis/spec/frontend/api-client.md", "reason": "核对 api.test.ts 断言的 ApiError/onUnauthorized 行为符合 api-client 契约"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "核对 errors.test.ts 覆盖的错误形态与错误处理 spec 一致，无遗漏路径"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "核对新增 web 测试代码通过 typecheck（strict、verbatimModuleSyntax），无类型逃逸"}
