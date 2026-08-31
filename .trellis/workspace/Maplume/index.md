@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 36
+- **Total Sessions**: 37
 - **Last Active**: 2026-08-31
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~819 | Active |
+| `journal-1.md` | ~840 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 37 | 2026-08-31 | Categories/Tags pages tree-list redesign | `c47602c` | `feat/refactor-categories-tags-pages` |
 | 36 | 2026-08-31 | 建立完善的测试体系（web 测试基建 + server 补强） | `dd14c31` | `feat/testing-system` |
 | 35 | 2026-08-31 | Add time entry deletion | `c7ee42b` | `fix/time-entry-delete` |
 | 34 | 2026-08-31 | Replace entry time picker segment input with native time input | `0099921` | `fix/entry-time-input-bug` |
