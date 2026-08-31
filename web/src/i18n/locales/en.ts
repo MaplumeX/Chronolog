@@ -41,7 +41,8 @@ export const en: Record<keyof typeof zh, string> = {
   "entry.cancel": "Cancel",
   "entry.saveFailed": "Failed to save",
   "entry.delete": "Delete",
-  "entry.confirmDelete": "Confirm delete?",
+  "entry.deleteConfirmTitle": "Delete this entry?",
+  "entry.deleteConfirmDescription": "This cannot be undone. The time entry will be permanently removed.",
   "entry.deleteFailed": "Failed to delete",
   "entry.overlap": "This time range overlaps another entry",
   "entry.invalidTime": "Invalid time format",
@@ -79,9 +80,11 @@ export const en: Record<keyof typeof zh, string> = {
   "categories.edit": "Edit",
   "categories.color": "Color",
   "categories.delete": "Delete",
-  "categories.confirmDelete": "Confirm delete?",
   "categories.deleteBlockedTitle":
     "This category still has time entries and cannot be deleted",
+  "categories.deleteConfirmTitle": "Delete this category?",
+  "categories.deleteConfirmDescription":
+    "This cannot be undone. Are you sure you want to delete this category?",
   "categories.createFailed": "Failed to create",
   "categories.editFailed": "Failed to save",
   "categories.deleteFailed": "Failed to delete",
@@ -89,8 +92,8 @@ export const en: Record<keyof typeof zh, string> = {
   "categories.topLevel": "None (top level)",
   "categories.addChild": "Add sub-item",
   "categories.childName": "Sub-item name",
-  "categories.deleteCascadeTitle":
-    "Deleting this will also delete {{count}} sub-item(s)",
+  "categories.deleteCascadeDescription":
+    "This cannot be undone. Deleting it will also delete {{count}} sub-item(s).",
   "categories.empty": "No categories yet — create one to get started",
   "categories.expand": "Expand sub-items",
   "categories.collapse": "Collapse sub-items",
@@ -102,7 +105,10 @@ export const en: Record<keyof typeof zh, string> = {
   "tags.edit": "Edit",
   "tags.color": "Color",
   "tags.delete": "Delete",
-  "tags.confirmDelete": "Confirm delete?",
+  "tags.deleteConfirmTitle": "Delete this tag?",
+  "tags.deleteConfirmDescription": "This cannot be undone. Are you sure you want to delete this tag?",
+  "tags.deleteCascadeDescription":
+    "This cannot be undone. Deleting it will also delete {{count}} sub-item(s).",
   "tags.empty": "No tags yet",
   "tags.createFailed": "Failed to create",
   "tags.editFailed": "Failed to save",
@@ -111,8 +117,6 @@ export const en: Record<keyof typeof zh, string> = {
   "tags.topLevel": "None (top level)",
   "tags.addChild": "Add sub-item",
   "tags.childName": "Sub-item name",
-  "tags.deleteCascadeTitle":
-    "Deleting this will also delete {{count}} sub-item(s)",
   "tags.expand": "Expand sub-items",
   "tags.collapse": "Collapse sub-items",
   "tokens.description":
@@ -210,6 +214,8 @@ export const en: Record<keyof typeof zh, string> = {
   "common.operationFailed": "Operation failed",
   "common.requestFailed": "Request failed",
   "common.color": "Color",
+  "common.cancel": "Cancel",
+  "common.confirmDelete": "Delete",
   "errors.network": "Cannot connect to the server",
   "sidebar.nav": "Navigation",
   "sidebar.navDescription": "Timer, stats, categories and tags",

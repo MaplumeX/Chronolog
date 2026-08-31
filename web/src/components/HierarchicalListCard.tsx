@@ -4,6 +4,7 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { paletteColor } from "../format";
 import { sortHierarchical } from "../hierarchy";
 import { AddChildPopover } from "@/components/AddChildPopover";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { NameColorEditPopover } from "@/components/NameColorEditPopover";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,7 +15,8 @@ import { cn } from "@/lib/utils";
  * 单张轻卡片承载整棵两级树 —— 父行（chevron 折叠 + 色点 + 名称 + 记录数 + 操作）
  * + 缩进子行（guide line）；行 hover / focus-within 显示操作按钮。
  * 纯 UI + 状态组件，不直接 import api，所有数据操作经 props 注入；
- * 两步确认（confirmingId）与折叠（collapsedIds，默认空 = 全展开）是组件内部状态。
+ * 删除确认弹窗（pendingDelete，同一时间至多一个）与折叠（collapsedIds，
+ * 默认空 = 全展开）是组件内部状态。
  */
 interface HierarchicalListCardProps<T extends HierarchyItem> {
   /** i18n namespace（"categories" | "tags"），同时作为 popover namespace */
@@ -46,7 +48,12 @@ export function HierarchicalListCard<T extends HierarchyItem>(
   const { t } = useTranslation();
   const ns = props.namespace;
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
-  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  /** 待删除行（弹窗目标）：单项 = 单弹窗；childCount 用于级联描述插值 */
+  const [pendingDelete, setPendingDelete] = useState<{
+    item: T;
+    childCount: number;
+  } | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const rows = sortHierarchical(props.items);
 
@@ -60,43 +67,42 @@ export function HierarchicalListCard<T extends HierarchyItem>(
   }
 
   /**
-   * 两步确认：首点进入确认态，再点执行。确认删除失败时不清除确认态；
-   * 页面壳的 onDelete 返回 rejected promise 时在此兜底 catch，避免
-   * unhandled rejection —— 错误文案由页面壳展示。
+   * 弹窗确认删除：页面壳的 onDelete 若 reject，错误文案由页面壳展示，
+   * 在此兑底 catch 避免 unhandled rejection；成功才关弹窗（失败可重试）。
    */
-  function handleDelete(item: T) {
-    if (confirmingId !== item.id) {
-      setConfirmingId(item.id);
-      return;
-    }
+  function handleConfirmDelete() {
+    const target = pendingDelete;
+    if (!target || deleting) return;
+    setDeleting(true);
     void props
-      .onDelete(item)
-      .then(() => setConfirmingId(null))
-      .catch(() => {});
+      .onDelete(target.item)
+      .then(() => setPendingDelete(null))
+      .catch(() => {})
+      .finally(() => setDeleting(false));
   }
 
-  /** 禁删 title 三态：deleteBlockedTitle → deleteCascadeTitle{count} → delete */
-  function deleteTitle(item: T, childCount: number) {
-    // deleteDisabled 仅分类页传入（占用禁删是分类侧后端 409 约束），
-    // tags 无 deleteBlockedTitle key，直接引用字面量 key 保持类型安全。
-    if (props.deleteDisabled?.(item)) return t("categories.deleteBlockedTitle");
-    if (childCount > 0) return t(`${ns}.deleteCascadeTitle`, { count: childCount });
-    return t(`${ns}.delete`);
+  /** 禁删 title：仅 deleteDisabled 行提示（分类侧后端 409 约束） */
+  function deleteTitle(item: T) {
+    return props.deleteDisabled?.(item)
+      ? t("categories.deleteBlockedTitle")
+      : undefined;
   }
 
   function deleteButton(item: T, childCount: number) {
-    const confirming = confirmingId === item.id;
+    const disabled = props.deleteDisabled?.(item) ?? false;
     return (
       <Button
         type="button"
-        variant={confirming ? "destructive" : "ghost"}
+        variant="ghost"
         size="sm"
-        className={confirming ? undefined : "text-destructive hover:text-destructive"}
-        title={deleteTitle(item, childCount)}
-        disabled={props.deleteDisabled?.(item) ?? false}
-        onClick={() => handleDelete(item)}
+        className={
+          disabled ? undefined : "text-destructive hover:text-destructive"
+        }
+        title={deleteTitle(item)}
+        disabled={disabled}
+        onClick={() => setPendingDelete({ item, childCount })}
       >
-        {confirming ? t(`${ns}.confirmDelete`) : t(`${ns}.delete`)}
+        {t(`${ns}.delete`)}
       </Button>
     );
   }
@@ -146,7 +152,6 @@ export function HierarchicalListCard<T extends HierarchyItem>(
         <div
           className={cn(
             "flex shrink-0 items-center gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover/row:opacity-100",
-            confirmingId === item.id && "opacity-100",
           )}
         >
           {isParent ? (
@@ -184,21 +189,40 @@ export function HierarchicalListCard<T extends HierarchyItem>(
   }
 
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-0">
-        <div className="divide-y">
-          {rows.map(({ parent, children }) => (
-            <Fragment key={parent.id}>
-              {renderRow(parent, { isParent: true, childCount: children.length, indent: false })}
-              {!collapsedIds.has(parent.id)
-                ? children.map((child) =>
-                    renderRow(child, { isParent: false, childCount: 0, indent: true }),
-                  )
-                : null}
-            </Fragment>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+    <>
+      <Card className="overflow-hidden">
+        <CardContent className="p-0">
+          <div className="divide-y">
+            {rows.map(({ parent, children }) => (
+              <Fragment key={parent.id}>
+                {renderRow(parent, { isParent: true, childCount: children.length, indent: false })}
+                {!collapsedIds.has(parent.id)
+                  ? children.map((child) =>
+                      renderRow(child, { isParent: false, childCount: 0, indent: true }),
+                    )
+                  : null}
+              </Fragment>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+      <ConfirmDialog
+        open={pendingDelete != null}
+        onOpenChange={(open) => {
+          if (!open && !deleting) setPendingDelete(null);
+        }}
+        title={t(`${ns}.deleteConfirmTitle`)}
+        description={
+          pendingDelete && pendingDelete.childCount > 0
+            ? t(`${ns}.deleteCascadeDescription`, { count: pendingDelete.childCount })
+            : t(`${ns}.deleteConfirmDescription`)
+        }
+        confirmText={t("common.confirmDelete")}
+        cancelText={t("common.cancel")}
+        pending={deleting}
+        destructive
+        onConfirm={handleConfirmDelete}
+      />
+    </>
   );
 }

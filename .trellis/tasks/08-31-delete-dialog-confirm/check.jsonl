@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "检查实现是否满足质量门禁（lint/typecheck/test）"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "检查组件交互、i18n、Dialog 动画约束是否符合 spec"}

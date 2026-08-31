@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "frontend spec 入口：组件/i18n/质量约定导航"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "HierarchicalListCard / EntryEditor / Dialog 动画约束 / i18n 与按钮约定"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "lint / typecheck / test 质量门禁"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "组件文件放置与命名位置（components/）"}
