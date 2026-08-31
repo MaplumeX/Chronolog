@@ -8,6 +8,7 @@ import { formatDuration } from "../format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ConfirmDialog } from "./ConfirmDialog";
 
 /** ISO-Z → 浏览器本地时区的 datetime-local 值（保留秒）。 */
 function toLocalInput(iso: string): string {
@@ -38,7 +39,7 @@ export function EntryEditor(props: {
   );
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [error, setError] = useState("");
 
   const isDraft = props.draft != null;
@@ -90,11 +91,8 @@ export function EntryEditor(props: {
     props.onSaved();
   }
 
+  /** 弹窗确认删除：成功后 onSaved()（关 popover + 刷新）；失败关弹窗、错误留在编辑器内可重试 */
   async function onDelete() {
-    if (!confirmingDelete) {
-      setConfirmingDelete(true);
-      return;
-    }
     setDeleting(true);
     setError("");
     try {
@@ -106,7 +104,7 @@ export function EntryEditor(props: {
         setError(t("entry.deleteFailed"));
       }
       setDeleting(false);
-      setConfirmingDelete(false);
+      setDeleteDialogOpen(false);
       return;
     }
     props.onSaved();
@@ -166,16 +164,29 @@ export function EntryEditor(props: {
         <span className="font-mono tabular-nums">{formatDuration(duration)}</span>
       </div>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {!isDraft ? (
+        <ConfirmDialog
+          open={deleteDialogOpen}
+          onOpenChange={setDeleteDialogOpen}
+          title={t("entry.deleteConfirmTitle")}
+          description={t("entry.deleteConfirmDescription")}
+          confirmText={t("common.confirmDelete")}
+          cancelText={t("common.cancel")}
+          pending={deleting}
+          destructive
+          onConfirm={() => void onDelete()}
+        />
+      ) : null}
       <div className="flex justify-end gap-2">
         {!isDraft ? (
           <Button
             type="button"
-            variant={confirmingDelete ? "destructive" : "ghost"}
-            className={confirmingDelete ? "mr-auto" : "mr-auto text-destructive hover:text-destructive"}
-            onClick={() => void onDelete()}
+            variant="ghost"
+            className="mr-auto text-destructive hover:text-destructive"
+            onClick={() => setDeleteDialogOpen(true)}
             disabled={saving || deleting}
           >
-            {confirmingDelete ? t("entry.confirmDelete") : t("entry.delete")}
+            {t("entry.delete")}
           </Button>
         ) : null}
         <Button

@@ -115,38 +115,56 @@ describe("HierarchicalListCard 折叠/展开", () => {
   });
 });
 
-describe("HierarchicalListCard 两步确认删除", () => {
-  it("首点不触发 onDelete，文案变「确认删除？」；再点触发一次", async () => {
+describe("HierarchicalListCard 弹窗确认删除", () => {
+  it("点删除打开确认弹窗，取消不触发 onDelete；确认后触发一次且传对目标", async () => {
     const user = setupUser();
     const props = renderCard();
-    const deleteBtn = within(rowOf("Life")).getByRole("button", { name: "Delete" });
+    await user.click(within(rowOf("Life")).getByRole("button", { name: "Delete" }));
 
-    await user.click(deleteBtn);
+    // 弹窗打开：标题 + 描述 + 取消/确认按钮
+    expect(screen.getByRole("dialog", { name: "Delete this category?" })).toBeInTheDocument();
+    expect(
+      screen.getByText("This cannot be undone. Are you sure you want to delete this category?"),
+    ).toBeInTheDocument();
+    const dialog = screen.getByRole("dialog");
+
+    await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
     expect(props.onDelete).not.toHaveBeenCalled();
-    const confirmBtn = within(rowOf("Life")).getByRole("button", { name: "Confirm delete?" });
-    expect(confirmBtn).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).toBeNull();
 
-    await user.click(confirmBtn);
+    // 重新打开并确认
+    await user.click(within(rowOf("Life")).getByRole("button", { name: "Delete" }));
+    await user.click(
+      within(screen.getByRole("dialog")).getByRole("button", { name: "Delete", hidden: false }),
+    );
     expect(props.onDelete).toHaveBeenCalledTimes(1);
     expect(props.onDelete).toHaveBeenCalledWith(
       expect.objectContaining({ id: "life", name: "Life" }),
     );
   });
 
-  it("确认态只作用于当前行：点 A 行删除后，B 行删除仍是首点", async () => {
+  it("同一时间至多一个弹窗：点 B 行后弹窗目标切为 B，不误删 A", async () => {
     const user = setupUser();
     const props = renderCard();
+    // 需先取消 A 弹窗再点 B（弹窗为模态）
     await user.click(within(rowOf("Life")).getByRole("button", { name: "Delete" }));
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Cancel" }));
     await user.click(within(rowOf("Work")).getByRole("button", { name: "Delete" }));
-    expect(props.onDelete).not.toHaveBeenCalled();
-    // Work 进入确认态（其后端行为与 Life 各自独立）
-    expect(within(rowOf("Work")).getByRole("button", { name: "Confirm delete?" })).toBeInTheDocument();
-    expect(within(rowOf("Life")).queryByRole("button", { name: "Confirm delete?" })).toBeNull();
+    // Work 是父级 → 描述带级联计数
+    expect(
+      screen.getByText(/will also delete 2 sub-item/),
+    ).toBeInTheDocument();
+    await user.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Delete" }));
+    expect(props.onDelete).toHaveBeenCalledTimes(1);
+    expect(props.onDelete).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "work", name: "Work" }),
+    );
   });
 });
 
-describe("HierarchicalListCard 禁删与级联提示", () => {
-  it("deleteDisabled 为 true → 按钮 disabled 且 title 为 deleteBlockedTitle", () => {
+describe("HierarchicalListCard 禁删", () => {
+  it("deleteDisabled 为 true → 按钮 disabled 且 title 为 deleteBlockedTitle，点击不弹窗", async () => {
+    const user = setupUser();
     renderCard({ deleteDisabled: (item) => item.entryCount > 0 });
     const btn = within(rowOf("Work")).getByRole("button", { name: "Delete" });
     expect(btn).toBeDisabled();
@@ -157,21 +175,9 @@ describe("HierarchicalListCard 禁删与级联提示", () => {
     // 子行同样受禁删约束（分类页约定：占用即禁删）
     const childBtn = within(rowOf("Dev")).getByRole("button", { name: "Delete" });
     expect(childBtn).toBeDisabled();
-  });
-
-  it("父行删除 title 含级联提示（deleteCascadeTitle 插值 count）", () => {
-    renderCard({ deleteDisabled: () => false });
-    const btn = within(rowOf("Work")).getByRole("button", { name: "Delete" });
-    expect(btn).toHaveAttribute(
-      "title",
-      "Deleting this will also delete 2 sub-item(s)",
-    );
-  });
-
-  it("无子级且不禁删 → title 为普通 delete 文案", () => {
-    renderCard({ deleteDisabled: () => false });
-    const btn = within(rowOf("Life")).getByRole("button", { name: "Delete" });
-    expect(btn).toHaveAttribute("title", "Delete");
+    // 禁删行点击不弹窗（disabled 按钮不触发）
+    await user.click(btn);
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 });
 

@@ -838,3 +838,24 @@ Replaced duplicated CategoriesPage/TagsPage tables (~400 lines) with shared gene
 ### Status
 
 [OK] **Completed**
+
+
+## Session 38: 条目删除与分类/标签删除改为弹窗确认
+
+**Date**: 2026-08-31
+**Task**: 条目删除与分类/标签删除改为弹窗确认
+**Branch**: `feat/modify-deletion-approach`
+
+### Summary
+
+新建共享 ConfirmDialog 组件（基于 shadcn Dialog，纯展示、文案由调用方 t() 传入、pending 禁双按钮）；EntryEditor 与 HierarchicalListCard 的行内两步删除确认改为弹窗确认，父级删除弹窗内提示级联子级数量，deleteDisabled 禁删规则不变；zh/en 新增弹窗文案并清理废弃行内确认键（保留 goals.confirmDelete）；HierarchicalListCard 测试改为弹窗交互断言；更新 frontend component-guidelines spec 记录 ConfirmDialog 契约。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `1abe889` | (see git log) |
+
+### Status
+
+[OK] **Completed**
