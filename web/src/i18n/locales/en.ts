@@ -74,12 +74,12 @@ export const en: Record<keyof typeof zh, string> = {
   "categories.newNamePlaceholder": "New category name",
   "categories.add": "Add",
   "categories.name": "Name",
-  "categories.entryCount": "Entries",
   "categories.save": "Save",
   "categories.cancel": "Cancel",
   "categories.edit": "Edit",
   "categories.color": "Color",
   "categories.delete": "Delete",
+  "categories.confirmDelete": "Confirm delete?",
   "categories.deleteBlockedTitle":
     "This category still has time entries and cannot be deleted",
   "categories.createFailed": "Failed to create",
@@ -91,10 +91,12 @@ export const en: Record<keyof typeof zh, string> = {
   "categories.childName": "Sub-item name",
   "categories.deleteCascadeTitle":
     "Deleting this will also delete {{count}} sub-item(s)",
+  "categories.empty": "No categories yet — create one to get started",
+  "categories.expand": "Expand sub-items",
+  "categories.collapse": "Collapse sub-items",
   "tags.newNamePlaceholder": "New tag name",
   "tags.add": "Add",
   "tags.name": "Name",
-  "tags.entryCount": "Entries",
   "tags.save": "Save",
   "tags.cancel": "Cancel",
   "tags.edit": "Edit",
@@ -111,6 +113,8 @@ export const en: Record<keyof typeof zh, string> = {
   "tags.childName": "Sub-item name",
   "tags.deleteCascadeTitle":
     "Deleting this will also delete {{count}} sub-item(s)",
+  "tags.expand": "Expand sub-items",
+  "tags.collapse": "Collapse sub-items",
   "tokens.description":
     "Create personal access tokens for CLI or other non-browser clients, then call the API with Authorization: Bearer <token>.",
   "tokens.newNamePlaceholder": "Token name, e.g. my-cli",

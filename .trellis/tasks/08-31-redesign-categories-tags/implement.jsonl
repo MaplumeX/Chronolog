@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/design-tokens.md", "reason": "轻卡片视觉语言、paletteColor/色板契约、type scale、hover 操作组需遵循的 token 规则"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "页面结构约定（PageContainer wide / 工具行）、两步确认删除惯例、Categories/Tags 页现状契约与反模式清单"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "新组件 HierarchicalListCard 的落位与命名约定"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "测试与质量门槛（vitest/RTL、build/lint 验证命令）"}
