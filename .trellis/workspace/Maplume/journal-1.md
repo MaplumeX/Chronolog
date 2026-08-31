@@ -754,3 +754,24 @@ Pushed pending commits, tagged v0.1.0 and ran the release workflow. Fixed broken
 ### Status
 
 [OK] **Completed**
+
+
+## Session 34: Replace entry time picker segment input with native time input
+
+**Date**: 2026-08-31
+**Task**: Replace entry time picker segment input with native time input
+**Branch**: `fix/entry-time-input-bug`
+
+### Summary
+
+Fixed buggy HH:MM:SS three-segment TimeField steppers in DateTimePicker (auto-advance on 2 digits, 23->00 hour wrap without date carry). Replaced with a single native <input type="time" step={1}> via ui/input: browser-owned segment editing, empty values never submitted, color-scheme adapts light/dark. Value contract YYYY-MM-DDTHH:mm:ss unchanged; EntryEditor untouched. component-guidelines spec updated. typecheck+build pass; trellis-check all PASS.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0099921` | (see git log) |
+
+### Status
+
+[OK] **Completed**
