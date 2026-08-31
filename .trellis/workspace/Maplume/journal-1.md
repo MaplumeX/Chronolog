@@ -859,3 +859,24 @@ Replaced duplicated CategoriesPage/TagsPage tables (~400 lines) with shared gene
 ### Status
 
 [OK] **Completed**
+
+
+## Session 39: 分类归档功能
+
+**Date**: 2026-09-01
+**Task**: 分类归档功能
+**Branch**: `feat/add-category-archive`
+
+### Summary
+
+实现分类归档功能：categories 加 archived_at 列（幂等迁移 + time_entries 表重建使 category_id 可空）；新增 archive/unarchive 接口（归档父级连带子级、取消归档级联恢复祖先链）；删除约束放宽为置 NULL 转未分类（entries leftJoin + coalesce 兜底名）；前端分类页归档分区展示、CategoryPicker 过滤归档分类。server 123 + web 115 测试全过，spec 四个文档同步更新。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `edef79e` | (see git log) |
+
+### Status
+
+[OK] **Completed**
