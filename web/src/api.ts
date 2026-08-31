@@ -282,6 +282,8 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify(body),
     }),
+  deleteEntry: (id: string) =>
+    request<{ ok: boolean }>(`/api/entries/${id}`, { method: "DELETE" }),
   todayStats: (tz: string, tagId?: string, rollup?: boolean) =>
     request<TodayStats>(
       `/api/stats/today?tz=${encodeURIComponent(tz)}${tagId ? `&tagId=${encodeURIComponent(tagId)}` : ""}${rollup ? "&rollup=true" : ""}`,

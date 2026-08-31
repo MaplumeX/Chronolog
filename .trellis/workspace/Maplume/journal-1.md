@@ -775,3 +775,24 @@ Fixed buggy HH:MM:SS three-segment TimeField steppers in DateTimePicker (auto-ad
 ### Status
 
 [OK] **Completed**
+
+
+## Session 35: Add time entry deletion
+
+**Date**: 2026-08-31
+**Task**: Add time entry deletion
+**Branch**: `fix/time-entry-delete`
+
+### Summary
+
+Added DELETE /api/entries/:id (owner 404, running 409, cascade-cleaned entry_tags) plus a two-click confirm delete button in the EntryEditor popover (edit mode only), with zh/en i18n. Server tests 108/108 pass; specs updated.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c7ee42b` | (see git log) |
+
+### Status
+
+[OK] **Completed**

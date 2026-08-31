@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 34
+- **Total Sessions**: 35
 - **Last Active**: 2026-08-31
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~777 | Active |
+| `journal-1.md` | ~798 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 35 | 2026-08-31 | Add time entry deletion | `c7ee42b` | `fix/time-entry-delete` |
 | 34 | 2026-08-31 | Replace entry time picker segment input with native time input | `0099921` | `fix/entry-time-input-bug` |
 | 33 | 2026-08-31 | 跨天时间范围改为两端完整日期 | `1f7b35a`, `0d845a2` | `fix/cross-day-entry-display` |
 | 32 | 2026-08-31 | 跨天日属标记改为相对真实今天 | `7488a48`, `46ecf0d` | `fix/cross-day-entry-display` |

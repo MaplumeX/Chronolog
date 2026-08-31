@@ -1,0 +1,6 @@
+{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python3 .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
+{"file": ".trellis/spec/backend/http-routes.md", "reason": "New DELETE /api/entries/:id route must follow route conventions"}
+{"file": ".trellis/spec/backend/error-handling.md", "reason": "AppError/status code conventions for 404 and 409 responses"}
+{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "Drizzle transaction and cascade-delete conventions"}
+{"file": ".trellis/spec/frontend/api-client.md", "reason": "api.ts deleteEntry wrapper conventions"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "EntryEditor delete button and inline confirm UI conventions"}
