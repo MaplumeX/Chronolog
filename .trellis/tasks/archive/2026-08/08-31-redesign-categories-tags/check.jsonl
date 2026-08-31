@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "验收对照：页面结构、两步确认删除、反模式（无裸色、无 h1、卡片轻量）是否被遵守"}
+{"file": ".trellis/spec/frontend/design-tokens.md", "reason": "验收对照：token 消费、色点 paletteColor、type scale 使用是否合规"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "验收对照：测试覆盖要求与验证命令"}

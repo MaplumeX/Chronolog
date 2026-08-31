@@ -817,3 +817,24 @@ Added DELETE /api/entries/:id (owner 404, running 409, cascade-cleaned entry_tag
 ### Status
 
 [OK] **Completed**
+
+
+## Session 37: Categories/Tags pages tree-list redesign
+
+**Date**: 2026-08-31
+**Task**: Categories/Tags pages tree-list redesign
+**Branch**: `feat/refactor-categories-tags-pages`
+
+### Summary
+
+Replaced duplicated CategoriesPage/TagsPage tables (~400 lines) with shared generic HierarchicalListCard: collapsible two-level tree (chevron, default expanded, guide-line indent), hover-revealed actions, unified two-click delete confirm, category occupied-delete guard preserved. Thin page shells keep API glue + fixed-at-creation color logic. 108 tests green, build green. Spec: component-guidelines updated (tree-list card contract, table-in-card scope narrowed to Goals/Tokens).
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c47602c` | (see git log) |
+
+### Status
+
+[OK] **Completed**
