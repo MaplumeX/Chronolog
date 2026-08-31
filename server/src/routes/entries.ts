@@ -128,6 +128,20 @@ function createOnce(deps: Deps, userId: string, body: UpsertBody): string {
   });
 }
 
+// 删除：仅所有者 + 已停止条目可删；entry_tags 由 ON DELETE CASCADE 自动清理。
+function deleteOnce(deps: Deps, userId: string, id: string) {
+  deps.db.transaction((tx) => {
+    const entry = tx
+      .select({ id: timeEntries.id, stoppedAt: timeEntries.stoppedAt })
+      .from(timeEntries)
+      .where(and(eq(timeEntries.id, id), eq(timeEntries.userId, userId)))
+      .get();
+    if (!entry) throw new AppError(404, "NOT_FOUND", "条目不存在");
+    if (!entry.stoppedAt) throw new AppError(409, "CONFLICT", "运行中的条目不可删除");
+    tx.delete(timeEntries).where(eq(timeEntries.id, id)).run();
+  });
+}
+
 const boundaryQuery = z.object({
   tz: z.string().min(1, "时区无效"),
   start: z.iso.datetime("时间格式无效"),
@@ -164,5 +178,12 @@ export function registerEntryRoutes(app: FastifyInstance, deps: Deps) {
     const entry = getEntry(deps.db, user.id, id, deps.now());
     reply.code(201);
     return { entry };
+  });
+
+  app.delete("/api/entries/:id", async (req) => {
+    const user = requireUser(req, deps);
+    const { id } = parseBody(z.object({ id: z.string().min(1) }), req.params);
+    deleteOnce(deps, user.id, id);
+    return { ok: true };
   });
 }

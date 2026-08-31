@@ -17,7 +17,7 @@ Throw `AppError(statusCode, code, message)` from `server/src/errors.ts`. Fastify
 | 400 | `VALIDATION` | zod / invalid IANA `tz` / empty name |
 | 401 | `UNAUTHORIZED` | missing, expired, or wrong credentials (`requireUser`, login, `/api/auth/me`) |
 | 404 | `NOT_FOUND` | resource missing **or** owned by another user; unknown `/api` path |
-| 409 | `CONFLICT` | username taken; category name taken; category in use; tag name taken; stop with no timer; edit a running entry |
+| 409 | `CONFLICT` | username taken; category name taken; category in use; tag name taken; stop with no timer; edit or delete a running entry |
 | 409 | `OVERLAP` | edited entry time range overlaps another entry (incl. running) |
 | 500 | `INTERNAL` | unexpected |
 

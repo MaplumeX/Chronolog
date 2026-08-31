@@ -631,4 +631,123 @@ describe("entries", () => {
       assert.equal(beforeRunning.statusCode, 201);
     });
   });
+
+  describe("DELETE /api/entries/:id", () => {
+    it("deletes a stopped entry; entry_tags rows are cascade-cleared", async () => {
+      const c: Clock = { value: new Date("2026-08-25T02:00:00.000Z") };
+      t = await createTestApp({ now: () => c.value });
+      const { sid } = await registerUser(t.app, "deleter");
+      const cats = await categories(sid);
+      const work = cats.find((x) => x.name === "工作");
+      assert.ok(work);
+      const tagA = await createTag(sid, "深度");
+      const id = await createStopped(sid, work.id, c, "2026-08-25T02:00:00.000Z", "2026-08-25T02:30:00.000Z", {
+        tagIds: [tagA],
+      });
+
+      const res = await t.app.inject({
+        method: "DELETE",
+        url: `/api/entries/${id}`,
+        headers: cookieHeader(sid),
+      });
+      assert.equal(res.statusCode, 200);
+      assert.deepEqual(json(res), { ok: true });
+
+      // today 列表不再包含该条目
+      const today = await t.app.inject({
+        method: "GET",
+        url: "/api/entries/today?tz=UTC",
+        headers: cookieHeader(sid),
+      });
+      const entries = json(today).entries as { id: string }[];
+      assert.equal(entries.length, 0);
+
+      // entry_tags 行被 ON DELETE CASCADE 清理（标签本身保留）
+      const tagsRes = await t.app.inject({
+        method: "GET",
+        url: "/api/tags",
+        headers: cookieHeader(sid),
+      });
+      const tagRow = (json(tagsRes).tags as { id: string; entryCount: number }[]).find(
+        (x) => x.id === tagA,
+      );
+      assert.ok(tagRow);
+      assert.equal(tagRow.entryCount, 0);
+
+      // 再次删除 → 404
+      const again = await t.app.inject({
+        method: "DELETE",
+        url: `/api/entries/${id}`,
+        headers: cookieHeader(sid),
+      });
+      assert.equal(again.statusCode, 404);
+    });
+
+    it("running entry is 409", async () => {
+      const c: Clock = { value: new Date("2026-08-25T02:00:00.000Z") };
+      t = await createTestApp({ now: () => c.value });
+      const { sid } = await registerUser(t.app, "runner_delete");
+      const cats = await categories(sid);
+      const work = cats.find((x) => x.name === "工作");
+      assert.ok(work);
+      const start = await t.app.inject({
+        method: "POST",
+        url: "/api/timer/start",
+        headers: cookieHeader(sid),
+        payload: { categoryId: work.id },
+      });
+      assert.equal(start.statusCode, 200);
+      const id = (json(start).entry as { id: string }).id;
+
+      const res = await t.app.inject({
+        method: "DELETE",
+        url: `/api/entries/${id}`,
+        headers: cookieHeader(sid),
+      });
+      assert.equal(res.statusCode, 409);
+      assert.equal((json(res).error as { code: string }).code, "CONFLICT");
+
+      // 计时器仍在运行
+      const current = await t.app.inject({
+        method: "GET",
+        url: "/api/timer/current",
+        headers: cookieHeader(sid),
+      });
+      assert.equal((json(current).entry as { id: string } | null)?.id, id);
+    });
+
+    it("foreign or missing entry is 404", async () => {
+      const c: Clock = { value: new Date("2026-08-25T02:00:00.000Z") };
+      t = await createTestApp({ now: () => c.value });
+      const a = await registerUser(t.app, "alice_delete");
+      const b = await registerUser(t.app, "bob_delete");
+      const cats = await categories(a.sid);
+      const work = cats.find((x) => x.name === "工作");
+      assert.ok(work);
+      const id = await createStopped(a.sid, work.id, c, "2026-08-25T02:00:00.000Z", "2026-08-25T02:30:00.000Z");
+
+      const foreign = await t.app.inject({
+        method: "DELETE",
+        url: `/api/entries/${id}`,
+        headers: cookieHeader(b.sid),
+      });
+      assert.equal(foreign.statusCode, 404);
+      assert.equal((json(foreign).error as { code: string }).code, "NOT_FOUND");
+
+      const missing = await t.app.inject({
+        method: "DELETE",
+        url: "/api/entries/no-such-entry",
+        headers: cookieHeader(a.sid),
+      });
+      assert.equal(missing.statusCode, 404);
+
+      // 他人删除失败后条目仍在
+      const today = await t.app.inject({
+        method: "GET",
+        url: "/api/entries/today?tz=UTC",
+        headers: cookieHeader(a.sid),
+      });
+      assert.equal((json(today).entries as { id: string }[]).length, 1);
+    });
+  });
 });

@@ -62,6 +62,7 @@ New endpoints belong in an existing file if they share the resource, or a new `r
 | GET | `/api/stats/range?tz=&from=&to=&tagId=&rollup=` | yes | range aggregation (task 08-29-refactor-stats-page): `days` (per-day clipped seconds incl. zero days, tz-local `YYYY-MM-DD`), `categories` (range-clipped, desc), `tags` (multi-tag entries count fully under each tag; `tagId: null` = no-tag bucket), `totalSeconds`; `rollup=true|1` merges child-category seconds into the parent bucket (`rollupCategories` in `server/src/entries.ts`; tags are **not** rolled up) |
 | POST | `/api/entries` | yes | create: `{ description, categoryId, tagIds, startedAt, stoppedAt }` → 201 + `EntryDto`; overlap → 409 `OVERLAP` |
 | PATCH | `/api/entries/:id` | yes | full update: `{ description, categoryId, tagIds, startedAt, stoppedAt }`; stopped entries only; overlap → 409 `OVERLAP` |
+| DELETE | `/api/entries/:id` | yes | hard delete; missing or foreign → 404; running (`stoppedAt IS NULL`) → 409 `CONFLICT`; `entry_tags` removed by `ON DELETE CASCADE` (task 08-31-delete-time-entry) |
 
 ### Goals API (task 08-30-goal-feature)
 

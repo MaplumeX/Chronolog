@@ -37,6 +37,8 @@ export function EntryEditor(props: {
     toLocalInput(props.entry?.stoppedAt ?? props.draft!.stoppedAt),
   );
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [error, setError] = useState("");
 
   const isDraft = props.draft != null;
@@ -83,6 +85,28 @@ export function EntryEditor(props: {
         setError(t("entry.saveFailed"));
       }
       setSaving(false);
+      return;
+    }
+    props.onSaved();
+  }
+
+  async function onDelete() {
+    if (!confirmingDelete) {
+      setConfirmingDelete(true);
+      return;
+    }
+    setDeleting(true);
+    setError("");
+    try {
+      await api.deleteEntry(props.entry!.id);
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.message);
+      } else {
+        setError(t("entry.deleteFailed"));
+      }
+      setDeleting(false);
+      setConfirmingDelete(false);
       return;
     }
     props.onSaved();
@@ -143,13 +167,29 @@ export function EntryEditor(props: {
       </div>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={props.onClose} disabled={saving}>
+        {!isDraft ? (
+          <Button
+            type="button"
+            variant={confirmingDelete ? "destructive" : "ghost"}
+            className={confirmingDelete ? "mr-auto" : "mr-auto text-destructive hover:text-destructive"}
+            onClick={() => void onDelete()}
+            disabled={saving || deleting}
+          >
+            {confirmingDelete ? t("entry.confirmDelete") : t("entry.delete")}
+          </Button>
+        ) : null}
+        <Button
+          type="button"
+          variant="outline"
+          onClick={props.onClose}
+          disabled={saving || deleting}
+        >
           {t("entry.cancel")}
         </Button>
         <Button
           type="button"
           onClick={() => void onSave()}
-          disabled={saving || (isDraft && categoryId === "")}
+          disabled={saving || deleting || (isDraft && categoryId === "")}
         >
           {t("entry.save")}
         </Button>
