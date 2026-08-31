@@ -24,10 +24,10 @@ afterEach(() => {
 });
 
 const CATEGORIES: Category[] = [
-  { id: "work", name: "Work", color: 3, entryCount: 0, parentId: null },
-  { id: "dev", name: "Dev", color: null, entryCount: 0, parentId: "work" },
-  { id: "meet", name: "Meetings", color: 5, entryCount: 0, parentId: "work" },
-  { id: "life", name: "Life", color: null, entryCount: 0, parentId: null },
+  { id: "work", name: "Work", color: 3, entryCount: 0, parentId: null, archivedAt: null },
+  { id: "dev", name: "Dev", color: null, entryCount: 0, parentId: "work", archivedAt: null },
+  { id: "meet", name: "Meetings", color: 5, entryCount: 0, parentId: "work", archivedAt: null },
+  { id: "life", name: "Life", color: null, entryCount: 0, parentId: null, archivedAt: null },
 ];
 
 function renderPicker(overrides?: Partial<Parameters<typeof CategoryPicker>[0]>) {

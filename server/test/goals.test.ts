@@ -565,13 +565,13 @@ describe("goals", () => {
     assert.equal(future.status, "achieved");
   });
 
-  it("reference protection: category/tag referenced by a goal cannot be deleted (AC6)", async () => {
+  it("deleting a category referenced by a goal unlinks it (categoryId -> null) instead of blocking (task 08-31)", async () => {
     t = await createTestApp({ now: () => NOW });
     const { sid } = await registerUser(t.app, "goal_ref");
     const studyId = await getCategoryId(t, sid, "学习");
     const tagId = await createTag(t, sid, "专注");
 
-    await createGoal(t, sid, {
+    const created = await createGoal(t, sid, {
       name: "引用分类",
       direction: "gt",
       hours: 1,
@@ -583,9 +583,13 @@ describe("goals", () => {
       url: `/api/categories/${studyId}`,
       headers: cookieHeader(sid),
     });
-    assert.equal(catDelete.statusCode, 409);
-    assert.equal((json(catDelete).error as { code: string }).code, "CONFLICT");
+    assert.equal(catDelete.statusCode, 200);
+    // 引用被置空而非阻止
+    const listed = await listGoals(t, sid, TZ);
+    const catGoal = listed.goals!.find((x) => x.id === created.id)!;
+    assert.equal(catGoal.categoryId, null);
 
+    // 标签引用仍阻止删除（tags 不在本任务范围）
     await createGoal(t, sid, {
       name: "引用标签",
       direction: "lt",
@@ -600,22 +604,6 @@ describe("goals", () => {
     });
     assert.equal(tagDelete.statusCode, 409);
     assert.equal((json(tagDelete).error as { code: string }).code, "CONFLICT");
-
-    // 解除引用（PATCH 置 null）后可删除
-    const listed = await listGoals(t, sid, TZ);
-    const catGoal = listed.goals!.find((x) => x.categoryId === studyId)!;
-    await t.app.inject({
-      method: "PATCH",
-      url: `/api/goals/${catGoal.id}`,
-      headers: cookieHeader(sid),
-      payload: { categoryId: null },
-    });
-    const catDelete2 = await t.app.inject({
-      method: "DELETE",
-      url: `/api/categories/${studyId}`,
-      headers: cookieHeader(sid),
-    });
-    assert.equal(catDelete2.statusCode, 200);
   });
 
   it("unassociated category/tag can still be deleted (regression for delete protection)", async () => {

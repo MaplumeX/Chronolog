@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ApiError, api, type Category } from "../api";
 import { categoryIndex } from "../format";
-import { topLevel } from "../hierarchy";
+import { filterActive, topLevel } from "../hierarchy";
 import { HierarchicalListCard } from "@/components/HierarchicalListCard";
 import { PageContainer } from "@/components/PageContainer";
 import { Button } from "@/components/ui/button";
@@ -58,7 +58,27 @@ export function CategoriesPage() {
     }
   }
 
-  const topOptions = topLevel(categories);
+  async function archive(c: Category) {
+    setError("");
+    try {
+      await api.archiveCategory(c.id);
+      await reload();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : t("common.operationFailed"));
+    }
+  }
+
+  async function unarchive(c: Category) {
+    setError("");
+    try {
+      await api.unarchiveCategory(c.id);
+      await reload();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : t("common.operationFailed"));
+    }
+  }
+
+  const topOptions = topLevel(filterActive(categories));
 
   return (
     <PageContainer size="wide">
@@ -83,7 +103,8 @@ export function CategoriesPage() {
         onCreateChild={createChild}
         onUpdate={update}
         onDelete={remove}
-        deleteDisabled={(c) => c.entryCount > 0}
+        onArchive={archive}
+        onUnarchive={unarchive}
       />
     </PageContainer>
   );

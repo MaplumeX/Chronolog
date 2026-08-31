@@ -195,16 +195,6 @@ export function registerGoalRoutes(app: FastifyInstance, deps: Deps) {
   });
 }
 
-/** 分类删除保护：被 goal 引用时 409 CONFLICT。 */
-export function goalReferencesCategory(deps: Deps, categoryId: string): boolean {
-  const used = deps.db
-    .select({ n: count() })
-    .from(goals)
-    .where(eq(goals.categoryId, categoryId))
-    .get();
-  return (used?.n ?? 0) > 0;
-}
-
 /** 标签删除保护：被 goal 引用时 409 CONFLICT。 */
 export function goalReferencesTag(deps: Deps, tagId: string): boolean {
   const used = deps.db

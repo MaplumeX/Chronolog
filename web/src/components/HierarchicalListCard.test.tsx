@@ -13,6 +13,7 @@ interface Item {
   color: number | null;
   entryCount: number;
   parentId: string | null;
+  archivedAt?: string | null;
 }
 
 // radix Popover（AddChildPopover / NameColorEditPopover）portal 挂在 document.body 上，
@@ -29,10 +30,19 @@ afterEach(() => {
 });
 
 const ITEMS: Item[] = [
-  { id: "work", name: "Work", color: 3, entryCount: 5, parentId: null },
-  { id: "dev", name: "Dev", color: null, entryCount: 2, parentId: "work" },
-  { id: "meet", name: "Meetings", color: 5, entryCount: 1, parentId: "work" },
-  { id: "life", name: "Life", color: null, entryCount: 0, parentId: null },
+  { id: "work", name: "Work", color: 3, entryCount: 5, parentId: null, archivedAt: null },
+  { id: "dev", name: "Dev", color: null, entryCount: 2, parentId: "work", archivedAt: null },
+  { id: "meet", name: "Meetings", color: 5, entryCount: 1, parentId: "work", archivedAt: null },
+  { id: "life", name: "Life", color: null, entryCount: 0, parentId: null, archivedAt: null },
+];
+
+/** 归档分区用例的 items：old（已归档父级 + 未归档子级）、side（已归档子级、父级活动） */
+const ARCHIVED_ITEMS: Item[] = [
+  { id: "work", name: "Work", color: 3, entryCount: 5, parentId: null, archivedAt: null },
+  { id: "dev", name: "Dev", color: null, entryCount: 2, parentId: "work", archivedAt: null },
+  { id: "old", name: "Old", color: 2, entryCount: 9, parentId: null, archivedAt: "2026-01-01T00:00:00.000Z" },
+  { id: "legacy", name: "Legacy", color: 1, entryCount: 4, parentId: "old", archivedAt: "2026-01-01T00:00:00.000Z" },
+  { id: "side", name: "Side", color: 7, entryCount: 0, parentId: "work", archivedAt: "2026-02-01T00:00:00.000Z" },
 ];
 
 function renderCard(overrides?: Partial<Parameters<typeof HierarchicalListCard<Item>>[0]>) {
@@ -43,6 +53,8 @@ function renderCard(overrides?: Partial<Parameters<typeof HierarchicalListCard<I
     onCreateChild: vi.fn().mockResolvedValue(undefined),
     onUpdate: vi.fn().mockResolvedValue(undefined),
     onDelete: vi.fn().mockResolvedValue(undefined),
+    onArchive: vi.fn().mockResolvedValue(undefined),
+    onUnarchive: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
   render(<HierarchicalListCard {...props} />);
@@ -162,22 +174,91 @@ describe("HierarchicalListCard 弹窗确认删除", () => {
   });
 });
 
-describe("HierarchicalListCard 禁删", () => {
-  it("deleteDisabled 为 true → 按钮 disabled 且 title 为 deleteBlockedTitle，点击不弹窗", async () => {
+describe("HierarchicalListCard 归档分区（分类）", () => {
+  it("未传 onArchive（tags）→ 无归档分区、无归档按钮，行为不变", () => {
+    renderCard({ onArchive: undefined, onUnarchive: undefined });
+    expect(screen.queryByText(/Archived \(/)).toBeNull();
+    expect(screen.queryByRole("button", { name: "Archive" })).toBeNull();
+    // 活动行正常渲染
+    expect(screen.getByText("Work")).toBeInTheDocument();
+  });
+
+  it("归档区默认折叠，点击分隔行展开后显示归档行与取消归档按钮", async () => {
     const user = setupUser();
-    renderCard({ deleteDisabled: (item) => item.entryCount > 0 });
-    const btn = within(rowOf("Work")).getByRole("button", { name: "Delete" });
-    expect(btn).toBeDisabled();
-    expect(btn).toHaveAttribute(
-      "title",
-      "This category still has time entries and cannot be deleted",
+    renderCard({ items: ARCHIVED_ITEMS, topOptions: ARCHIVED_ITEMS.filter((x) => x.parentId === null) });
+    // 分隔标题行存在，带归档总数（old + legacy + side = 3）
+    expect(screen.getByText("Archived (3)")).toBeInTheDocument();
+    // 默认折叠：归档行不可见，但活动区正常
+    expect(screen.queryByText("Old")).toBeNull();
+    expect(screen.getByText("Work")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Expand archived categories" }));
+    expect(screen.getByText("Old")).toBeInTheDocument();
+    expect(screen.getByText("Legacy")).toBeInTheDocument();
+    // 归档行有取消归档按钮；活动行（Work）有归档按钮
+    expect(
+      within(rowOf("Old")).getByRole("button", { name: "Unarchive" }),
+    ).toBeInTheDocument();
+    expect(
+      within(rowOf("Work")).getByRole("button", { name: "Archive" }),
+    ).toBeInTheDocument();
+
+    // 再点折叠
+    await user.click(screen.getByRole("button", { name: "Collapse archived categories" }));
+    expect(screen.queryByText("Old")).toBeNull();
+  });
+
+  it("归档行无添加子级入口，且置灰（text-muted-foreground）", async () => {
+    const user = setupUser();
+    renderCard({ items: ARCHIVED_ITEMS, topOptions: ARCHIVED_ITEMS.filter((x) => x.parentId === null) });
+    await user.click(screen.getByRole("button", { name: "Expand archived categories" }));
+    const oldRow = rowOf("Old");
+    expect(
+      within(oldRow).queryByRole("button", { name: "Add sub-item" }),
+    ).toBeNull();
+    // 活动父行仍保留添加子级入口
+    expect(
+      within(rowOf("Work")).getByRole("button", { name: "Add sub-item" }),
+    ).toBeInTheDocument();
+    // 归档行名称置灰
+    expect(screen.getByText("Old")).toHaveClass("text-muted-foreground");
+  });
+
+  it("点归档打开确认弹窗（父级带子级计数），确认后触发 onArchive", async () => {
+    const user = setupUser();
+    const props = renderCard({ items: ARCHIVED_ITEMS, topOptions: ARCHIVED_ITEMS.filter((x) => x.parentId === null) });
+    await user.click(within(rowOf("Work")).getByRole("button", { name: "Archive" }));
+    // Work 有 dev + side 两个子级，其中 side 已归档 → 活动子级数 1
+    expect(screen.getByRole("dialog", { name: "Archive this category?" })).toBeInTheDocument();
+    expect(screen.getByText(/sub-item\(s\) will be archived as well/)).toBeInTheDocument();
+    await user.click(
+      within(screen.getByRole("dialog")).getByRole("button", { name: "Archive", hidden: false }),
     );
-    // 子行同样受禁删约束（分类页约定：占用即禁删）
-    const childBtn = within(rowOf("Dev")).getByRole("button", { name: "Delete" });
-    expect(childBtn).toBeDisabled();
-    // 禁删行点击不弹窗（disabled 按钮不触发）
-    await user.click(btn);
+    expect(props.onArchive).toHaveBeenCalledTimes(1);
+    expect(props.onArchive).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "work", name: "Work" }),
+    );
     expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("取消归档弹窗提示级联恢复父级链，确认后触发 onUnarchive", async () => {
+    const user = setupUser();
+    const props = renderCard({ items: ARCHIVED_ITEMS, topOptions: ARCHIVED_ITEMS.filter((x) => x.parentId === null) });
+    await user.click(screen.getByRole("button", { name: "Expand archived categories" }));
+    // side 的父级 work 未归档 → 无级联提示文案；old 无父级同理。这里取消归档 side
+    await user.click(within(rowOf("Side")).getByRole("button", { name: "Unarchive" }));
+    expect(screen.getByRole("dialog", { name: "Unarchive this category?" })).toBeInTheDocument();
+    // 无归档祖先 → 普通描述
+    expect(
+      screen.getByText("It will appear again in the category picker for new time entries."),
+    ).toBeInTheDocument();
+    await user.click(
+      within(screen.getByRole("dialog")).getByRole("button", { name: "Unarchive", hidden: false }),
+    );
+    expect(props.onUnarchive).toHaveBeenCalledTimes(1);
+    expect(props.onUnarchive).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "side" }),
+    );
   });
 });
 

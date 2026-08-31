@@ -1,11 +1,10 @@
-import { and, count, eq, isNull, sql } from "drizzle-orm";
+import { and, count, eq, isNull, or, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { newId, requireUser } from "../auth.js";
 import type { Deps } from "../db.js";
 import { AppError, isUniqueViolation, parseBody } from "../errors.js";
-import { goalReferencesCategory } from "./goals.js";
-import { categories, timeEntries } from "../schema.js";
+import { categories, goals, timeEntries } from "../schema.js";
 
 const colorField = z
   .number({ message: "颜色须为 1–8 的整数" })
@@ -50,11 +49,14 @@ function getOwnCategory(deps: Deps, userId: string, id: string) {
   return row;
 }
 
-/** 指定父级必须存在、属于当前用户且为顶层节点（层级最多两级）。返回该父级行。 */
+/** 指定父级必须存在、属于当前用户、为顶层节点（层级最多两级）且未归档。返回该父级行。 */
 function requireValidParent(deps: Deps, userId: string, parentId: string) {
   const parent = getOwnCategory(deps, userId, parentId);
   if (parent.parentId !== null) {
     throw new AppError(409, "CONFLICT", "层级最多两级");
+  }
+  if (parent.archivedAt !== null) {
+    throw new AppError(409, "CONFLICT", "归档分类不能作为父级");
   }
   return parent;
 }
@@ -106,6 +108,7 @@ export function registerCategoryRoutes(app: FastifyInstance, deps: Deps) {
         name: c.name,
         color: c.color ?? null,
         parentId: c.parentId ?? null,
+        archivedAt: c.archivedAt ?? null,
         entryCount: byId.get(c.id) ?? 0,
       })),
     };
@@ -136,7 +139,7 @@ export function registerCategoryRoutes(app: FastifyInstance, deps: Deps) {
       }
       throw err;
     }
-    return { id, name: body.name, color: body.color ?? null, parentId, entryCount: 0 };
+    return { id, name: body.name, color: body.color ?? null, parentId, archivedAt: null, entryCount: 0 };
   });
 
   app.patch("/api/categories/:id", async (req) => {
@@ -183,34 +186,79 @@ export function registerCategoryRoutes(app: FastifyInstance, deps: Deps) {
       throw err;
     }
     const updated = getOwnCategory(deps, user.id, id);
-    return { id: updated.id, name: updated.name, color: updated.color ?? null, parentId: updated.parentId ?? null };
+    return { id: updated.id, name: updated.name, color: updated.color ?? null, parentId: updated.parentId ?? null, archivedAt: updated.archivedAt ?? null };
+  });
+
+  app.post("/api/categories/:id/archive", async (req) => {
+    const user = requireUser(req, deps);
+    const { id } = parseBody(z.object({ id: z.string().min(1) }), req.params);
+    const existing = getOwnCategory(deps, user.id, id);
+    const archivedAt = deps.now().toISOString();
+    deps.db.transaction((tx) => {
+      // 顶层节点：整体归档，所有子分类一并刷新时间戳（含已归档子级，幂等）；子分类：仅自身
+      tx.update(categories)
+        .set({ archivedAt })
+        .where(
+          and(
+            eq(categories.userId, user.id),
+            existing.parentId === null
+              ? or(eq(categories.id, id), eq(categories.parentId, id))
+              : eq(categories.id, id),
+          ),
+        )
+        .run();
+    });
+    const updated = getOwnCategory(deps, user.id, id);
+    return { id: updated.id, name: updated.name, color: updated.color ?? null, parentId: updated.parentId ?? null, archivedAt: updated.archivedAt ?? null };
+  });
+
+  app.post("/api/categories/:id/unarchive", async (req) => {
+    const user = requireUser(req, deps);
+    const { id } = parseBody(z.object({ id: z.string().min(1) }), req.params);
+    const existing = getOwnCategory(deps, user.id, id);
+    deps.db.transaction((tx) => {
+      // 目标自身 + 沿 parentId 链向上级联恢复归档祖先链；不触碰兄弟/子孙
+      let node: { id: string; parentId: string | null } | undefined = existing;
+      while (node) {
+        tx.update(categories)
+          .set({ archivedAt: null })
+          .where(and(eq(categories.id, node.id), eq(categories.userId, user.id)))
+          .run();
+        node = node.parentId
+          ? tx
+              .select({ id: categories.id, parentId: categories.parentId })
+              .from(categories)
+              .where(and(eq(categories.id, node.parentId), eq(categories.userId, user.id)))
+              .get()
+          : undefined;
+      }
+    });
+    const updated = getOwnCategory(deps, user.id, id);
+    return { id: updated.id, name: updated.name, color: updated.color ?? null, parentId: updated.parentId ?? null, archivedAt: updated.archivedAt ?? null };
   });
 
   app.delete("/api/categories/:id", async (req) => {
     const user = requireUser(req, deps);
     const { id } = parseBody(z.object({ id: z.string().min(1) }), req.params);
     getOwnCategory(deps, user.id, id);
-    // 级联删除：父级与其所有子分类都必须无时间记录、无 goal 引用
     const children = deps.db
       .select({ id: categories.id })
       .from(categories)
       .where(and(eq(categories.parentId, id), eq(categories.userId, user.id)))
       .all();
     const ids = [id, ...children.map((c) => c.id)];
-    for (const targetId of ids) {
-      const used = deps.db
-        .select({ n: count() })
-        .from(timeEntries)
-        .where(and(eq(timeEntries.categoryId, targetId), eq(timeEntries.userId, user.id)))
-        .get();
-      if ((used?.n ?? 0) > 0) {
-        throw new AppError(409, "CONFLICT", "该分类仍有时间记录，无法删除");
-      }
-      if (goalReferencesCategory(deps, targetId)) {
-        throw new AppError(409, "CONFLICT", "该分类已被目标引用");
-      }
-    }
+    // 删除放宽：不再要求无时间记录/无 goal 引用；相关引用置 NULL（未分类），运行中计时器继续运行
     deps.db.transaction((tx) => {
+      for (const targetId of ids) {
+        tx.update(timeEntries)
+          .set({ categoryId: null })
+          .where(and(eq(timeEntries.categoryId, targetId), eq(timeEntries.userId, user.id)))
+          .run();
+        tx.update(goals)
+          .set({ categoryId: null })
+          .where(and(eq(goals.categoryId, targetId), eq(goals.userId, user.id)))
+          .run();
+      }
       for (const targetId of ids) {
         tx.delete(categories)
           .where(and(eq(categories.id, targetId), eq(categories.userId, user.id)))

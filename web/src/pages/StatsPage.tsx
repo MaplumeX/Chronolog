@@ -200,8 +200,11 @@ export function StatsPage() {
 
   // 颜色查表：聚合数据只有 id/name，按 id 查页面已加载的分类/标签列表拿显式色；
   // 查不到或未显式设色时 paletteColor 回退名称 hash 色（与升级前视觉一致）
-  const categoryColorOf = (categoryId: string, categoryName: string) =>
-    paletteColor(categories.find((c) => c.id === categoryId)?.color ?? null, categoryName);
+  const categoryColorOf = (categoryId: string | null, categoryName: string) =>
+    paletteColor(
+      categories.find((c) => c.id === categoryId)?.color ?? null,
+      categoryName,
+    );
   const tagColorOf = (tagId: string | null, tagName: string | null) =>
     tagId ? paletteColor(tags.find((x) => x.id === tagId)?.color ?? null, tagName ?? "") : "var(--muted-foreground)";
 

@@ -24,7 +24,7 @@ async function listCategories(t: TestApp, sid: string) {
     headers: cookieHeader(sid),
   });
   assert.equal(res.statusCode, 200);
-  return json(res).categories as { id: string; name: string; parentId: string | null }[];
+  return json(res).categories as { id: string; name: string; parentId: string | null; archivedAt: string | null }[];
 }
 
 describe("categories", () => {
@@ -198,7 +198,7 @@ describe("categories", () => {
     assert.equal((json(emptyPatch).error as { code: string }).code, "VALIDATION");
   });
 
-  it("cannot delete a category that is in use; unused can be deleted", async () => {
+  it("deleting a category with entries unlinks them to uncategorized (task 08-31)", async () => {
     t = await createTestApp();
     const { sid } = await registerUser(t.app, "cat_del");
     const list = await t.app.inject({
@@ -225,29 +225,26 @@ describe("categories", () => {
     });
     assert.equal(stop.statusCode, 200);
 
-    const occupied = await t.app.inject({
+    const deleted = await t.app.inject({
       method: "DELETE",
       url: `/api/categories/${work.id}`,
       headers: cookieHeader(sid),
     });
-    assert.equal(occupied.statusCode, 409);
-
-    const extra = await t.app.inject({
-      method: "POST",
-      url: "/api/categories",
-      headers: cookieHeader(sid),
-      payload: { name: "临时" },
-    });
-    const extraId = json(extra).id as string;
-    const deleted = await t.app.inject({
-      method: "DELETE",
-      url: `/api/categories/${extraId}`,
-      headers: cookieHeader(sid),
-    });
     assert.equal(deleted.statusCode, 200);
+
+    // 条目变未分类：categoryName 兑底 + today 列表正常返回
+    const today = await t.app.inject({
+      method: "GET",
+      url: "/api/entries/today?tz=UTC",
+      headers: cookieHeader(sid),
+    });
+    assert.equal(today.statusCode, 200);
+    const entries = json(today).entries as { categoryId: string | null; categoryName: string }[];
+    assert.ok(entries.length >= 1);
+    assert.ok(entries.every((e) => e.categoryId === null && e.categoryName === "未分类"));
   });
 
-  it("running timer also occupies the category", async () => {
+  it("deleting a category with a running timer keeps the timer running as uncategorized", async () => {
     t = await createTestApp();
     const { sid } = await registerUser(t.app, "cat_run");
     const list = await t.app.inject({
@@ -259,21 +256,41 @@ describe("categories", () => {
       (c) => c.name === "休息",
     );
     assert.ok(rest);
-    await t.app.inject({
+    const started = await t.app.inject({
       method: "POST",
       url: "/api/timer/start",
       headers: cookieHeader(sid),
       payload: { categoryId: rest.id },
     });
-    const occupied = await t.app.inject({
+    assert.equal(started.statusCode, 200);
+    const entryId = (json(started).entry as { id: string }).id;
+
+    const deleted = await t.app.inject({
       method: "DELETE",
       url: `/api/categories/${rest.id}`,
       headers: cookieHeader(sid),
     });
-    assert.equal(occupied.statusCode, 409);
+    assert.equal(deleted.statusCode, 200);
+
+    const current = await t.app.inject({
+      method: "GET",
+      url: "/api/timer/current",
+      headers: cookieHeader(sid),
+    });
+    assert.equal(current.statusCode, 200);
+    const running = json(current).entry as {
+      id: string;
+      categoryId: string | null;
+      categoryName: string;
+      stoppedAt: string | null;
+    };
+    assert.equal(running.id, entryId);
+    assert.equal(running.categoryId, null);
+    assert.equal(running.categoryName, "未分类");
+    assert.equal(running.stoppedAt, null);
   });
 
-  it("category referenced by a goal cannot be deleted; unreferenced still can", async () => {
+  it("deleting a category referenced by a goal unlinks the goal (categoryId -> null)", async () => {
     t = await createTestApp();
     const { sid } = await registerUser(t.app, "cat_goal_ref");
     const list = await t.app.inject({
@@ -299,28 +316,25 @@ describe("categories", () => {
       },
     });
     assert.equal(goal.statusCode, 200);
+    const goalId = json(goal).id as string;
 
-    const occupied = await t.app.inject({
+    const deleted = await t.app.inject({
       method: "DELETE",
       url: `/api/categories/${study.id}`,
       headers: cookieHeader(sid),
     });
-    assert.equal(occupied.statusCode, 409);
-    assert.equal((json(occupied).error as { code: string }).code, "CONFLICT");
-
-    const extra = await t.app.inject({
-      method: "POST",
-      url: "/api/categories",
-      headers: cookieHeader(sid),
-      payload: { name: "临时" },
-    });
-    const extraId = json(extra).id as string;
-    const deleted = await t.app.inject({
-      method: "DELETE",
-      url: `/api/categories/${extraId}`,
-      headers: cookieHeader(sid),
-    });
     assert.equal(deleted.statusCode, 200);
+
+    const goalsRes = await t.app.inject({
+      method: "GET",
+      url: "/api/goals?tz=UTC",
+      headers: cookieHeader(sid),
+    });
+    assert.equal(goalsRes.statusCode, 200);
+    const goals = json(goalsRes).goals as { id: string; categoryId: string | null }[];
+    const found = goals.find((g) => g.id === goalId);
+    assert.ok(found);
+    assert.equal(found.categoryId, null);
   });
 
   it("two-level hierarchy: create/list child, reject third level and self-parent", async () => {
@@ -464,7 +478,7 @@ describe("categories", () => {
     assert.equal(json(renameCross).parentId, b.id);
   });
 
-  it("deleting a parent cascades to children; occupied child or goal-referenced child blocks", async () => {
+  it("deleting a parent cascades to children; entries and goals under children are unlinked", async () => {
     t = await createTestApp();
     const { sid } = await registerUser(t.app, "cat_cascade");
 
@@ -485,7 +499,7 @@ describe("categories", () => {
     assert.ok(!after.find((c) => c.id === child1.id));
     assert.ok(!after.find((c) => c.id === child2.id));
 
-    // 子级有 entry → 父级删除被拦（父级自身无条目）
+    // 子级有 entry + goal 引用：级联删除仍成功，条目变未分类、goal 解除引用
     const p2 = await createCategory(t, sid, { name: "父二" });
     const c2 = await createCategory(t, sid, { name: "子二", parentId: p2.id });
     await t.app.inject({
@@ -499,21 +513,6 @@ describe("categories", () => {
       url: "/api/timer/stop",
       headers: cookieHeader(sid),
     });
-    const blockedByEntry = await t.app.inject({
-      method: "DELETE",
-      url: `/api/categories/${p2.id}`,
-      headers: cookieHeader(sid),
-    });
-    assert.equal(blockedByEntry.statusCode, 409);
-    assert.equal((json(blockedByEntry).error as { code: string }).code, "CONFLICT");
-    // 父子都还在
-    const still = await listCategories(t, sid);
-    assert.ok(still.find((c) => c.id === p2.id));
-    assert.ok(still.find((c) => c.id === c2.id));
-
-    // 子级被 goal 引用 → 父级删除被拦
-    const p3 = await createCategory(t, sid, { name: "父三" });
-    const c3 = await createCategory(t, sid, { name: "子三", parentId: p3.id });
     const goal = await t.app.inject({
       method: "POST",
       url: "/api/goals",
@@ -523,16 +522,165 @@ describe("categories", () => {
         direction: "gt",
         hours: 1,
         periodUnit: "day",
-        categoryId: c3.id,
+        categoryId: c2.id,
       },
     });
     assert.equal(goal.statusCode, 200);
-    const blockedByGoal = await t.app.inject({
+    const goalId = json(goal).id as string;
+
+    const cascaded = await t.app.inject({
       method: "DELETE",
-      url: `/api/categories/${p3.id}`,
+      url: `/api/categories/${p2.id}`,
       headers: cookieHeader(sid),
     });
-    assert.equal(blockedByGoal.statusCode, 409);
-    assert.equal((json(blockedByGoal).error as { code: string }).code, "CONFLICT");
+    assert.equal(cascaded.statusCode, 200);
+    const still = await listCategories(t, sid);
+    assert.ok(!still.find((c) => c.id === p2.id));
+    assert.ok(!still.find((c) => c.id === c2.id));
+
+    const today = await t.app.inject({
+      method: "GET",
+      url: "/api/entries/today?tz=UTC",
+      headers: cookieHeader(sid),
+    });
+    const entries = json(today).entries as { categoryId: string | null; categoryName: string }[];
+    assert.ok(entries.every((e) => e.categoryId === null && e.categoryName === "未分类"));
+
+    const goalsRes = await t.app.inject({
+      method: "GET",
+      url: "/api/goals?tz=UTC",
+      headers: cookieHeader(sid),
+    });
+    const goals = json(goalsRes).goals as { id: string; categoryId: string | null }[];
+    assert.equal(goals.find((g) => g.id === goalId)?.categoryId, null);
+  });
+
+  it("archive/unarchive: parent cascades down, child archive is isolated, unarchive restores ancestor chain", async () => {
+    const c: { value: Date } = { value: new Date("2026-08-31T00:00:00.000Z") };
+    t = await createTestApp({ now: () => c.value });
+    const { sid } = await registerUser(t.app, "cat_archive");
+
+    const seeded = await listCategories(t, sid);
+    const parent = seeded.find((x) => x.name === "学习");
+    assert.ok(parent);
+    const child1 = await createCategory(t, sid, { name: "英语", parentId: parent.id });
+    const child2 = await createCategory(t, sid, { name: "数学", parentId: parent.id });
+
+    // 列表返回 archivedAt: null
+    const before = await listCategories(t, sid);
+    assert.equal(before.find((x) => x.id === parent.id)?.archivedAt, null);
+
+    // 归档父级 → 所有子分类一并归档
+    const archive = await t.app.inject({
+      method: "POST",
+      url: `/api/categories/${parent.id}/archive`,
+      headers: cookieHeader(sid),
+    });
+    assert.equal(archive.statusCode, 200);
+    assert.equal((json(archive) as { archivedAt: string | null }).archivedAt, "2026-08-31T00:00:00.000Z");
+    const archived = await listCategories(t, sid);
+    assert.equal(archived.find((x) => x.id === parent.id)?.archivedAt, "2026-08-31T00:00:00.000Z");
+    assert.equal(archived.find((x) => x.id === child1.id)?.archivedAt, "2026-08-31T00:00:00.000Z");
+    assert.equal(archived.find((x) => x.id === child2.id)?.archivedAt, "2026-08-31T00:00:00.000Z");
+
+    // 归档分类不能作为父级（创建/移动均拒绝）
+    const createUnder = await t.app.inject({
+      method: "POST",
+      url: "/api/categories",
+      headers: cookieHeader(sid),
+      payload: { name: "新子", parentId: parent.id },
+    });
+    assert.equal(createUnder.statusCode, 409);
+    assert.equal((json(createUnder).error as { code: string }).code, "CONFLICT");
+    const moveUnder = await t.app.inject({
+      method: "PATCH",
+      url: `/api/categories/${seeded.find((x) => x.name === "工作")!.id}`,
+      headers: cookieHeader(sid),
+      payload: { parentId: parent.id },
+    });
+    assert.equal(moveUnder.statusCode, 409);
+
+    // 取消归档子分类 → 级联恢复父级链（父级也恢复）
+    c.value = new Date("2026-08-31T01:00:00.000Z");
+    const unarchive = await t.app.inject({
+      method: "POST",
+      url: `/api/categories/${child1.id}/unarchive`,
+      headers: cookieHeader(sid),
+    });
+    assert.equal(unarchive.statusCode, 200);
+    const restored = await listCategories(t, sid);
+    assert.equal(restored.find((x) => x.id === child1.id)?.archivedAt, null);
+    assert.equal(restored.find((x) => x.id === parent.id)?.archivedAt, null, "父级链应被级联恢复");
+    // 兄弟分类不连带恢复
+    assert.equal(restored.find((x) => x.id === child2.id)?.archivedAt, "2026-08-31T00:00:00.000Z");
+  });
+
+  it("archive child only: parent stays active; unarchive parent does not restore archived child", async () => {
+    t = await createTestApp();
+    const { sid } = await registerUser(t.app, "cat_archive_child");
+
+    const seeded = await listCategories(t, sid);
+    const parent = seeded.find((x) => x.name === "学习");
+    assert.ok(parent);
+    const child = await createCategory(t, sid, { name: "英语", parentId: parent.id });
+
+    // 单独归档子分类：仅自身，父级保持活动
+    const archive = await t.app.inject({
+      method: "POST",
+      url: `/api/categories/${child.id}/archive`,
+      headers: cookieHeader(sid),
+    });
+    assert.equal(archive.statusCode, 200);
+    const after = await listCategories(t, sid);
+    assert.ok(after.find((x) => x.id === child.id)!.archivedAt);
+    assert.equal(after.find((x) => x.id === parent.id)!.archivedAt, null);
+
+    // 取消归档父级（未归档时幂等）：不影响已归档子分类
+    const unarchive = await t.app.inject({
+      method: "POST",
+      url: `/api/categories/${parent.id}/unarchive`,
+      headers: cookieHeader(sid),
+    });
+    assert.equal(unarchive.statusCode, 200);
+    const after2 = await listCategories(t, sid);
+    assert.ok(after2.find((x) => x.id === child.id)!.archivedAt);
+
+    // 归档分类与活动分类共享命名空间：同父下与归档子分类重名仍拒绝
+    const dup = await t.app.inject({
+      method: "POST",
+      url: "/api/categories",
+      headers: cookieHeader(sid),
+      payload: { name: "英语", parentId: parent.id },
+    });
+    assert.equal(dup.statusCode, 409);
+  });
+
+  it("archive/unarchive isolation: foreign or missing category is 404", async () => {
+    t = await createTestApp();
+    { const { sid } = await registerUser(t.app, "cat_archive_owner");
+      const seeded = await listCategories(t, sid);
+      const mine = seeded[0];
+      const other = await registerUser(t.app, "cat_archive_other");
+
+      const foreign = await t.app.inject({
+        method: "POST",
+        url: `/api/categories/${mine.id}/archive`,
+        headers: cookieHeader(other.sid),
+      });
+      assert.equal(foreign.statusCode, 404);
+
+      const missing = await t.app.inject({
+        method: "POST",
+        url: "/api/categories/no-such-id/archive",
+        headers: cookieHeader(sid),
+      });
+      assert.equal(missing.statusCode, 404);
+      const missingUn = await t.app.inject({
+        method: "POST",
+        url: "/api/categories/no-such-id/unarchive",
+        headers: cookieHeader(sid),
+      });
+      assert.equal(missingUn.statusCode, 404);
+    }
   });
 });

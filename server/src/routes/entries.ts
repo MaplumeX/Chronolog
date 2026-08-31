@@ -27,13 +27,32 @@ function checkTimeOrder(body: UpsertBody) {
   }
 }
 
-function checkCategory(tx: Db, userId: string, categoryId: string) {
+function checkCategory(tx: Db, userId: string, categoryId: string, unchangedCategoryId?: string | null) {
+  // 值未变化时放行（编辑归档分类下的既有条目保持原分类）；换绑到归档分类 → 409
   const cat = tx
-    .select({ id: categories.id })
+    .select({ id: categories.id, archivedAt: categories.archivedAt })
     .from(categories)
-    .where(and(eq(categories.id, categoryId), eq(categories.userId, userId)))
+    .where(
+      and(
+        eq(categories.id, categoryId),
+        eq(categories.userId, userId),
+        categoryId === unchangedCategoryId ? isNull(categories.archivedAt) : undefined,
+      ),
+    )
     .get();
-  if (!cat) throw new AppError(404, "NOT_FOUND", "分类不存在");
+  if (!cat) {
+    // 未变化路径：分类存在且为原值 → 放行；否则统一 404/409 归档校验
+    if (categoryId === unchangedCategoryId) {
+      const owned = tx
+        .select({ id: categories.id })
+        .from(categories)
+        .where(and(eq(categories.id, categoryId), eq(categories.userId, userId)))
+        .get();
+      if (owned) return;
+    }
+    throw new AppError(404, "NOT_FOUND", "分类不存在");
+  }
+  if (cat.archivedAt !== null) throw new AppError(409, "CONFLICT", "分类已归档");
 }
 
 function checkTags(tx: Db, userId: string, tagIds: string[]) {
@@ -77,7 +96,7 @@ function updateOnce(deps: Deps, userId: string, id: string, body: UpsertBody) {
     if (!entry) throw new AppError(404, "NOT_FOUND", "条目不存在");
     if (!entry.stoppedAt) throw new AppError(409, "CONFLICT", "运行中的条目不可编辑");
 
-    checkCategory(tx, userId, body.categoryId);
+    checkCategory(tx, userId, body.categoryId, entry.categoryId);
     checkTags(tx, userId, body.tagIds);
     checkTimeOrder(body);
     checkOverlap(tx, userId, body.startedAt, body.stoppedAt, id);

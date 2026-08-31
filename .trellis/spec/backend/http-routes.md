@@ -43,10 +43,12 @@ New endpoints belong in an existing file if they share the resource, or a new `r
 | PATCH | `/api/profile` | yes | `{ username?, displayName? }`; username dup → 409; empty update → 400 |
 | PATCH | `/api/account/password` | yes | revokes other sessions, keeps PATs |
 | DELETE | `/api/account` | yes | password confirmation; FK cascade; clears cookie |
-| GET | `/api/categories` | yes | includes `entryCount`, `parentId` (null = top level) |
+| GET | `/api/categories` | yes | includes `entryCount`, `parentId` (null = top level), `archivedAt: string\|null` (task 08-31-category-archive) |
 | POST | `/api/categories` | yes | `{ name, color?, parentId? }`; `color` = palette index 1–8 or null (auto). Invalid (0/9/"red"/1.5) → 400. `parentId` hierarchy rules below |
 | PATCH | `/api/categories/:id` | yes | `{ name?, color?, parentId? }` at least one (empty → 400); `color: null` clears the explicit color; `parentId: null` promotes to top level |
-| DELETE | `/api/categories/:id` | yes | occupied (self or any child) → 409; cascades children in one transaction |
+| POST | `/api/categories/:id/archive` | yes | sets `archivedAt`; top-level target archives all children in one transaction; child archives only itself (task 08-31-category-archive) |
+| POST | `/api/categories/:id/unarchive` | yes | clears `archivedAt` on target + every archived ancestor up the `parentId` chain (never siblings/descendants) |
+| DELETE | `/api/categories/:id` | yes | no occupancy checks — nulls `time_entries.category_id` and `goals.category_id` for `[id, ...children]` then deletes them in one transaction (running entries keep running, uncategorized) |
 | GET | `/api/tags` | yes | includes `entryCount`, `parentId` |
 | POST | `/api/tags` | yes | `{ name, color?, parentId? }`; duplicate under same parent → 409; color same as categories |
 | PATCH | `/api/tags/:id` | yes | `{ name?, color?, parentId? }` at least one; duplicate under same parent → 409 |
@@ -85,7 +87,7 @@ Validation order inside the transaction — PATCH: entry owned (404) → stopped
 
 The server does **not** constrain created/updated ranges to a day window — day-boundary clamping is a frontend concern (timeline drag clamps to the column's `[dayStart, dayEnd]`).
 
-`EntryDto` (`server/src/entries.ts`) is the timer/today payload: `id`, `categoryId`, `categoryName`, `description`, `startedAt`, `stoppedAt`, `durationSeconds`, optional `clippedSeconds`, `tags: { id, name }[]` (ordered by name). Keep `web/src/api.ts` `TimeEntry` in sync.
+`EntryDto` (`server/src/entries.ts`) is the timer/today payload: `id`, `categoryId: string | null` (null = uncategorized), `categoryName` (coalesced to `UNCATEGORIZED_NAME` = "未分类" when null, `leftJoin(categories)` — never innerJoin on the nullable `category_id`), `description`, `startedAt`, `stoppedAt`, `durationSeconds`, optional `clippedSeconds`, `tags: { id, name }[]` (ordered by name). Keep `web/src/api.ts` `TimeEntry` in sync. Archived-category entries: starting/rebinding to an archived category → 409 `"分类已归档"`, but saving an edit whose `categoryId` is unchanged is allowed (`unchangedCategoryId` in `routes/entries.ts` / `routes/timer.ts`).
 
 ## SPA fallback
 
@@ -107,6 +109,8 @@ Applies symmetrically to categories and tags (`routes/categories.ts` / `routes/t
 | `parentId === id` (self-parent) | 409 `CONFLICT` |
 | node has children and PATCH tries to make it a child | 409 `CONFLICT` `"层级最多两级"` |
 | same name under the same parent (incl. top level) | 409 `CONFLICT` `"分类名已存在"` / `"标签名已存在"` |
+| `parentId` refers to an **archived** category (categories only, task 08-31-category-archive) | 409 `CONFLICT` `"归档分类不能作为父级"` |
+| start/rebind a timer or entry to an archived category | 409 `CONFLICT` `"分类已归档"` (skipped when `categoryId` is unchanged from the entry's current value) |
 
 `parentId: null` on PATCH promotes to top level; `undefined` leaves it unchanged. Default categories seed as top level. Tests: `server/test/categories.test.ts`, `tags.test.ts`, `migration.test.ts`.
 
