@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 39
+- **Total Sessions**: 40
 - **Last Active**: 2026-09-01
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~882 | Active |
+| `journal-1.md` | ~903 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 40 | 2026-09-01 | Tree-list row actions dropdown menu | `0fba63e` | `feat/move-category-buttons-into-menu` |
 | 39 | 2026-09-01 | 分类归档功能 | `edef79e` | `feat/add-category-archive` |
 | 38 | 2026-08-31 | 条目删除与分类/标签删除改为弹窗确认 | `1abe889` | `feat/modify-deletion-approach` |
 | 37 | 2026-08-31 | Categories/Tags pages tree-list redesign | `c47602c` | `feat/refactor-categories-tags-pages` |

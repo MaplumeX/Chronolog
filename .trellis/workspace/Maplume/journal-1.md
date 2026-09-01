@@ -880,3 +880,24 @@ Replaced duplicated CategoriesPage/TagsPage tables (~400 lines) with shared gene
 ### Status
 
 [OK] **Completed**
+
+
+## Session 40: Tree-list row actions dropdown menu
+
+**Date**: 2026-09-01
+**Task**: Tree-list row actions dropdown menu
+**Branch**: `feat/move-category-buttons-into-menu`
+
+### Summary
+
+Collapsed the flat per-row action buttons in HierarchicalListCard (categories/tags) into a single ⋯ DropdownMenu: add child (active parents) / edit / archive / destructive delete, confirm-dialog flows unchanged. AddChildPopover and NameColorEditPopover refactored into pure form-content components opened via a row-level controlled Popover anchored to the menu trigger (PopoverAnchor virtualRef; anchor read inside onSelect). Added {categories,tags}.moreActions i18n (zh/en), rewrote component tests (120 passing), updated frontend component-guidelines spec.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0fba63e` | (see git log) |
+
+### Status
+
+[OK] **Completed**

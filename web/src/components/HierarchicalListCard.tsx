@@ -1,19 +1,40 @@
-import { Fragment, useState } from "react";
+import { Fragment, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Archive, ChevronDown, ChevronRight } from "lucide-react";
+import type { Measurable } from "@radix-ui/rect";
+import {
+  Archive,
+  ChevronDown,
+  ChevronRight,
+  MoreHorizontal,
+} from "lucide-react";
 import { paletteColor } from "../format";
 import { sortHierarchical } from "../hierarchy";
-import { AddChildPopover } from "@/components/AddChildPopover";
+import { AddChildPopoverForm } from "@/components/AddChildPopover";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
-import { NameColorEditPopover } from "@/components/NameColorEditPopover";
+import { NameColorEditPopoverForm } from "@/components/NameColorEditPopover";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+} from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 
 /**
  * 分类/标签共享树形列表卡片（task 08-31-redesign-categories-tags）：
  * 单张轻卡片承载整棵两级树 —— 父行（chevron 折叠 + 色点 + 名称 + 记录数 + 操作）
  * + 缩进子行（guide line）；行 hover / focus-within 显示操作按钮。
+ * 行操作收入 `⋯` 下拉菜单（task 09-01-row-actions-menu）：
+ * 添加子项 / 编辑菜单项点击后关闭菜单，把对应 Popover 锚定到
+ * `⋯` 按钮打开（PopoverAnchor，controlled open，交互语义不变）；
+ * 归档/取消归档、删除沿用原有确认弹窗流程。
  * 纯 UI + 状态组件，不直接 import api，所有数据操作经 props 注入；
  * 删除确认弹窗（pendingDelete，同一时间至多一个）与折叠（collapsedIds，
  * 默认空 = 全展开）是组件内部状态。
@@ -74,14 +95,40 @@ export function HierarchicalListCard<T extends HierarchyItem>(
     context: ArchiveContext;
   } | null>(null);
   const [archiving, setArchiving] = useState(false);
+  /** 行级菜单弹层目标：菜单项「添加子项 / 编辑」点击后关闭菜单并锚定 ⋯ 按钮打开 */
+  const [popoverTarget, setPopoverTarget] = useState<{
+    kind: "addChild" | "edit";
+    item: T;
+    anchor: Measurable | null;
+  } | null>(null);
+  /** PopoverAnchor virtualRef 需要 RefObject 形态 */
+  const anchorRef = useRef<Measurable | null>(null);
   /** 归档区折叠状态（默认折叠） */
   const [archivedCollapsed, setArchivedCollapsed] = useState(true);
 
+  /** PopoverAnchor virtualRef 需要 RefObject 形态；跟随 popoverTarget 更新 */
+  anchorRef.current = popoverTarget?.anchor ?? null;
+  /** 各行 ⋯ 菜单触发按钮（菜单项 onSelect 时 React 合成事件的 currentTarget 已置空，
+   * 改由 ref 记录触发按钮，作为弹层锚点） */
+  const triggerEls = useRef(new Map<string, HTMLElement>());
+
   const rows = sortHierarchical(props.items);
+  // 行数变化后同步菜单触发按钮缓存（含首次渲染）：PopoverAnchor virtualRef 需要可用锚点
+  triggerEls.current.forEach((_, id) => {
+    if (
+      !rows.some(
+        (r) => r.parent.id === id || r.children.some((c) => c.id === id),
+      )
+    ) {
+      triggerEls.current.delete(id);
+    }
+  });
   // 归档分区仅在 items 带 archivedAt 字段且提供归档回调时启用（tags 不传 → 单列表）
   const archiveEnabled = props.onArchive != null;
   const isArchived = (item: T): boolean =>
-    archiveEnabled && "archivedAt" in item && (item as { archivedAt: string | null }).archivedAt !== null;
+    archiveEnabled &&
+    "archivedAt" in item &&
+    (item as { archivedAt: string | null }).archivedAt !== null;
   const activeRows = archiveEnabled
     ? rows
         .filter(({ parent }) => !isArchived(parent))
@@ -132,7 +179,8 @@ export function HierarchicalListCard<T extends HierarchyItem>(
   function handleConfirmArchive() {
     const target = pendingArchive;
     if (!target || archiving) return;
-    const fn = target.action === "archive" ? props.onArchive : props.onUnarchive;
+    const fn =
+      target.action === "archive" ? props.onArchive : props.onUnarchive;
     if (!fn) return;
     setArchiving(true);
     void fn(target.item)
@@ -141,63 +189,22 @@ export function HierarchicalListCard<T extends HierarchyItem>(
       .finally(() => setArchiving(false));
   }
 
-  function deleteButton(item: T, childCount: number) {
-    return (
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className="text-destructive hover:text-destructive"
-        onClick={() => setPendingDelete({ item, childCount })}
-      >
-        {t(`${ns}.delete`)}
-      </Button>
-    );
-  }
-
-  /** 归档/取消归档按钮 + 弹窗目标计算（归档分区专用交互） */
-  function archiveButton(item: T, isParent: boolean) {
-    if (!archiveEnabled) return null;
-    if (isArchived(item)) {
-      return (
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() =>
-            setPendingArchive({
-              action: "unarchive",
-              item,
-              context: {
-                childCount: 0,
-                archivedAncestorCount: countArchivedAncestors(item),
-              },
-            })
-          }
-        >
-          {t("categories.unarchive")}
-        </Button>
-      );
-    }
-    return (
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        onClick={() =>
-          setPendingArchive({
-            action: "archive",
-            item,
-            context: {
-              childCount: isParent ? activeChildCount(item) : 0,
-              archivedAncestorCount: 0,
-            },
-          })
-        }
-      >
-        {t("categories.archive")}
-      </Button>
-    );
+  /** 计算归档/取消归档弹窗目标（菜单项复用，沿用原上下文插值逻辑） */
+  function archiveTarget(
+    item: T,
+    isParent: boolean,
+    action: "archive" | "unarchive",
+  ) {
+    return {
+      action,
+      item,
+      context: {
+        childCount:
+          action === "archive" && isParent ? activeChildCount(item) : 0,
+        archivedAncestorCount:
+          action === "unarchive" ? countArchivedAncestors(item) : 0,
+      },
+    };
   }
 
   /** 目标父级下仍活动的子分类数（归档描述插值：连带归档 n 个子分类） */
@@ -219,9 +226,97 @@ export function HierarchicalListCard<T extends HierarchyItem>(
     return n;
   }
 
+  /** 行尾 `⋯` 操作菜单（task 09-01-row-actions-menu）：收编原有平铺按钮 */
+  function rowMenu(
+    item: T,
+    {
+      isParent,
+      childCount,
+      archived,
+    }: { isParent: boolean; childCount: number; archived: boolean },
+  ) {
+    const archivedItem = isArchived(item);
+    return (
+      <DropdownMenu modal={false}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="text-muted-foreground"
+            aria-label={t(`${ns}.moreActions`)}
+            ref={(el) => {
+              if (el) triggerEls.current.set(item.id, el);
+              else triggerEls.current.delete(item.id);
+            }}
+          >
+            <MoreHorizontal />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          {isParent && !archived ? (
+            <DropdownMenuItem
+              onSelect={() => {
+                // 锚点在 onSelect 时读取（render 期 map 尚未挂 ref，闭包值会是 null）
+                setPopoverTarget({
+                  kind: "addChild",
+                  item,
+                  anchor: triggerEls.current.get(item.id) ?? null,
+                });
+              }}
+            >
+              {t(`${ns}.addChild`)}
+            </DropdownMenuItem>
+          ) : null}
+          <DropdownMenuItem
+            onSelect={() => {
+              setPopoverTarget({
+                kind: "edit",
+                item,
+                anchor: triggerEls.current.get(item.id) ?? null,
+              });
+            }}
+          >
+            {t(`${ns}.edit`)}
+          </DropdownMenuItem>
+          {archiveEnabled ? (
+            archivedItem ? (
+              <DropdownMenuItem
+                onSelect={() =>
+                  setPendingArchive(archiveTarget(item, isParent, "unarchive"))
+                }
+              >
+                {t("categories.unarchive")}
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem
+                onSelect={() =>
+                  setPendingArchive(archiveTarget(item, isParent, "archive"))
+                }
+              >
+                {t("categories.archive")}
+              </DropdownMenuItem>
+            )
+          ) : null}
+          <DropdownMenuItem
+            variant="destructive"
+            onSelect={() => setPendingDelete({ item, childCount })}
+          >
+            {t(`${ns}.delete`)}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  }
+
   function renderRow(
     item: T,
-    { isParent, childCount, indent, archived }: {
+    {
+      isParent,
+      childCount,
+      indent,
+      archived,
+    }: {
       isParent: boolean;
       childCount: number;
       indent: boolean;
@@ -251,7 +346,9 @@ export function HierarchicalListCard<T extends HierarchyItem>(
             <span className="size-8 shrink-0" aria-hidden="true" />
           )
         ) : null}
-        <span className={cn("flex min-w-0 items-center gap-2", indent && "pl-6")}>
+        <span
+          className={cn("flex min-w-0 items-center gap-2", indent && "pl-6")}
+        >
           {indent ? (
             <span className="h-4 w-px shrink-0 bg-border" aria-hidden="true" />
           ) : null}
@@ -269,7 +366,10 @@ export function HierarchicalListCard<T extends HierarchyItem>(
             {item.name}
           </span>
           {archived ? (
-            <Archive className="size-3.5 shrink-0 text-muted-foreground" aria-label={t("categories.archived")} />
+            <Archive
+              className="size-3.5 shrink-0 text-muted-foreground"
+              aria-label={t("categories.archived")}
+            />
           ) : null}
         </span>
         <span className="ml-auto pl-2 font-mono text-xs tabular-nums text-muted-foreground">
@@ -280,24 +380,51 @@ export function HierarchicalListCard<T extends HierarchyItem>(
             "flex shrink-0 items-center gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover/row:opacity-100",
           )}
         >
-          {isParent && !archived ? (
-            <AddChildPopover
-              namespace={ns}
-              parentName={item.name}
-              onCreate={(childName) => props.onCreateChild(item, childName)}
-            />
+          {popoverTarget?.item.id === item.id &&
+          popoverTarget.anchor != null ? (
+            popoverTarget.kind === "addChild" ? (
+              <Popover
+                open
+                onOpenChange={(open) => {
+                  if (!open) setPopoverTarget(null);
+                }}
+              >
+                <PopoverAnchor virtualRef={anchorRef} />
+                <PopoverContent align="end" className="w-72">
+                  <AddChildPopoverForm
+                    namespace={ns}
+                    parentName={item.name}
+                    onClose={() => setPopoverTarget(null)}
+                    onCreate={(childName) =>
+                      props.onCreateChild(item, childName)
+                    }
+                  />
+                </PopoverContent>
+              </Popover>
+            ) : (
+              <Popover
+                open
+                onOpenChange={(open) => {
+                  if (!open) setPopoverTarget(null);
+                }}
+              >
+                <PopoverAnchor virtualRef={anchorRef} />
+                <PopoverContent align="end" className="w-72">
+                  <NameColorEditPopoverForm
+                    namespace={ns}
+                    name={item.name}
+                    color={item.color}
+                    parentOptions={props.topOptions}
+                    parentId={item.parentId}
+                    excludeId={item.id}
+                    onClose={() => setPopoverTarget(null)}
+                    onSave={(next) => props.onUpdate(item, next)}
+                  />
+                </PopoverContent>
+              </Popover>
+            )
           ) : null}
-          <NameColorEditPopover
-            namespace={ns}
-            name={item.name}
-            color={item.color}
-            parentOptions={props.topOptions}
-            parentId={item.parentId}
-            excludeId={item.id}
-            onSave={(next) => props.onUpdate(item, next)}
-          />
-          {archiveButton(item, isParent)}
-          {deleteButton(item, childCount)}
+          {rowMenu(item, { isParent, childCount, archived })}
         </div>
       </div>
     );
@@ -322,10 +449,20 @@ export function HierarchicalListCard<T extends HierarchyItem>(
           <div className="divide-y">
             {activeRows.map(({ parent, children }) => (
               <Fragment key={parent.id}>
-                {renderRow(parent, { isParent: true, childCount: children.length, indent: false, archived: false })}
+                {renderRow(parent, {
+                  isParent: true,
+                  childCount: children.length,
+                  indent: false,
+                  archived: false,
+                })}
                 {!collapsedIds.has(parent.id)
                   ? children.map((child) =>
-                      renderRow(child, { isParent: false, childCount: 0, indent: true, archived: false }),
+                      renderRow(child, {
+                        isParent: false,
+                        childCount: 0,
+                        indent: true,
+                        archived: false,
+                      }),
                     )
                   : null}
               </Fragment>
@@ -336,10 +473,18 @@ export function HierarchicalListCard<T extends HierarchyItem>(
                   type="button"
                   className="flex w-full items-center gap-2 px-4 py-2 text-sm text-muted-foreground"
                   aria-expanded={!archivedCollapsed}
-                  aria-label={archivedCollapsed ? t("categories.expandArchived") : t("categories.collapseArchived")}
+                  aria-label={
+                    archivedCollapsed
+                      ? t("categories.expandArchived")
+                      : t("categories.collapseArchived")
+                  }
                   onClick={() => setArchivedCollapsed((v) => !v)}
                 >
-                  {archivedCollapsed ? <ChevronRight className="size-4" /> : <ChevronDown className="size-4" />}
+                  {archivedCollapsed ? (
+                    <ChevronRight className="size-4" />
+                  ) : (
+                    <ChevronDown className="size-4" />
+                  )}
                   <span className="font-medium">
                     {t("categories.archivedCount", { count: archivedCount })}
                   </span>
@@ -348,10 +493,20 @@ export function HierarchicalListCard<T extends HierarchyItem>(
                   <div className="divide-y border-t">
                     {archivedRows.map(({ parent, children }) => (
                       <Fragment key={parent.id}>
-                        {renderRow(parent, { isParent: true, childCount: children.length, indent: false, archived: true })}
+                        {renderRow(parent, {
+                          isParent: true,
+                          childCount: children.length,
+                          indent: false,
+                          archived: true,
+                        })}
                         {!collapsedIds.has(parent.id)
                           ? children.map((child) =>
-                              renderRow(child, { isParent: false, childCount: 0, indent: true, archived: true }),
+                              renderRow(child, {
+                                isParent: false,
+                                childCount: 0,
+                                indent: true,
+                                archived: true,
+                              }),
                             )
                           : null}
                       </Fragment>
@@ -371,7 +526,9 @@ export function HierarchicalListCard<T extends HierarchyItem>(
         title={t(`${ns}.deleteConfirmTitle`)}
         description={
           pendingDelete && pendingDelete.childCount > 0
-            ? t(`${ns}.deleteCascadeDescription`, { count: pendingDelete.childCount })
+            ? t(`${ns}.deleteCascadeDescription`, {
+                count: pendingDelete.childCount,
+              })
             : t(`${ns}.deleteConfirmDescription`)
         }
         confirmText={t("common.confirmDelete")}
@@ -410,7 +567,9 @@ export function HierarchicalListCard<T extends HierarchyItem>(
     if (!target) return "";
     if (target.action === "archive") {
       return target.context.childCount > 0
-        ? t("categories.archiveCascadeDescription", { count: target.context.childCount })
+        ? t("categories.archiveCascadeDescription", {
+            count: target.context.childCount,
+          })
         : t("categories.archiveConfirmDescription");
     }
     return target.context.archivedAncestorCount > 0
