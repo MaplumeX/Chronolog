@@ -89,6 +89,7 @@ export const en: Record<keyof typeof zh, string> = {
   "categories.parent": "Parent",
   "categories.topLevel": "None (top level)",
   "categories.addChild": "Add sub-item",
+  "categories.moreActions": "More actions",
   "categories.childName": "Sub-item name",
   "categories.deleteCascadeDescription":
     "This cannot be undone. Deleting it will also delete {{count}} sub-item(s).",
@@ -126,6 +127,7 @@ export const en: Record<keyof typeof zh, string> = {
   "tags.parent": "Parent",
   "tags.topLevel": "None (top level)",
   "tags.addChild": "Add sub-item",
+  "tags.moreActions": "More actions",
   "tags.childName": "Sub-item name",
   "tags.expand": "Expand sub-items",
   "tags.collapse": "Collapse sub-items",
