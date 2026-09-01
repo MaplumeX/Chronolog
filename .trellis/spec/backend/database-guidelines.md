@@ -25,10 +25,10 @@ When adding a column or index, update **both** files in the same change. For new
 |-------|--------|
 | `users` | `username` unique with `COLLATE NOCASE`; `password_hash` Argon2id PHC; `display_name` nullable (added task 08-29-user-system) |
 | `sessions` | opaque id; `ON DELETE CASCADE` with user |
-| `categories` | `parent_id` TEXT nullable (two-level hierarchy, task 08-30-hierarchical-categories-tags); name uniqueness is **per-parent within a user** — enforced at the API layer, the old `categories_user_id_name` unique index is dropped in `migrate()`; `color` INTEGER nullable — palette index 1–8, NULL = auto (hash) (added task 08-30-category-tag-color-palette) |
+| `categories` | `parent_id` TEXT nullable (two-level hierarchy, task 08-30-hierarchical-categories-tags); name uniqueness is **per-parent within a user** — enforced at the API layer, the old `categories_user_id_name` unique index is dropped in `migrate()`; `color` INTEGER nullable — palette index 1–8, NULL = auto (hash) (added task 08-30-category-tag-color-palette); `archived_at` TEXT nullable — NULL = active, ISO timestamp = archived (task 08-31-category-archive) |
 | `tags` | `parent_id` TEXT nullable, same two-level semantics; name uniqueness per-parent at API layer (old unique index dropped); `ON DELETE CASCADE` with user; `color` INTEGER nullable — same semantics as categories |
 | `entry_tags` | composite PK `(entry_id, tag_id)`; both FKs `ON DELETE CASCADE` |
-| `time_entries` | `stopped_at` NULL = running; unique `(user_id) WHERE stopped_at IS NULL` |
+| `time_entries` | `stopped_at` NULL = running; unique `(user_id) WHERE stopped_at IS NULL`; `category_id` **nullable** — NULL = uncategorized (task 08-31-category-archive) |
 
 Default categories on register: `DEFAULT_CATEGORIES` in `schema.ts` — `工作`, `学习`, `休息`, `事务`. Seeded in the same transaction as the user insert (`server/src/routes/auth.ts`).
 
@@ -74,9 +74,19 @@ Deleting a parent cascades its children **only after** every child passes the sa
 
 Wrong: creating the `(user_id, parent_id)` index in `SCHEMA_SQL` — on an old db the column doesn't exist yet and `CREATE INDEX` fails (`no such column`). Correct: build the index in `migrate()` after the `ALTER TABLE`. Regression: `server/test/migration.test.ts`.
 
-## Category occupancy
+## Category deletion & archive (task 08-31-category-archive)
 
-`DELETE /api/categories/:id` counts `time_entries` for that category (running or stopped). Count > 0 → 409 `CONFLICT`. Additionally counts `goals.category_id` references — a goal referencing the category blocks deletion with 409 `CONFLICT` `"该分类已被目标引用"` (task 08-30-goal-feature; `goalReferencesCategory` in `server/src/routes/goals.ts`, called after the entries check in `server/src/routes/categories.ts`). `time_entries.category_id` has no `ON DELETE CASCADE`; occupancy is an application rule (`server/src/routes/categories.ts`, `server/test/categories.test.ts`). With hierarchy (task 08-30-hierarchical-categories-tags): deleting a parent requires **all its children** to pass the same entries+goal checks too; the delete removes children then the parent in one transaction.
+`DELETE /api/categories/:id` has **no occupancy checks anymore**: deleting a parent or child nulls out references instead of blocking. In one transaction, for `[id, ...children]`: `UPDATE time_entries SET category_id = NULL WHERE category_id = target` (running entries keep running, become uncategorized), `UPDATE goals SET category_id = NULL WHERE category_id = target`, then delete the category rows. `time_entries.category_id` is nullable (NULL = uncategorized, server constant `UNCATEGORIZED_NAME = "未分类"` in `entries.ts`); `goals.category_id` was already nullable.
+
+Archive: `POST /api/categories/:id/archive` sets `archived_at = deps.now().toISOString()`; a top-level target archives **all its children** in the same transaction; a child archives only itself. `POST /api/categories/:id/unarchive` clears the target and walks the `parentId` chain up, clearing every archived ancestor (restore the chain, never siblings/descendants). Archived categories: cannot be a `parentId` (409 `"归档分类不能作为父级"`), cannot start/rebind timer or entry category (409 `"分类已归档"`) — except when the passed `categoryId` equals the entry's current one (`unchangedCategoryId` skip: editing an archived-category entry without touching the category still saves). Name uniqueness spans archived + active under the same parent. `GET /api/categories` returns `archivedAt: string | null` per row.
+
+`entrySelect` uses `leftJoin(categories)` + `coalesce(categories.name, '未分类')` — never innerJoin on a nullable `category_id`, uncategorized rows would silently vanish from today/week/stats. `rollupCategories` keeps null (uncategorized) buckets separate — they never merge into a parent bucket.
+
+Wrong: blocking deletion with 409 occupancy checks. Correct: null out references in one transaction. Wrong: `innerJoin(categories)` after making `category_id` nullable. Correct: `leftJoin` + coalesce fallback name.
+
+## Table-rebuild migration (NOT NULL drop, task 08-31-category-archive)
+
+SQLite cannot drop `NOT NULL` via `ALTER`. `migrate()` detects `table_info(time_entries).category_id.notnull == 1` and rebuilds the table (SQLite 12-step): `PRAGMA foreign_keys = OFF` outside the transaction → `BEGIN` → `CREATE TABLE time_entries_new` (new definition) → `INSERT ... SELECT` copy → `DROP TABLE time_entries` → `PRAGMA legacy_alter_table = ON` around the `RENAME` (otherwise referencing tables like `entry_tags` get their FK rewritten to the dropped table name) → recreate `time_entries_user_started` + `time_entries_one_running` indexes → `COMMIT` → `PRAGMA foreign_keys = ON` in `finally`. Detection by `notnull` makes it idempotent. Regression: `server/test/migration.test.ts` "archive migration" suite (legacy db with running entry + entry_tags + goal refs; second open is a no-op).
 
 ## Tag occupancy
 
@@ -86,4 +96,4 @@ Wrong: creating the `(user_id, parent_id)` index in `SCHEMA_SQL` — on an old d
 
 ## Goals
 
-`goals` (task 08-30-goal-feature): user-scoped target definitions. Columns: `id`, `user_id` (ON DELETE CASCADE), `name`, `icon` (emoji string, default 🎯), `category_id` / `tag_id` (nullable, no cascade — deletion protection is the application rules above), `direction` (`'lt' | 'gt'`), `hours` (REAL > 0), `period_unit` (`'day' | 'week' | 'month'`), `due_date` (`YYYY-MM-DD` nullable), `created_at`. Index `goals_user_id`. New table via `CREATE TABLE IF NOT EXISTS` in `SCHEMA_SQL` — no `migrate()` entry needed. Progress is computed on read (`server/src/goals.ts` `listGoalsWithProgress`), never snapshotted; see [HTTP Routes](./http-routes.md) for the API contract and [Time and Timezone](./time-and-timezone.md) for `periodBounds`.
+`goals` (task 08-30-goal-feature): user-scoped target definitions. Columns: `id`, `user_id` (ON DELETE CASCADE), `name`, `icon` (emoji string, default 🎯), `category_id` / `tag_id` (nullable — category refs are nulled on category delete, see above; tag refs still block tag deletion), `direction` (`'lt' | 'gt'`), `hours` (REAL > 0), `period_unit` (`'day' | 'week' | 'month'`), `due_date` (`YYYY-MM-DD` nullable), `created_at`. Index `goals_user_id`. New table via `CREATE TABLE IF NOT EXISTS` in `SCHEMA_SQL` — no `migrate()` entry needed. Progress is computed on read (`server/src/goals.ts` `listGoalsWithProgress`), never snapshotted; see [HTTP Routes](./http-routes.md) for the API contract and [Time and Timezone](./time-and-timezone.md) for `periodBounds`.

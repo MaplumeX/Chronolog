@@ -40,13 +40,14 @@ CREATE TABLE IF NOT EXISTS categories (
   name TEXT NOT NULL,
   color INTEGER,
   parent_id TEXT,
+  archived_at TEXT,
   created_at TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS time_entries (
   id TEXT PRIMARY KEY,
   user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  category_id TEXT NOT NULL REFERENCES categories(id),
+  category_id TEXT REFERENCES categories(id),
   description TEXT NOT NULL DEFAULT '',
   started_at TEXT NOT NULL,
   stopped_at TEXT
@@ -129,10 +130,56 @@ function migrate(sqlite: InstanceType<typeof Database>) {
   if (!categoryCols.includes("parent_id")) {
     sqlite.exec("ALTER TABLE categories ADD COLUMN parent_id TEXT");
   }
+  if (!categoryCols.includes("archived_at")) {
+    sqlite.exec("ALTER TABLE categories ADD COLUMN archived_at TEXT");
+  }
   // 新库（SCHEMA_SQL 已建列）与老库（ALTER 后）都在这里建索引，幂等
   sqlite.exec("CREATE INDEX IF NOT EXISTS categories_user_parent ON categories(user_id, parent_id)");
   // 唯一性放宽为「同父下重名」由应用层校验；旧库的 (user_id, name) 唯一索引必须删除，否则跨父重名会撞索引
   sqlite.exec("DROP INDEX IF EXISTS categories_user_id_name");
+
+  // time_entries.category_id 去 NOT NULL：SQLite 无法直接去 NOT NULL，按官方 12-step 流程重建表
+  const entryCategoryCol = (sqlite.pragma("table_info(time_entries)") as { name: string; notnull: number }[]).find(
+    (c) => c.name === "category_id",
+  );
+  if (entryCategoryCol?.notnull === 1) {
+    sqlite.pragma("foreign_keys = OFF");
+    try {
+      sqlite.exec("BEGIN");
+      sqlite.exec(`
+        CREATE TABLE time_entries_new (
+          id TEXT PRIMARY KEY,
+          user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+          category_id TEXT REFERENCES categories(id),
+          description TEXT NOT NULL DEFAULT '',
+          started_at TEXT NOT NULL,
+          stopped_at TEXT
+        );
+        INSERT INTO time_entries_new (id, user_id, category_id, description, started_at, stopped_at)
+          SELECT id, user_id, category_id, description, started_at, stopped_at FROM time_entries;
+        DROP TABLE time_entries;
+      `);
+      // legacy_alter_table = ON 时 RENAME 不改写其它表（entry_tags）的 FK 定义，保持其指向 time_entries
+      sqlite.pragma("legacy_alter_table = ON");
+      try {
+        sqlite.exec("ALTER TABLE time_entries_new RENAME TO time_entries");
+      } finally {
+        sqlite.pragma("legacy_alter_table = OFF");
+      }
+      sqlite.exec(
+        "CREATE INDEX IF NOT EXISTS time_entries_user_started ON time_entries(user_id, started_at)",
+      );
+      sqlite.exec(
+        "CREATE UNIQUE INDEX IF NOT EXISTS time_entries_one_running ON time_entries(user_id) WHERE stopped_at IS NULL",
+      );
+      sqlite.exec("COMMIT");
+    } catch (err) {
+      sqlite.exec("ROLLBACK");
+      throw err;
+    } finally {
+      sqlite.pragma("foreign_keys = ON");
+    }
+  }
 
   const tagCols = (sqlite.pragma("table_info(tags)") as { name: string }[]).map(
     (c) => c.name,

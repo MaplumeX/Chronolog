@@ -10,6 +10,8 @@ export type Category = {
   color: number | null;
   entryCount: number;
   parentId: string | null;
+  /** null = 活动；ISO 时间 = 归档时间（分类归档功能） */
+  archivedAt: string | null;
 };
 
 export type Tag = {
@@ -53,7 +55,8 @@ export type Goal = GoalInput & {
 
 export type TimeEntry = {
   id: string;
-  categoryId: string;
+  /** null = 未分类（分类被删除后条目转未分类） */
+  categoryId: string | null;
   categoryName: string;
   description: string;
   startedAt: string;
@@ -89,7 +92,7 @@ export type TodayStats = {
   tz: string;
   dayStart: string;
   dayEnd: string;
-  categories: { categoryId: string; categoryName: string; seconds: number }[];
+  categories: { categoryId: string | null; categoryName: string; seconds: number }[];
   totalSeconds: number;
 };
 
@@ -98,7 +101,7 @@ export type RangeStats = {
   rangeStart: string;
   rangeEnd: string;
   days: { date: string; seconds: number }[];
-  categories: { categoryId: string; categoryName: string; seconds: number }[];
+  categories: { categoryId: string | null; categoryName: string; seconds: number }[];
   tags: { tagId: string | null; tagName: string | null; seconds: number }[];
   totalSeconds: number;
 };
@@ -198,6 +201,10 @@ export const api = {
     ),
   deleteCategory: (id: string) =>
     request<{ ok: boolean }>(`/api/categories/${id}`, { method: "DELETE" }),
+  archiveCategory: (id: string) =>
+    request<Category>(`/api/categories/${id}/archive`, { method: "POST" }),
+  unarchiveCategory: (id: string) =>
+    request<Category>(`/api/categories/${id}/unarchive`, { method: "POST" }),
   tags: () => request<{ tags: Tag[] }>("/api/tags"),
   createTag: (name: string, color?: number | null, parentId?: string | null) =>
     request<Tag>("/api/tags", {

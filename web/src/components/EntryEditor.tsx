@@ -5,6 +5,7 @@ import { CategoryPicker } from "./CategoryPicker";
 import { DateTimePicker } from "./DateTimePicker";
 import { TagPicker } from "./TagPicker";
 import { formatDuration } from "../format";
+import { filterActive } from "../hierarchy";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,7 +49,13 @@ export function EntryEditor(props: {
   const duration = Number.isNaN(startMs) || Number.isNaN(stopMs)
     ? 0
     : Math.max(0, Math.floor((stopMs - startMs) / 1000));
-  const selectedCategory = props.categories.find((c) => c.id === categoryId);
+  const selectedCategory = filterActive(props.categories).find(
+    (c) => c.id === categoryId,
+  );
+  // 未选中活动分类时的显示兜底：未分类条目用后端 coalesce 的“未分类”；
+  // 指向归档分类的既有条目用后端返回的 categoryName（PRD：编辑时选择器显示当前值），
+  // 保存仍要求切换到活动分类（后端换绑归档分类会 409）；未分类条目同样显示“未分类”
+  const categoryLabel = selectedCategory?.name ?? (!isDraft ? props.entry!.categoryName : "");
   const tagPickerLabel =
     tagIds.length > 0
       ? tagIds
@@ -125,10 +132,10 @@ export function EntryEditor(props: {
       <div className="space-y-1.5">
         <Label>{t("entry.category")}</Label>
         <CategoryPicker
-          categories={props.categories}
+          categories={filterActive(props.categories)}
           value={categoryId}
-          label={selectedCategory?.name ?? t("timer.selectCategory")}
-          colorName={selectedCategory?.name ?? ""}
+          label={categoryLabel || t("timer.selectCategory")}
+          colorName={selectedCategory?.name ?? categoryLabel}
           onChange={setCategoryId}
         />
       </div>
@@ -200,7 +207,7 @@ export function EntryEditor(props: {
         <Button
           type="button"
           onClick={() => void onSave()}
-          disabled={saving || deleting || (isDraft && categoryId === "")}
+          disabled={saving || deleting || categoryId === ""}
         >
           {t("entry.save")}
         </Button>

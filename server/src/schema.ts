@@ -39,6 +39,7 @@ export const categories = sqliteTable(
     name: text("name").notNull(),
     color: integer("color"),
     parentId: text("parent_id"), // 两级层级：指向同表同用户顶层节点；NULL = 顶层。唯一性（同父下重名）由应用层校验
+    archivedAt: text("archived_at"), // NULL = 活动；ISO 时间 = 归档时间
     createdAt: text("created_at").notNull(),
   },
   (t) => [index("categories_user_parent").on(t.userId, t.parentId)],
@@ -51,9 +52,7 @@ export const timeEntries = sqliteTable(
     userId: text("user_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
-    categoryId: text("category_id")
-      .notNull()
-      .references(() => categories.id),
+    categoryId: text("category_id").references(() => categories.id), // NULL = 未分类（删除分类时置空而非阻止）
     description: text("description").notNull().default(""),
     startedAt: text("started_at").notNull(),
     stoppedAt: text("stopped_at"),

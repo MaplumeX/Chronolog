@@ -16,9 +16,11 @@ import {
 } from "./time.js";
 import { categories, entryTags, tags, timeEntries } from "./schema.js";
 
+export const UNCATEGORIZED_NAME = "未分类";
+
 export type EntryDto = {
   id: string;
-  categoryId: string;
+  categoryId: string | null;
   categoryName: string;
   description: string;
   startedAt: string;
@@ -31,7 +33,7 @@ export type EntryDto = {
 const entrySelect = {
   id: timeEntries.id,
   categoryId: timeEntries.categoryId,
-  categoryName: categories.name,
+  categoryName: sql<string>`coalesce(${categories.name}, ${UNCATEGORIZED_NAME})`,
   description: timeEntries.description,
   startedAt: timeEntries.startedAt,
   stoppedAt: timeEntries.stoppedAt,
@@ -68,7 +70,7 @@ export function getRunningEntry(db: Db, userId: string, now: Date): EntryDto | n
   const row = db
     .select(entrySelect)
     .from(timeEntries)
-    .innerJoin(categories, eq(categories.id, timeEntries.categoryId))
+    .leftJoin(categories, eq(categories.id, timeEntries.categoryId))
     .where(and(eq(timeEntries.userId, userId), isNull(timeEntries.stoppedAt)))
     .get();
   if (!row) return null;
@@ -85,7 +87,7 @@ export function getEntry(db: Db, userId: string, id: string, now: Date): EntryDt
   const row = db
     .select(entrySelect)
     .from(timeEntries)
-    .innerJoin(categories, eq(categories.id, timeEntries.categoryId))
+    .leftJoin(categories, eq(categories.id, timeEntries.categoryId))
     .where(and(eq(timeEntries.id, id), eq(timeEntries.userId, userId)))
     .get();
   if (!row) return null;
@@ -126,7 +128,7 @@ export function listToday(
   const rows = db
     .select(entrySelect)
     .from(timeEntries)
-    .innerJoin(categories, eq(categories.id, timeEntries.categoryId))
+    .leftJoin(categories, eq(categories.id, timeEntries.categoryId))
     .where(and(overlap(userId, dayStart, dayEnd), tagFilter))
     .orderBy(desc(timeEntries.startedAt))
     .all();
@@ -153,7 +155,7 @@ export function listWeek(db: Db, userId: string, tzRaw: unknown, now: Date, date
   const rows = db
     .select(entrySelect)
     .from(timeEntries)
-    .innerJoin(categories, eq(categories.id, timeEntries.categoryId))
+    .leftJoin(categories, eq(categories.id, timeEntries.categoryId))
     .where(overlap(userId, weekStart, weekEnd))
     .orderBy(desc(timeEntries.startedAt))
     .all();
@@ -194,7 +196,7 @@ export function listBoundary(
   const prevRow = db
     .select(entrySelect)
     .from(timeEntries)
-    .innerJoin(categories, eq(categories.id, timeEntries.categoryId))
+    .leftJoin(categories, eq(categories.id, timeEntries.categoryId))
     .where(
       and(
         eq(timeEntries.userId, userId),
@@ -208,7 +210,7 @@ export function listBoundary(
   const nextRow = db
     .select(entrySelect)
     .from(timeEntries)
-    .innerJoin(categories, eq(categories.id, timeEntries.categoryId))
+    .leftJoin(categories, eq(categories.id, timeEntries.categoryId))
     .where(and(eq(timeEntries.userId, userId), gte(timeEntries.startedAt, endIso)))
     .orderBy(timeEntries.startedAt)
     .get();
@@ -244,13 +246,13 @@ export function statsToday(
     if (!owned) throw new AppError(404, "NOT_FOUND", "标签不存在");
   }
   const { tz, dayStart, dayEnd, entries } = listToday(db, userId, tzRaw, now, tagId);
-  const byId = new Map<string, { categoryId: string; categoryName: string; seconds: number }>();
+  const byId = new Map<string, { categoryId: string | null; categoryName: string; seconds: number }>();
   for (const e of entries) {
     const seconds = e.clippedSeconds ?? 0;
     if (seconds <= 0) continue;
-    const cur = byId.get(e.categoryId);
+    const cur = byId.get(e.categoryId ?? "");
     if (cur) cur.seconds += seconds;
-    else byId.set(e.categoryId, { categoryId: e.categoryId, categoryName: e.categoryName, seconds });
+    else byId.set(e.categoryId ?? "", { categoryId: e.categoryId, categoryName: e.categoryName, seconds });
   }
   const grouped = [...byId.values()].sort((a, b) => b.seconds - a.seconds);
   const rolledUp = rollup ? rollupCategories(db, userId, grouped) : grouped;
@@ -265,17 +267,17 @@ export type RangeStats = {
   rangeStart: string;
   rangeEnd: string;
   days: { date: string; seconds: number }[];
-  categories: { categoryId: string; categoryName: string; seconds: number }[];
+  categories: { categoryId: string | null; categoryName: string; seconds: number }[];
   tags: { tagId: string | null; tagName: string | null; seconds: number }[];
   totalSeconds: number;
 };
 
-/** rollup=true 时将子分类秒数并入父分类桶（桶名用父分类名），子分类条目消失。 */
+/** rollup=true 时将子分类秒数并入父分类桶（桶名用父分类名），子分类条目消失；未分类（null）自成一组。 */
 function rollupCategories(
   db: Db,
   userId: string,
-  grouped: { categoryId: string; categoryName: string; seconds: number }[],
-): { categoryId: string; categoryName: string; seconds: number }[] {
+  grouped: { categoryId: string | null; categoryName: string; seconds: number }[],
+): { categoryId: string | null; categoryName: string; seconds: number }[] {
   if (grouped.length === 0) return grouped;
   const rows = db
     .select({ id: categories.id, parentId: categories.parentId })
@@ -283,19 +285,23 @@ function rollupCategories(
     .where(eq(categories.userId, userId))
     .all();
   const parentOf = new Map(rows.map((r) => [r.id, r.parentId ?? null]));
-  const byId = new Map(grouped.map((c) => [c.categoryId, c]));
-  const merged = new Map<string, { categoryId: string; categoryName: string; seconds: number }>();
+  const byId = new Map(
+    grouped.filter((c): c is { categoryId: string; categoryName: string; seconds: number } => c.categoryId !== null).map((c) => [c.categoryId, c]),
+  );
+  const merged = new Map<string, { categoryId: string | null; categoryName: string; seconds: number }>();
   for (const c of grouped) {
-    const parentId = parentOf.get(c.categoryId) ?? null;
+    // 未分类（categoryId = null）自成一组，不参与归并
+    const parentId = c.categoryId === null ? null : parentOf.get(c.categoryId) ?? null;
     const bucketId = parentId ?? c.categoryId;
-    let bucket = merged.get(bucketId);
+    const key = bucketId ?? "";
+    let bucket = merged.get(key);
     if (!bucket) {
       // 桶名：父分类名（父分类可能不在本次聚合里——自身无条目——则查表）
       const bucketName = parentId
         ? (byId.get(parentId)?.categoryName ?? lookupCategoryName(db, userId, parentId))
         : c.categoryName;
       bucket = { categoryId: bucketId, categoryName: bucketName, seconds: 0 };
-      merged.set(bucketId, bucket);
+      merged.set(key, bucket);
     }
     bucket.seconds += c.seconds;
   }
@@ -370,7 +376,7 @@ export function statsRange(
   const rows = db
     .select(entrySelect)
     .from(timeEntries)
-    .innerJoin(categories, eq(categories.id, timeEntries.categoryId))
+    .leftJoin(categories, eq(categories.id, timeEntries.categoryId))
     .where(and(overlap(userId, rangeStart, rangeEnd), tagFilter))
     .all();
   const entries: EntryDto[] = rows.map((row) => ({
@@ -382,14 +388,14 @@ export function statsRange(
 
   // range 级 clip 秒数（运行中条目按 now 裁剪）
   const rangeClipped = new Map<string, number>(); // entryId -> clipped seconds
-  const catById = new Map<string, { categoryId: string; categoryName: string; seconds: number }>();
+  const catById = new Map<string, { categoryId: string | null; categoryName: string; seconds: number }>();
   for (const e of entries) {
     const seconds = clipSeconds(e.startedAt, e.stoppedAt, rangeStart, rangeEnd, now);
     rangeClipped.set(e.id, seconds);
     if (seconds <= 0) continue;
-    const cur = catById.get(e.categoryId);
+    const cur = catById.get(e.categoryId ?? "");
     if (cur) cur.seconds += seconds;
-    else catById.set(e.categoryId, { categoryId: e.categoryId, categoryName: e.categoryName, seconds });
+    else catById.set(e.categoryId ?? "", { categoryId: e.categoryId, categoryName: e.categoryName, seconds });
   }
   const categoriesGrouped = [...catById.values()].sort((a, b) => b.seconds - a.seconds);
   const categoriesOut = rollup ? rollupCategories(db, userId, categoriesGrouped) : categoriesGrouped;

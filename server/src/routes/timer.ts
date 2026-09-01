@@ -32,13 +32,26 @@ function updateRunningOnce(deps: Deps, userId: string, body: UpdateCurrentBody):
       .get();
     if (!running) throw new AppError(409, "CONFLICT", "当前没有正在运行的计时");
 
+    // 分类校验：值未变化时放行（运行中条目保持归档分类）；换绑到归档分类 → 409
+    let keepCategoryId = false;
     if (body.categoryId !== undefined) {
-      const cat = tx
-        .select({ id: categories.id })
-        .from(categories)
-        .where(and(eq(categories.id, body.categoryId), eq(categories.userId, userId)))
-        .get();
-      if (!cat) throw new AppError(404, "NOT_FOUND", "分类不存在");
+      if (body.categoryId === running.categoryId) {
+        const owned = tx
+          .select({ id: categories.id })
+          .from(categories)
+          .where(and(eq(categories.id, body.categoryId), eq(categories.userId, userId)))
+          .get();
+        if (!owned) throw new AppError(404, "NOT_FOUND", "分类不存在");
+        keepCategoryId = true; // 原值：即使已归档也不改绑，后续更新无变化
+      } else {
+        const cat = tx
+          .select({ id: categories.id, archivedAt: categories.archivedAt })
+          .from(categories)
+          .where(and(eq(categories.id, body.categoryId), eq(categories.userId, userId)))
+          .get();
+        if (!cat) throw new AppError(404, "NOT_FOUND", "分类不存在");
+        if (cat.archivedAt !== null) throw new AppError(409, "CONFLICT", "分类已归档");
+      }
     }
 
     if (body.tagIds !== undefined && body.tagIds.length > 0) {
@@ -54,7 +67,7 @@ function updateRunningOnce(deps: Deps, userId: string, body: UpdateCurrentBody):
 
     const set: { description?: string; categoryId?: string } = {};
     if (body.description !== undefined) set.description = body.description.trim();
-    if (body.categoryId !== undefined) set.categoryId = body.categoryId;
+    if (body.categoryId !== undefined && !keepCategoryId) set.categoryId = body.categoryId;
     if (set.description !== undefined || set.categoryId !== undefined) {
       tx.update(timeEntries).set(set).where(eq(timeEntries.id, running.id)).run();
     }
@@ -82,11 +95,12 @@ function startOnce(
   let createdId = "";
   deps.db.transaction((tx) => {
     const cat = tx
-      .select({ id: categories.id })
+      .select({ id: categories.id, archivedAt: categories.archivedAt })
       .from(categories)
       .where(and(eq(categories.id, categoryId), eq(categories.userId, userId)))
       .get();
     if (!cat) throw new AppError(404, "NOT_FOUND", "分类不存在");
+    if (cat.archivedAt !== null) throw new AppError(409, "CONFLICT", "分类已归档");
 
     if (tagIds.length > 0) {
       const owned = tx

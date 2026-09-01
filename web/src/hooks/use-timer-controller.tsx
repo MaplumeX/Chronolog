@@ -13,6 +13,7 @@ import {
 import { CategoryPicker } from "../components/CategoryPicker";
 import { TagPicker } from "../components/TagPicker";
 import { browserTz, clipSeconds, elapsedSeconds } from "../format";
+import { filterActive } from "../hierarchy";
 
 const DATE_VIEW_KEY = "chronolog-date-view";
 
@@ -95,7 +96,7 @@ export function useTimerController(props: {
     setToday(dayWindow);
     setBoundary(b ?? null);
     props.onCurrent(cur.entry);
-    if (!categoryId && cur.entry) setCategoryId(cur.entry.categoryId);
+    if (!categoryId && cur.entry) setCategoryId(cur.entry.categoryId ?? "");
     if (cur.entry) setDescription(cur.entry.description);
   }
 
@@ -132,6 +133,8 @@ export function useTimerController(props: {
 
   const selected = categories.find((c) => c.id === categoryId);
   const running = props.current;
+  // 选择器只展示活动分类：归档父级整个子树隐藏，归档子级仅隐藏自身（分类归档功能）
+  const activeCategories = filterActive(categories);
 
   // running 切换（开始新计时/停止）时重置说明草稿并取消 pending 防抖，
   // 避免停止后把草稿误发到 timer 接口（409）或残留到新计时表单
@@ -287,8 +290,8 @@ export function useTimerController(props: {
     onDescriptionChange: running ? onRunningDescriptionChange : setDescription,
     categoryPicker: (
       <CategoryPicker
-        categories={categories}
-        value={running ? running.categoryId : categoryId}
+        categories={activeCategories}
+        value={running ? (running.categoryId ?? "") : categoryId}
         label={pickerLabel}
         colorName={pickerColor}
         onChange={running ? (id: string) => {

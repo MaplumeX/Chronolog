@@ -1,6 +1,9 @@
 /** 两级节点最小形状（分类/标签共用于层级排序） */
 export type HierNode = { id: string; name: string; parentId: string | null };
 
+/** 带归档标记的两级节点（分类归档功能）；tags 无 archivedAt，不适用 */
+export type ArchivableNode = HierNode & { archivedAt: string | null };
+
 /**
  * 两级层级工具（task 08-30-hierarchical-categories-tags）：
  * 服务端返回扁平列表（parentId 指向顶层节点），这里负责排序成「顶层 + 紧随其子级」
@@ -28,4 +31,22 @@ export function sortHierarchical<T extends HierNode>(items: T[]): { parent: T; c
 export function topLevel<T extends HierNode>(items: T[]): T[] {
   const known = new Set(items.map((x) => x.id));
   return items.filter((x) => x.parentId === null || !known.has(x.parentId));
+}
+
+/**
+ * 过滤出「可选」的活动分类（分类归档功能）：
+ * - 父级归档 → 整个子树隐藏（子级即使自身未归档也不可选）；
+ * - 子级归档 → 仅隐藏该子级，父级保留；
+ * - 归档的孤儿节点（parentId 指向不存在/归档节点）同样隐藏。
+ */
+export function filterActive<T extends ArchivableNode>(items: T[]): T[] {
+  const known = new Set(items.map((x) => x.id));
+  const parentArchived = (x: T): boolean => {
+    if (x.parentId === null || !known.has(x.parentId)) return false;
+    const parent = items.find((p) => p.id === x.parentId);
+    return parent != null && parent.archivedAt !== null;
+  };
+  return items.filter(
+    (x) => x.archivedAt === null && !parentArchived(x),
+  );
 }

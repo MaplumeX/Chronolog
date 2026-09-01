@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { sortHierarchical, topLevel, type HierNode } from "./hierarchy";
+import {
+  filterActive,
+  sortHierarchical,
+  topLevel,
+  type ArchivableNode,
+  type HierNode,
+} from "./hierarchy";
 
 function node(id: string, parentId: string | null = null): HierNode {
   return { id, name: `n-${id}`, parentId };
@@ -61,5 +67,51 @@ describe("topLevel", () => {
 
   it("空列表 → 空结果", () => {
     expect(topLevel([])).toEqual([]);
+  });
+});
+
+describe("filterActive（分类归档）", () => {
+  function aNode(
+    id: string,
+    parentId: string | null = null,
+    archivedAt: string | null = null,
+  ): ArchivableNode {
+    return { id, name: `n-${id}`, parentId, archivedAt };
+  }
+
+  it("全活动 → 原样返回", () => {
+    const items = [aNode("a"), aNode("a1", "a"), aNode("b")];
+    expect(filterActive(items)).toEqual(items);
+  });
+
+  it("父级归档 → 整个子树隐藏（含未归档子级）", () => {
+    const items = [
+      aNode("a", null, "2026-01-01T00:00:00.000Z"),
+      aNode("a1", "a"), // 未归档但父归档 → 隐藏
+      aNode("b"),
+    ];
+    expect(filterActive(items).map((x) => x.id)).toEqual(["b"]);
+  });
+
+  it("子级归档 → 仅隐藏该子级，父级保留", () => {
+    const items = [
+      aNode("a"),
+      aNode("a1", "a", "2026-01-01T00:00:00.000Z"),
+      aNode("a2", "a"),
+    ];
+    expect(filterActive(items).map((x) => x.id)).toEqual(["a", "a2"]);
+  });
+
+  it("归档孤儿节点（parentId 指向归档节点）同样隐藏", () => {
+    const items = [
+      aNode("a", null, "2026-01-01T00:00:00.000Z"),
+      aNode("ghost", "missing"), // 孤儿降级顶层，未归档 → 保留
+      aNode("orphanArchived", "missing2", "2026-01-01T00:00:00.000Z"),
+    ];
+    expect(filterActive(items).map((x) => x.id)).toEqual(["ghost"]);
+  });
+
+  it("空列表 → 空结果", () => {
+    expect(filterActive([])).toEqual([]);
   });
 });

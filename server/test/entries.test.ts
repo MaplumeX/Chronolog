@@ -751,3 +751,187 @@ describe("entries", () => {
     });
   });
 });
+
+describe("entries + archived categories (task 08-31)", () => {
+  let t: TestApp;
+  afterEach(async () => {
+    await t?.close();
+  });
+
+  async function categories(sid: string) {
+    const res = await t.app.inject({
+      method: "GET",
+      url: "/api/categories",
+      headers: cookieHeader(sid),
+    });
+    return json(res).categories as { id: string; name: string }[];
+  }
+
+  async function archiveCategory(sid: string, id: string) {
+    const res = await t.app.inject({
+      method: "POST",
+      url: `/api/categories/${id}/archive`,
+      headers: cookieHeader(sid),
+    });
+    assert.equal(res.statusCode, 200, JSON.stringify(res.json()));
+  }
+
+  it("creating or rebinding an entry to an archived category is 409; unchanged categoryId passes", async () => {
+    const c: Clock = { value: new Date("2026-08-31T02:00:00.000Z") };
+    t = await createTestApp({ now: () => c.value });
+    const { sid } = await registerUser(t.app, "entry_archived");
+    const cats = await categories(sid);
+    const work = cats.find((x) => x.name === "工作");
+    const study = cats.find((x) => x.name === "学习");
+    assert.ok(work && study);
+
+    // 造一条已停止条目后归档其分类
+    c.value = new Date("2026-08-31T01:00:00.000Z");
+    const startRes = await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: work.id },
+    });
+    assert.equal(startRes.statusCode, 200);
+    const id = (json(startRes).entry as { id: string }).id;
+    c.value = new Date("2026-08-31T02:00:00.000Z");
+    await t.app.inject({
+      method: "POST",
+      url: "/api/timer/stop",
+      headers: cookieHeader(sid),
+    });
+    await archiveCategory(sid, work.id);
+
+    // POST 新建指向归档分类 → 409
+    const create = await t.app.inject({
+      method: "POST",
+      url: "/api/entries",
+      headers: cookieHeader(sid),
+      payload: {
+        description: "new",
+        categoryId: work.id,
+        tagIds: [],
+        startedAt: "2026-08-31T04:00:00.000Z",
+        stoppedAt: "2026-08-31T04:30:00.000Z",
+      },
+    });
+    assert.equal(create.statusCode, 409);
+    assert.equal((json(create).error as { code: string }).code, "CONFLICT");
+
+    // PATCH 保持原分类（值未变化）→ 放行
+    const keep = await t.app.inject({
+      method: "PATCH",
+      url: `/api/entries/${id}`,
+      headers: cookieHeader(sid),
+      payload: {
+        description: "kept",
+        categoryId: work.id,
+        tagIds: [],
+        startedAt: "2026-08-31T01:00:00.000Z",
+        stoppedAt: "2026-08-31T02:00:00.000Z",
+      },
+    });
+    assert.equal(keep.statusCode, 200);
+    assert.equal((json(keep).entry as { categoryId: string }).categoryId, work.id);
+
+    // PATCH 从活动分类切回归档分类 → 409
+    const rebind = await t.app.inject({
+      method: "PATCH",
+      url: `/api/entries/${id}`,
+      headers: cookieHeader(sid),
+      payload: {
+        description: "rebind",
+        categoryId: study.id,
+        tagIds: [],
+        startedAt: "2026-08-31T01:00:00.000Z",
+        stoppedAt: "2026-08-31T02:00:00.000Z",
+      },
+    });
+    assert.equal(rebind.statusCode, 200);
+    const rebindBack = await t.app.inject({
+      method: "PATCH",
+      url: `/api/entries/${id}`,
+      headers: cookieHeader(sid),
+      payload: {
+        description: "rebind back",
+        categoryId: work.id,
+        tagIds: [],
+        startedAt: "2026-08-31T01:00:00.000Z",
+        stoppedAt: "2026-08-31T02:00:00.000Z",
+      },
+    });
+    assert.equal(rebindBack.statusCode, 409);
+    assert.equal((json(rebindBack).error as { code: string }).code, "CONFLICT");
+  });
+
+  it("uncategorized entries (categoryId null) appear in lists and stats with 未分类 bucket", async () => {
+    const c: Clock = { value: new Date("2026-08-31T03:00:00.000Z") };
+    t = await createTestApp({ now: () => c.value });
+    const { sid } = await registerUser(t.app, "entry_uncat");
+    const cats = await categories(sid);
+    const work = cats.find((x) => x.name === "工作");
+    assert.ok(work);
+
+    c.value = new Date("2026-08-31T02:00:00.000Z");
+    const startRes = await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: work.id },
+    });
+    const id = (json(startRes).entry as { id: string }).id;
+    c.value = new Date("2026-08-31T03:00:00.000Z");
+    await t.app.inject({
+      method: "POST",
+      url: "/api/timer/stop",
+      headers: cookieHeader(sid),
+    });
+
+    // 删除分类 → 条目变未分类
+    const del = await t.app.inject({
+      method: "DELETE",
+      url: `/api/categories/${work.id}`,
+      headers: cookieHeader(sid),
+    });
+    assert.equal(del.statusCode, 200);
+
+    const today = await t.app.inject({
+      method: "GET",
+      url: "/api/entries/today?tz=UTC",
+      headers: cookieHeader(sid),
+    });
+    assert.equal(today.statusCode, 200);
+    const entries = json(today).entries as { id: string; categoryId: string | null; categoryName: string }[];
+    const entry = entries.find((e) => e.id === id);
+    assert.ok(entry);
+    assert.equal(entry.categoryId, null);
+    assert.equal(entry.categoryName, "未分类");
+
+    // 今日统计：未分类自成一组
+    const statsToday = await t.app.inject({
+      method: "GET",
+      url: "/api/stats/today?tz=UTC",
+      headers: cookieHeader(sid),
+    });
+    const todayCats = json(statsToday).categories as { categoryId: string | null; categoryName: string; seconds: number }[];
+    assert.equal(todayCats.length, 1);
+    assert.equal(todayCats[0].categoryId, null);
+    assert.equal(todayCats[0].categoryName, "未分类");
+    assert.equal(todayCats[0].seconds, 3600);
+
+    // range 统计：未分类桶 + rollup 下仍自成一组
+    const statsRange = await t.app.inject({
+      method: "GET",
+      url: "/api/stats/range?tz=UTC&from=2026-08-31&to=2026-08-31&rollup=true",
+      headers: cookieHeader(sid),
+    });
+    assert.equal(statsRange.statusCode, 200);
+    const rangeCats = json(statsRange).categories as { categoryId: string | null; categoryName: string; seconds: number }[];
+    assert.equal(rangeCats.length, 1);
+    assert.equal(rangeCats[0].categoryId, null);
+    assert.equal(rangeCats[0].categoryName, "未分类");
+    assert.equal(rangeCats[0].seconds, 3600);
+    assert.equal(json(statsRange).totalSeconds, 3600);
+  });
+});

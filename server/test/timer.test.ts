@@ -316,3 +316,119 @@ describe("timer", () => {
     }
   });
 });
+
+describe("timer + archived categories (task 08-31)", () => {
+  let t: TestApp;
+  afterEach(async () => {
+    await t?.close();
+  });
+
+  async function firstCategory(app: TestApp["app"], sid: string) {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/categories",
+      headers: cookieHeader(sid),
+    });
+    return json(res).categories as { id: string; name: string }[];
+  }
+
+  it("start with an archived category is 409", async () => {
+    t = await createTestApp();
+    const { sid } = await registerUser(t.app, "timer_archived");
+    const cats = await firstCategory(t.app, sid);
+    const work = cats.find((c) => c.name === "工作");
+    const study = cats.find((c) => c.name === "学习");
+    assert.ok(work && study);
+
+    const archive = await t.app.inject({
+      method: "POST",
+      url: `/api/categories/${work.id}/archive`,
+      headers: cookieHeader(sid),
+    });
+    assert.equal(archive.statusCode, 200);
+
+    const start = await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: work.id },
+    });
+    assert.equal(start.statusCode, 409);
+    assert.equal((json(start).error as { code: string }).code, "CONFLICT");
+
+    // 活动分类仍可正常启动
+    const okStart = await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: study.id },
+    });
+    assert.equal(okStart.statusCode, 200);
+  });
+
+  it("update running entry: rebind to archived category is 409; unchanged categoryId passes", async () => {
+    t = await createTestApp();
+    const { sid } = await registerUser(t.app, "timer_archived_update");
+    const cats = await firstCategory(t.app, sid);
+    const work = cats.find((c) => c.name === "工作");
+    const study = cats.find((c) => c.name === "学习");
+    assert.ok(work && study);
+
+    const start = await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: work.id },
+    });
+    assert.equal(start.statusCode, 200);
+
+    await t.app.inject({
+      method: "POST",
+      url: `/api/categories/${work.id}/archive`,
+      headers: cookieHeader(sid),
+    });
+
+    // 值未变化（categoryId 与运行条目相同）→ 放行，即使分类已归档（保持原分类不改绑）
+    const keep = await t.app.inject({
+      method: "PATCH",
+      url: "/api/timer/current",
+      headers: cookieHeader(sid),
+      payload: { categoryId: work.id },
+    });
+    assert.equal(keep.statusCode, 200);
+    const kept = json(keep).entry as { categoryId: string };
+    assert.equal(kept.categoryId, work.id);
+
+    // 附带其它字段 + 原 categoryId 也放行
+    const keep2 = await t.app.inject({
+      method: "PATCH",
+      url: "/api/timer/current",
+      headers: cookieHeader(sid),
+      payload: { description: "unchanged cat", categoryId: work.id },
+    });
+    assert.equal(keep2.statusCode, 200);
+    const kept2 = json(keep2).entry as { categoryId: string; description: string };
+    assert.equal(kept2.categoryId, work.id);
+    assert.equal(kept2.description, "unchanged cat");
+
+    // 换绑到归档分类（从活动分类）→ 409
+    await t.app.inject({
+      method: "POST",
+      url: "/api/timer/stop",
+      headers: cookieHeader(sid),
+    });
+    await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: study.id },
+    });
+    const switchToArchived = await t.app.inject({
+      method: "PATCH",
+      url: "/api/timer/current",
+      headers: cookieHeader(sid),
+      payload: { categoryId: work.id },
+    });
+    assert.equal(switchToArchived.statusCode, 409);
+  });
+});
