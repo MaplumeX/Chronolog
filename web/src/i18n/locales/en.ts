@@ -140,7 +140,8 @@ export const en: Record<keyof typeof zh, string> = {
   "tokens.lastUsedAt": "Last used",
   "tokens.neverUsed": "Never used",
   "tokens.revoke": "Revoke",
-  "tokens.confirmRevoke": "Confirm revoke?",
+  "tokens.revokeTitle": "Revoke token",
+  "tokens.revokeDescription": "Are you sure you want to revoke \"{{name}}\"? Clients using this token will immediately lose access, and this cannot be undone.",
   "tokens.createdTitle": "Token created",
   "tokens.createdWarning":
     "Copy and store it now — this token is shown only once and cannot be viewed again.",

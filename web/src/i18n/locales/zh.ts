@@ -133,7 +133,8 @@ export const zh = {
   "tokens.lastUsedAt": "最近使用",
   "tokens.neverUsed": "从未使用",
   "tokens.revoke": "撤销",
-  "tokens.confirmRevoke": "确认撤销？",
+  "tokens.revokeTitle": "撤销 Token",
+  "tokens.revokeDescription": "确定要撤销 “{{name}}” 吗？撤销后使用该 Token 的客户端将立即失去访问权限，且无法恢复。",
   "tokens.createdTitle": "Token 已创建",
   "tokens.createdWarning":
     "请立即复制保存，此 Token 仅显示这一次，关闭后无法再次查看。",
