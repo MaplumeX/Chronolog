@@ -5,6 +5,7 @@ import { ApiError, api, type ApiToken } from "../api";
 import i18n, { localeFor } from "../i18n";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -31,7 +32,8 @@ export function TokensPage() {
   const locale = localeFor(i18n.language);
   const [tokens, setTokens] = useState<ApiToken[]>([]);
   const [name, setName] = useState("");
-  const [confirming, setConfirming] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState<ApiToken | null>(null);
+  const [revoking, setRevoking] = useState(false);
   const [error, setError] = useState("");
   const [created, setCreated] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -58,14 +60,18 @@ export function TokensPage() {
     }
   }
 
-  async function remove(id: string) {
+  async function remove() {
+    if (!confirming) return;
     setError("");
+    setRevoking(true);
     try {
-      await api.deleteToken(id);
+      await api.deleteToken(confirming.id);
       setConfirming(null);
       await reload();
     } catch (err) {
       setError(err instanceof ApiError ? err.message : t("tokens.deleteFailed"));
+    } finally {
+      setRevoking(false);
     }
   }
 
@@ -117,26 +123,15 @@ export function TokensPage() {
               </TableCell>
               <TableCell>
                 <div className="flex flex-wrap justify-end gap-2">
-                  {confirming === token.id ? (
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => void remove(token.id)}
-                    >
-                      {t("tokens.confirmRevoke")}
-                    </Button>
-                  ) : (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:text-destructive"
-                      onClick={() => setConfirming(token.id)}
-                    >
-                      {t("tokens.revoke")}
-                    </Button>
-                  )}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => setConfirming(token)}
+                  >
+                    {t("tokens.revoke")}
+                  </Button>
                 </div>
               </TableCell>
             </TableRow>
@@ -145,6 +140,20 @@ export function TokensPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={confirming !== null}
+        onOpenChange={(open) => {
+          if (!open) setConfirming(null);
+        }}
+        title={t("tokens.revokeTitle")}
+        description={t("tokens.revokeDescription", { name: confirming?.name ?? "" })}
+        confirmText={t("tokens.revoke")}
+        cancelText={t("common.cancel")}
+        pending={revoking}
+        destructive
+        onConfirm={() => void remove()}
+      />
 
       {created ? (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4">

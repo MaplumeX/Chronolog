@@ -901,3 +901,24 @@ Collapsed the flat per-row action buttons in HierarchicalListCard (categories/ta
 ### Status
 
 [OK] **Completed**
+
+
+## Session 41: Token revoke confirm via shared ConfirmDialog
+
+**Date**: 2026-09-02
+**Task**: Token revoke confirm via shared ConfirmDialog
+**Branch**: `fix/token-revoke-confirm`
+
+### Summary
+
+TokensPage 撤销确认从行内两步按钮改为共享 ConfirmDialog（pending 防重复提交，描述插值 token 名并提示立即失效不可恢复），zh/en 新增 revokeTitle/revokeDescription 文案并删除 confirmRevoke；同步更新 frontend/component-guidelines.md 的 ConfirmDialog 使用方清单。无 Trellis task（用户选择直接改），typecheck + 120 个 web 测试通过。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a77761f` | (see git log) |
+
+### Status
+
+[OK] **Completed**
