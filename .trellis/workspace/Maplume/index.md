@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 41
-- **Last Active**: 2026-09-02
+- **Total Sessions**: 42
+- **Last Active**: 2026-09-05
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~924 | Active |
+| `journal-1.md` | ~945 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 42 | 2026-09-05 | Fix row-menu popover closing instantly after add-child/edit | `b5c1278` | `fix/add-child-edit-buttons` |
 | 41 | 2026-09-02 | Token revoke confirm via shared ConfirmDialog | `a77761f` | `fix/token-revoke-confirm` |
 | 40 | 2026-09-01 | Tree-list row actions dropdown menu | `0fba63e` | `feat/move-category-buttons-into-menu` |
 | 39 | 2026-09-01 | 分类归档功能 | `edef79e` | `feat/add-category-archive` |
