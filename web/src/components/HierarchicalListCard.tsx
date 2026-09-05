@@ -226,6 +226,28 @@ export function HierarchicalListCard<T extends HierarchyItem>(
     return n;
   }
 
+  /**
+   * Popover focus-outside 守卫：菜单项 onSelect 关闭 DropdownMenu 后，鼠标
+   * 滑出菜单项时 Radix MenuItem 的 onPointerLeave → onItemLeave 仍会执行
+   * `contentRef.current?.focus()`，把焦点抢回已关闭的菜单容器；这个
+   * focusin 发生在新打开的弹层之外，Popover 判定为 focus-outside 而立即
+   * 关闭（真实浏览器可复现，jsdom 无真实指针/焦点时序测不出）。
+   * 因为我们用的是 PopoverAnchor virtualRef 而非 PopoverTrigger，Radix
+   * 自带的 targetIsTrigger 豁免不生效，这里补一个短暂的豁免窗口：
+   * 弹层打开后 ~300ms 内的 focus-outside 不 dismiss（足以覆盖菜单卸载的
+   * 焦点回执：onCloseAutoFocus → ⋯ 按钮、onItemLeave → 菜单容器）。
+   */
+  const popoverOpenedAtRef = useRef(0);
+
+  function guardPopoverFocusOutside(event: {
+    target: EventTarget | null;
+    preventDefault: () => void;
+  }) {
+    if (Date.now() - popoverOpenedAtRef.current < 300) {
+      event.preventDefault();
+    }
+  }
+
   /** 行尾 `⋯` 操作菜单（task 09-01-row-actions-menu）：收编原有平铺按钮 */
   function rowMenu(
     item: T,
@@ -263,6 +285,7 @@ export function HierarchicalListCard<T extends HierarchyItem>(
                   item,
                   anchor: triggerEls.current.get(item.id) ?? null,
                 });
+                popoverOpenedAtRef.current = Date.now();
               }}
             >
               {t(`${ns}.addChild`)}
@@ -275,6 +298,7 @@ export function HierarchicalListCard<T extends HierarchyItem>(
                 item,
                 anchor: triggerEls.current.get(item.id) ?? null,
               });
+              popoverOpenedAtRef.current = Date.now();
             }}
           >
             {t(`${ns}.edit`)}
@@ -390,7 +414,11 @@ export function HierarchicalListCard<T extends HierarchyItem>(
                 }}
               >
                 <PopoverAnchor virtualRef={anchorRef} />
-                <PopoverContent align="end" className="w-72">
+                <PopoverContent
+                  align="end"
+                  className="w-72"
+                  onFocusOutside={guardPopoverFocusOutside}
+                >
                   <AddChildPopoverForm
                     namespace={ns}
                     parentName={item.name}
@@ -409,7 +437,11 @@ export function HierarchicalListCard<T extends HierarchyItem>(
                 }}
               >
                 <PopoverAnchor virtualRef={anchorRef} />
-                <PopoverContent align="end" className="w-72">
+                <PopoverContent
+                  align="end"
+                  className="w-72"
+                  onFocusOutside={guardPopoverFocusOutside}
+                >
                   <NameColorEditPopoverForm
                     namespace={ns}
                     name={item.name}
