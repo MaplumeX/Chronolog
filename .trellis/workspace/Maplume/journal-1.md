@@ -922,3 +922,24 @@ TokensPage 撤销确认从行内两步按钮改为共享 ConfirmDialog（pending
 ### Status
 
 [OK] **Completed**
+
+
+## Session 42: Fix row-menu popover closing instantly after add-child/edit
+
+**Date**: 2026-09-05
+**Task**: Fix row-menu popover closing instantly after add-child/edit
+**Branch**: `fix/add-child-edit-buttons`
+
+### Summary
+
+Tree-list ⋯ menu 添加子级/编辑 弹层在真实浏览器闪现即关：菜单卸载时 MenuItem onPointerLeave → onItemLeave 把焦点抢回菜单容器，PopoverAnchor virtualRef 无 Radix targetIsTrigger 豁免，focus-outside 判定成立导致弹层秒关（jsdom 无真实指针/焦点时序测不出，120 测试全绿掩盖了 bug）。用 Playwright 事件追踪定位根因后，在 HierarchicalListCard 加 popoverOpenedAtRef 时间戳 + PopoverContent onFocusOutside 300ms 豁免窗口；指针外点与 Escape 关闭路径不受影响。Chromium 实测创建子级/改名保存成功，120/120 测试 + typecheck 通过；spec component-guidelines 补充守卫契约。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b5c1278` | (see git log) |
+
+### Status
+
+[OK] **Completed**
