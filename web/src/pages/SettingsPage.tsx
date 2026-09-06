@@ -1,9 +1,17 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Globe } from "lucide-react";
 import { ApiError, api, type User } from "../api";
+import { supportedTimezones, tzUtcOffsetLabel } from "../format";
 import { PageContainer } from "@/components/PageContainer";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -37,9 +45,15 @@ export function SettingsPage(props: {
   // 资料
   const [username, setUsername] = useState(props.user.username);
   const [displayName, setDisplayName] = useState(props.user.displayName ?? "");
+  // "" = 跟随浏览器（提交后服务端置 null）
+  const [timezone, setTimezone] = useState(props.user.timezone ?? "");
   const [profileSaved, setProfileSaved] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [profileBusy, setProfileBusy] = useState(false);
+
+  const timezoneOptions = useMemo(() => supportedTimezones(), []);
+  const timezoneLabel = (tz: string) =>
+    tz === "" ? t("settings.timezoneFollowBrowser") : `${tz} ${tzUtcOffsetLabel(tz)}`;
 
   // 密码
   const [currentPassword, setCurrentPassword] = useState("");
@@ -62,10 +76,11 @@ export function SettingsPage(props: {
     setProfileSaved(false);
     setProfileBusy(true);
     try {
-      const body: { username?: string; displayName?: string } = {};
+      const body: { username?: string; displayName?: string; timezone?: string } = {};
       const trimmedUsername = username.trim();
       if (trimmedUsername !== props.user.username) body.username = trimmedUsername;
       if ((props.user.displayName ?? "") !== displayName) body.displayName = displayName;
+      if (timezone !== (props.user.timezone ?? "")) body.timezone = timezone;
       const updated = await api.updateProfile(body);
       props.onUserUpdated(updated);
       setProfileSaved(true);
@@ -156,6 +171,38 @@ export function SettingsPage(props: {
                 onChange={(e) => setDisplayName(e.target.value)}
               />
             </div>
+            <div className="space-y-2">
+              <Label>{t("settings.timezone")}</Label>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full justify-start gap-2 font-normal"
+                  >
+                    <Globe className="size-4 shrink-0" />
+                    <span className="truncate">{timezoneLabel(timezone)}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto">
+                  <DropdownMenuItem
+                    onClick={() => setTimezone("")}
+                    className={timezone === "" ? "bg-accent" : undefined}
+                  >
+                    {t("settings.timezoneFollowBrowser")}
+                  </DropdownMenuItem>
+                  {timezoneOptions.map((tz) => (
+                    <DropdownMenuItem
+                      key={tz}
+                      onClick={() => setTimezone(tz)}
+                      className={timezone === tz ? "bg-accent" : undefined}
+                    >
+                      <span className="font-mono text-xs">{timezoneLabel(tz)}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
             {profileSaved ? (
               <p className="text-sm text-muted-foreground">{t("settings.saved")}</p>
             ) : null}
@@ -166,7 +213,8 @@ export function SettingsPage(props: {
               disabled={
                 profileBusy ||
                 (username.trim() === props.user.username &&
-                  (props.user.displayName ?? "") === displayName)
+                  (props.user.displayName ?? "") === displayName &&
+                  timezone === (props.user.timezone ?? ""))
               }
               onClick={() => void saveProfile()}
             >

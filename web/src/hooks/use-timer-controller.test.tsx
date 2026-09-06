@@ -40,6 +40,7 @@ function renderController(overrides?: Partial<Parameters<typeof useTimerControll
     (props: Parameters<typeof useTimerController>[0]) => useTimerController(props),
     {
       initialProps: {
+        tz: "UTC",
         nowMs: Date.now(),
         current: null as TimeEntry | null,
         onCurrent: () => {},
@@ -118,6 +119,7 @@ describe("enabled 门控", () => {
     const { rerender, unmount } = renderController({ enabled: false });
     expect(fetchSpy).not.toHaveBeenCalled();
     rerender({
+      tz: "UTC",
       nowMs: Date.now(),
       current: null,
       onCurrent: () => {},
@@ -126,6 +128,31 @@ describe("enabled 门控", () => {
     await waitFor(() => {
       expect(fetchSpy).toHaveBeenCalled();
     });
+    unmount();
+  });
+
+  it("tz 变化（rerender）后重新拉取 today 数据", async () => {
+    const fetchSpy = stubRefreshFetch();
+    vi.stubGlobal("fetch", fetchSpy);
+    const { rerender, unmount } = renderController({ enabled: true });
+    await waitFor(() => {
+      expect(fetchSpy).toHaveBeenCalled();
+    });
+    fetchSpy.mockClear();
+    // 切换时区 → refresh effect 重跑
+    rerender({
+      tz: "America/New_York",
+      nowMs: Date.now(),
+      current: null,
+      onCurrent: () => {},
+      enabled: true,
+    });
+    await waitFor(() => {
+      expect(fetchSpy).toHaveBeenCalled();
+    });
+    const paths = fetchSpy.mock.calls.map((c) => String(c[0]));
+    const todayPath = paths.find((p) => p.startsWith("/api/entries/today"));
+    expect(todayPath).toContain(encodeURIComponent("America/New_York"));
     unmount();
   });
 });

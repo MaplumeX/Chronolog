@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS users (
   username TEXT NOT NULL COLLATE NOCASE,
   password_hash TEXT NOT NULL,
   display_name TEXT,
+  timezone TEXT,
   created_at TEXT NOT NULL
 );
 CREATE UNIQUE INDEX IF NOT EXISTS users_username_unique ON users(username);
@@ -119,6 +120,9 @@ function migrate(sqlite: InstanceType<typeof Database>) {
   );
   if (!userCols.includes("display_name")) {
     sqlite.exec("ALTER TABLE users ADD COLUMN display_name TEXT");
+  }
+  if (!userCols.includes("timezone")) {
+    sqlite.exec("ALTER TABLE users ADD COLUMN timezone TEXT");
   }
 
   const categoryCols = (sqlite.pragma("table_info(categories)") as { name: string }[]).map(

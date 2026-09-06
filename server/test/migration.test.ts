@@ -8,6 +8,115 @@ import { buildApp } from "../src/app.js";
 import { cookieHeader, json, sidOf, type TestApp } from "./helpers.js";
 
 /**
+ * 老库迁移回归（users.timezone）：无 timezone 列的旧库升级后列存在、
+ * 既有用户 timezone 为 null，且可正常设置。二饮打开幂等。
+ */
+describe("timezone migration", () => {
+  let t: TestApp | undefined;
+  let dir: string | undefined;
+  afterEach(async () => {
+    await t?.close();
+    t = undefined;
+    if (dir && fs.existsSync(dir)) fs.rmSync(dir, { recursive: true, force: true });
+    dir = undefined;
+  });
+
+  it("upgrades a legacy db: adds users.timezone, me returns null, second open is a no-op", async () => {
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), "chronolog-tz-mig-"));
+    const dbPath = path.join(dir, "legacy.db");
+    const legacy = new Database(dbPath);
+    legacy.pragma("journal_mode = WAL");
+    legacy.exec(`
+      CREATE TABLE users (
+        id TEXT PRIMARY KEY,
+        username TEXT NOT NULL COLLATE NOCASE,
+        password_hash TEXT NOT NULL,
+        display_name TEXT,
+        created_at TEXT NOT NULL
+      );
+      CREATE UNIQUE INDEX users_username_unique ON users(username);
+      CREATE TABLE sessions (
+        id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        expires_at TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      );
+    `);
+    legacy.prepare(
+      `INSERT INTO users (id, username, password_hash, display_name, created_at)
+       VALUES ('u1', 'legacy_tz_user', 'x', NULL, '2026-08-01T00:00:00.000Z')`,
+    ).run();
+    const sid = "timezoneMigrationSession0000000000";
+    legacy.prepare(
+      `INSERT INTO sessions (id, user_id, expires_at, created_at)
+       VALUES (?, 'u1', '2999-01-01T00:00:00.000Z', '2026-08-01T00:00:00.000Z')`,
+    ).run(sid);
+    legacy.close();
+
+    // 新代码首次打开：migrate 补列
+    const app = await buildApp({
+      dbPath,
+      cookieSecure: false,
+      sessionTtlSeconds: 604800,
+      registrationOpen: true,
+      logger: false,
+    });
+    try {
+      const sqlite = new Database(dbPath, { readonly: true });
+      try {
+        const cols = (sqlite.pragma("table_info(users)") as { name: string }[]).map(
+          (c) => c.name,
+        );
+        assert.ok(cols.includes("timezone"), "users 应有 timezone 列");
+      } finally {
+        sqlite.close();
+      }
+
+      // 老用户 me 返回 null 且不报错
+      const me = await app.inject({
+        method: "GET",
+        url: "/api/auth/me",
+        headers: cookieHeader(sid),
+      });
+      assert.equal(me.statusCode, 200);
+      assert.equal((json(me) as { timezone: string | null }).timezone, null);
+
+      // 升级后可正常设置时区
+      const set = await app.inject({
+        method: "PATCH",
+        url: "/api/profile",
+        payload: { timezone: "Asia/Shanghai" },
+        headers: cookieHeader(sid),
+      });
+      assert.equal(set.statusCode, 200);
+      assert.equal((json(set) as { timezone: string | null }).timezone, "Asia/Shanghai");
+    } finally {
+      await app.close();
+    }
+
+    // 二次打开（迁移幂等）
+    const app2 = await buildApp({
+      dbPath,
+      cookieSecure: false,
+      sessionTtlSeconds: 604800,
+      registrationOpen: true,
+      logger: false,
+    });
+    try {
+      const me2 = await app2.inject({
+        method: "GET",
+        url: "/api/auth/me",
+        headers: cookieHeader(sid),
+      });
+      assert.equal(me2.statusCode, 200);
+      assert.equal((json(me2) as { timezone: string | null }).timezone, "Asia/Shanghai");
+    } finally {
+      await app2.close();
+    }
+  });
+});
+
+/**
  * 老库迁移回归：模拟「归档功能之前的库结构」（categories 无 archived_at 列、
  * time_entries.category_id 带 NOT NULL），升级后列可空、索引与 FK 完整、数据无损。
  */

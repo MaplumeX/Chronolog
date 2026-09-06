@@ -1,6 +1,12 @@
 import i18n from "./i18n";
 
-export type User = { id: string; username: string; displayName: string | null };
+export type User = {
+  id: string;
+  username: string;
+  displayName: string | null;
+  /** null = 未设置，前端回退 browserTz() */
+  timezone: string | null;
+};
 
 export type Meta = { registrationOpen: boolean };
 
@@ -167,7 +173,12 @@ export const api = {
   logout: () =>
     request<{ ok: boolean }>("/api/auth/logout", { method: "POST" }),
   meta: () => request<Meta>("/api/meta"),
-  updateProfile: (body: { username?: string; displayName?: string }) =>
+  updateProfile: (body: {
+    username?: string;
+    displayName?: string;
+    /** 空串 = 清除（跟随浏览器） */
+    timezone?: string;
+  }) =>
     request<User>("/api/profile", {
       method: "PATCH",
       body: JSON.stringify(body),

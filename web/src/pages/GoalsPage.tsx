@@ -8,7 +8,7 @@ import {
   type GoalInput,
   type Tag,
 } from "../api";
-import { browserTz, formatDuration } from "../format";
+import { formatDuration } from "../format";
 import { GoalEditorDialog } from "@/components/GoalEditorDialog";
 import { PageContainer } from "@/components/PageContainer";
 import { Button } from "@/components/ui/button";
@@ -32,8 +32,9 @@ function isExceeded(goal: Goal): boolean {
   );
 }
 
-export function GoalsPage() {
+export function GoalsPage(props: { tz: string }) {
   const { t } = useTranslation();
+  const tz = props.tz;
   const [goals, setGoals] = useState<Goal[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
@@ -44,7 +45,6 @@ export function GoalsPage() {
   const [confirming, setConfirming] = useState<string | null>(null);
 
   async function reload() {
-    const tz = browserTz();
     const res = await api.goals(tz);
     setGoals(res.goals);
   }
@@ -65,12 +65,12 @@ export function GoalsPage() {
       .tags()
       .then((r) => setTags(r.tags))
       .catch(() => undefined);
-    // 简单 30s 轮询刷新进度
+    // 简单 30s 轮询刷新进度（tz 变化时重拉）
     const id = setInterval(() => {
       reload().catch(() => undefined);
     }, 30_000);
     return () => clearInterval(id);
-  }, []);
+  }, [tz]);
 
   function openCreate() {
     setEditing(null);

@@ -4,7 +4,7 @@ import { api, setOnUnauthorized, type TimeEntry, type User } from "./api";
 import { Shell, type PageId } from "./components/Shell";
 import { TimerBar } from "./components/TimerBar";
 import { Timeline } from "./components/Timeline";
-import { elapsedSeconds } from "./format";
+import { elapsedSeconds, browserTz } from "./format";
 import { useTheme } from "./hooks/use-theme";
 import { useTimerController } from "./hooks/use-timer-controller";
 import { AuthPage } from "./pages/AuthPage";
@@ -58,7 +58,10 @@ export function App() {
   }, [current]);
 
   // 顶栏与内容区共享 Timer 状态；未登录或不在 Timer 页时不发请求
+  // tz 单一来源：用户设置优先，未设置回退浏览器时区；未登录也用 browserTz 兜底
+  const tz = user?.timezone ?? browserTz();
   const timer = useTimerController({
+    tz,
     nowMs,
     current,
     onCurrent: setCurrent,
@@ -106,8 +109,8 @@ export function App() {
       }
     >
       {page === "timer" ? <Timeline {...timer.timelineProps} /> : null}
-      {page === "stats" ? <StatsPage /> : null}
-      {page === "goals" ? <GoalsPage /> : null}
+      {page === "stats" ? <StatsPage tz={tz} /> : null}
+      {page === "goals" ? <GoalsPage tz={tz} /> : null}
       {page === "categories" ? <CategoriesPage /> : null}
       {page === "tags" ? <TagsPage /> : null}
       {page === "settings" ? (

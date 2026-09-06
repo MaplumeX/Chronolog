@@ -45,7 +45,12 @@ describe("account: profile", () => {
       headers: cookieHeader(sid),
     });
     assert.equal(res.statusCode, 200);
-    assert.deepEqual(json(res), { id: json(res).id, username: "alice_2", displayName: null });
+    assert.deepEqual(json(res), {
+      id: json(res).id,
+      username: "alice_2",
+      displayName: null,
+      timezone: null,
+    });
 
     const me = await t.app.inject({
       method: "GET",
@@ -154,6 +159,91 @@ describe("account: profile", () => {
     });
     assert.equal(res.statusCode, 200);
     assert.equal((json(res) as { displayName: string }).displayName, "Alice");
+  });
+
+  it("sets, reflects and clears the timezone", async () => {
+    t = await createTestApp();
+    const { sid } = await registerUser(t.app, "alice");
+
+    // 初始为 null（跟随浏览器）
+    const initial = await t.app.inject({
+      method: "GET",
+      url: "/api/auth/me",
+      headers: cookieHeader(sid),
+    });
+    assert.equal(initial.statusCode, 200);
+    assert.equal((json(initial) as { timezone: string | null }).timezone, null);
+
+    // 设置有效时区
+    const set = await t.app.inject({
+      method: "PATCH",
+      url: "/api/profile",
+      payload: { timezone: "America/New_York" },
+      headers: cookieHeader(sid),
+    });
+    assert.equal(set.statusCode, 200);
+    assert.equal((json(set) as { timezone: string | null }).timezone, "America/New_York");
+
+    // 持久化：me / login 响应都返回该时区
+    const me = await t.app.inject({
+      method: "GET",
+      url: "/api/auth/me",
+      headers: cookieHeader(sid),
+    });
+    assert.equal(
+      (json(me) as { timezone: string | null }).timezone,
+      "America/New_York",
+    );
+
+    const login = await t.app.inject({
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { username: "alice", password: "password1" },
+    });
+    assert.equal(login.statusCode, 200);
+    assert.equal(
+      (json(login) as { timezone: string | null }).timezone,
+      "America/New_York",
+    );
+
+    // 空串清除回 null
+    const clear = await t.app.inject({
+      method: "PATCH",
+      url: "/api/profile",
+      payload: { timezone: "" },
+      headers: cookieHeader(sid),
+    });
+    assert.equal(clear.statusCode, 200);
+    assert.equal((json(clear) as { timezone: string | null }).timezone, null);
+
+    const meAfter = await t.app.inject({
+      method: "GET",
+      url: "/api/auth/me",
+      headers: cookieHeader(sid),
+    });
+    assert.equal((json(meAfter) as { timezone: string | null }).timezone, null);
+  });
+
+  it("rejects an invalid timezone with 400 VALIDATION", async () => {
+    t = await createTestApp();
+    const { sid } = await registerUser(t.app, "alice");
+
+    const res = await t.app.inject({
+      method: "PATCH",
+      url: "/api/profile",
+      payload: { timezone: "Mars/Olympus_Mons" },
+      headers: cookieHeader(sid),
+    });
+    assert.equal(res.statusCode, 400);
+    assert.equal(errorCode(res), "VALIDATION");
+
+    // 无效值不落库
+    const me = await t.app.inject({
+      method: "GET",
+      url: "/api/auth/me",
+      headers: cookieHeader(sid),
+    });
+    assert.equal((json(me) as { timezone: string | null }).timezone, null);
   });
 });
 

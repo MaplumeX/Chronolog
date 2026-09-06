@@ -15,7 +15,7 @@ import {
 import { enUS, zhCN } from "react-day-picker/locale";
 
 import { ApiError, api, type Category, type RangeStats, type Tag } from "../api";
-import { browserTz, formatDuration, paletteColor } from "../format";
+import { formatDuration, paletteColor } from "../format";
 import { localeFor } from "../i18n";
 import { PageContainer } from "@/components/PageContainer";
 import { Button } from "@/components/ui/button";
@@ -96,9 +96,9 @@ const TOOLTIP_STYLE: React.CSSProperties = {
   fontSize: "0.75rem",
 };
 
-export function StatsPage() {
+export function StatsPage(props: { tz: string }) {
   const { t, i18n } = useTranslation();
-  const tz = browserTz();
+  const tz = props.tz;
 
   const [kind, setKind] = useState<RangeKind>("today");
   // tz 本地「今天」，轮询时重算；跨午夜保持打开时据此滚动到新的一天。
