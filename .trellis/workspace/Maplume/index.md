@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 42
-- **Last Active**: 2026-09-05
+- **Total Sessions**: 43
+- **Last Active**: 2026-09-06
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~945 | Active |
+| `journal-1.md` | ~967 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 43 | 2026-09-06 | Add user timezone setting with global date/time display | `527e5f5`, `ef0edca` | `feat/settings-timezone` |
 | 42 | 2026-09-05 | Fix row-menu popover closing instantly after add-child/edit | `b5c1278` | `fix/add-child-edit-buttons` |
 | 41 | 2026-09-02 | Token revoke confirm via shared ConfirmDialog | `a77761f` | `fix/token-revoke-confirm` |
 | 40 | 2026-09-01 | Tree-list row actions dropdown menu | `0fba63e` | `feat/move-category-buttons-into-menu` |

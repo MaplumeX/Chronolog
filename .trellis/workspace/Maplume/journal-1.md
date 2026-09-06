@@ -943,3 +943,25 @@ Tree-list ⋯ menu 添加子级/编辑 弹层在真实浏览器闪现即关：�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 43: Add user timezone setting with global date/time display
+
+**Date**: 2026-09-06
+**Task**: Add user timezone setting with global date/time display
+**Branch**: `feat/settings-timezone`
+
+### Summary
+
+Implemented per-user timezone setting (task 09-06-settings-timezone): users.timezone nullable column with idempotent migration; register/login/me/profile carry timezone; PATCH /api/profile accepts optional IANA-validated timezone (empty string clears). Frontend derives tz = user.timezone ?? browserTz() at App level and passes it to useTimerController/StatsPage/GoalsPage; Settings profile card gained a timezone DropdownMenu (follow-browser default + supportedTimezones/tzUtcOffsetLabel helpers, zh/en i18n). Specs synced (backend db/http/time, frontend api-client/state/component). typecheck + all 253 tests green.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `527e5f5` | (see git log) |
+| `ef0edca` | (see git log) |
+
+### Status
+
+[OK] **Completed**
