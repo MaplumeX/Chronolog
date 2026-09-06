@@ -965,3 +965,24 @@ Implemented per-user timezone setting (task 09-06-settings-timezone): users.time
 ### Status
 
 [OK] **Completed**
+
+
+## Session 44: Auto-persist detected browser timezone
+
+**Date**: 2026-09-06
+**Task**: Auto-persist detected browser timezone
+**Branch**: `feat/settings-timezone`
+
+### Summary
+
+Switched timezone default to detect-then-persist (task 09-06-timezone-autodetect-persist): App auto-saves browserTz() via one-shot fire-and-forget updateProfile when user.timezone is null (per-user-id dedup, silent failure, retry next visit; manual zones never overwritten). Removed the follow-browser dropdown item; settings baseline is user.timezone ?? browserTz(). Frontend-only, 5 new App.test.tsx cases; specs synced. typecheck + all tests green (server 121, web 132).
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `26b2cfc` | (see git log) |
+
+### Status
+
+[OK] **Completed**
