@@ -6,7 +6,7 @@ No Redux, Zustand, or context providers beyond React defaults.
 
 `App.tsx` holds:
 
-- `user: User | null | undefined` — session (its `timezone` field feeds the App-derived `tz = user?.timezone ?? browserTz()` handed to `useTimerController` / `StatsPage` / `GoalsPage` as a prop; switching timezone in settings updates `user` via `onUserUpdated`, which changes `tz` and re-triggers the tz-dependent fetch effects — task 09-06-settings-timezone)
+- `user: User | null | undefined` — session (its `timezone` field feeds the App-derived `tz = user?.timezone ?? browserTz()` handed to `useTimerController` / `StatsPage` / `GoalsPage` as a prop; switching timezone in settings updates `user` via `onUserUpdated`, which changes `tz` and re-triggers the tz-dependent fetch effects — task 09-06-settings-timezone). Detect-then-persist (task 09-06-timezone-autodetect-persist): when a loaded user has `timezone === null`, App fires a one-shot fire-and-forget `updateProfile({ timezone: browserTz() })` (deduped per user id via a ref — StrictMode-safe; failure silent, retried next visit); the successful response replaces `user`, closing the transient null window. Manually set zones are never overwritten.
 - `page: PageId` — shell tab
 - `current: TimeEntry | null` — running timer
 - `nowMs` — clock for elapsed

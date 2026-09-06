@@ -12,7 +12,7 @@ Clients never send `startedAt`. The server stamps start (and stop) from `deps.no
 
 `GET /api/entries/today` and `GET /api/stats/today` require `?tz=`. `requireTz` in `server/src/time.ts` rejects missing, empty, or non-IANA values with 400 `VALIDATION` `"时区无效"`.
 
-The browser sends `Intl.DateTimeFormat().resolvedOptions().timeZone` (`web/src/format.ts` `browserTz`) — since task 09-06-settings-timezone only as the fallback: the frontend's effective tz is `user.timezone ?? browserTz()` (App-level), the user's persisted IANA zone when set. Do not read the container timezone. Docker images are typically UTC; China before 08:00 would otherwise see yesterday.
+The browser sends `Intl.DateTimeFormat().resolvedOptions().timeZone` (`web/src/format.ts` `browserTz`) — since task 09-06-settings-timezone only as the fallback: the frontend's effective tz is `user.timezone ?? browserTz()` (App-level), the user's persisted IANA zone when set (auto-persisted from the browser on first login, task 09-06-timezone-autodetect-persist — NULL is a transient not-yet-detected state, not a follow-browser choice). Do not read the container timezone. Docker images are typically UTC; China before 08:00 would otherwise see yesterday.
 
 ## Day bounds and clip
 

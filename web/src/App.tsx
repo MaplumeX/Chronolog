@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, setOnUnauthorized, type TimeEntry, type User } from "./api";
 import { Shell, type PageId } from "./components/Shell";
@@ -26,6 +26,8 @@ export function App() {
   const { t } = useTranslation();
   const { mode: themeMode, setMode: setThemeMode } = useTheme();
   const [user, setUser] = useState<User | null | undefined>(undefined);
+  // 已为其触发过时区自动持久化的 user id，避免 me()/登录/其他路径重复触发
+  const tzPersistedForRef = useRef<string | null>(null);
   const [page, setPage] = useState<PageId>("timer");
   const [current, setCurrent] = useState<TimeEntry | null>(null);
   const [nowMs, setNowMs] = useState(() => Date.now());
@@ -41,6 +43,19 @@ export function App() {
       .catch(() => setUser(null));
     return () => setOnUnauthorized(undefined);
   }, []);
+
+  // 首次访问自动持久化检测到的浏览器时区：timezone 为 null 时 fire-and-forget
+  // 写入，成功后 setUser（此后条件不再成立，不会循环）；失败静默，下次访问重试。
+  // UI 不等待持久化：tz 派生仍以 browserTz() 兜底，瞬态期间行为与现状一致。
+  useEffect(() => {
+    if (!user || user.timezone !== null) return;
+    if (tzPersistedForRef.current === user.id) return;
+    tzPersistedForRef.current = user.id;
+    api
+      .updateProfile({ timezone: browserTz() })
+      .then(setUser)
+      .catch(() => undefined);
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;

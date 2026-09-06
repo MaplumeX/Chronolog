@@ -158,7 +158,6 @@ export const en: Record<keyof typeof zh, string> = {
   "settings.language": "Language",
   "settings.theme": "Theme",
   "settings.timezone": "Timezone",
-  "settings.timezoneFollowBrowser": "Follow browser",
   "settings.logout": "Log out",
   "settings.username": "Username",
   "settings.displayName": "Display name",
