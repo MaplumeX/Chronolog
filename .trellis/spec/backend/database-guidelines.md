@@ -23,7 +23,7 @@ When adding a column or index, update **both** files in the same change. For new
 
 | Table | Notes |
 |-------|--------|
-| `users` | `username` unique with `COLLATE NOCASE`; `password_hash` Argon2id PHC; `display_name` nullable (added task 08-29-user-system) |
+| `users` | `username` unique with `COLLATE NOCASE`; `password_hash` Argon2id PHC; `display_name` nullable (added task 08-29-user-system); `timezone` TEXT nullable — NULL = 未设置，前端回退浏览器时区（added task 09-06-settings-timezone） |
 | `sessions` | opaque id; `ON DELETE CASCADE` with user |
 | `categories` | `parent_id` TEXT nullable (two-level hierarchy, task 08-30-hierarchical-categories-tags); name uniqueness is **per-parent within a user** — enforced at the API layer, the old `categories_user_id_name` unique index is dropped in `migrate()`; `color` INTEGER nullable — palette index 1–8, NULL = auto (hash) (added task 08-30-category-tag-color-palette); `archived_at` TEXT nullable — NULL = active, ISO timestamp = archived (task 08-31-category-archive) |
 | `tags` | `parent_id` TEXT nullable, same two-level semantics; name uniqueness per-parent at API layer (old unique index dropped); `ON DELETE CASCADE` with user; `color` INTEGER nullable — same semantics as categories |

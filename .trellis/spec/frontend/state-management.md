@@ -6,7 +6,7 @@ No Redux, Zustand, or context providers beyond React defaults.
 
 `App.tsx` holds:
 
-- `user: User | null | undefined` — session
+- `user: User | null | undefined` — session (its `timezone` field feeds the App-derived `tz = user?.timezone ?? browserTz()` handed to `useTimerController` / `StatsPage` / `GoalsPage` as a prop; switching timezone in settings updates `user` via `onUserUpdated`, which changes `tz` and re-triggers the tz-dependent fetch effects — task 09-06-settings-timezone)
 - `page: PageId` — shell tab
 - `current: TimeEntry | null` — running timer
 - `nowMs` — clock for elapsed
