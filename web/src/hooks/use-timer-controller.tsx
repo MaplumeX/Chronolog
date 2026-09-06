@@ -12,7 +12,7 @@ import {
 } from "../api";
 import { CategoryPicker } from "../components/CategoryPicker";
 import { TagPicker } from "../components/TagPicker";
-import { browserTz, clipSeconds, elapsedSeconds } from "../format";
+import { clipSeconds, elapsedSeconds } from "../format";
 import { filterActive } from "../hierarchy";
 
 const DATE_VIEW_KEY = "chronolog-date-view";
@@ -44,13 +44,14 @@ function saveDateView(date: string | null): void {
  * 传 false 跳过数据加载。
  */
 export function useTimerController(props: {
+  tz: string;
   nowMs: number;
   current: TimeEntry | null;
   onCurrent: (entry: TimeEntry | null) => void;
   enabled: boolean;
 }) {
   const { t } = useTranslation();
-  const tz = browserTz();
+  const tz = props.tz;
   const [categories, setCategories] = useState<Category[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [today, setToday] = useState<TodayEntries | null>(null);
@@ -105,7 +106,7 @@ export function useTimerController(props: {
     void refresh().catch((err) =>
       setError(err instanceof ApiError ? err.message : t("common.loadFailed")),
     );
-  }, [props.enabled]);
+  }, [props.enabled, tz]);
 
   /** 条目切换查看的日期后重新拉取当前视图的数据；回今天（null）时清除持久化。Step 3 DateNav 接入。 */
   function onDateChange(next: string | null) {

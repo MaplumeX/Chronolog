@@ -4,6 +4,33 @@ export function browserTz(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 }
 
+/** 时区选择列表：浏览器支持的 IANA 时区；不支持 supportedValuesOf 时回退（当前浏览器时区 + UTC）。 */
+export function supportedTimezones(): string[] {
+  const supported = (Intl as { supportedValuesOf?: (key: "timeZone") => string[] })
+    .supportedValuesOf;
+  if (typeof supported === "function") {
+    try {
+      return supported.call(Intl, "timeZone");
+    } catch {
+      // fall through
+    }
+  }
+  return [browserTz(), "UTC"].filter((tz, i, arr) => arr.indexOf(tz) === i);
+}
+
+/** IANA 时区当前的 UTC 偏移文案，如 `(UTC+08:00)`。 */
+export function tzUtcOffsetLabel(tz: string, nowMs = Date.now()): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    timeZoneName: "longOffset",
+  }).formatToParts(new Date(nowMs));
+  const name = parts.find((p) => p.type === "timeZoneName")?.value ?? "GMT+00:00";
+  // longOffset 形如 GMT+08:00 / GMT-05:30；UTC 返回 GMT，归一化为 +00:00
+  const m = /GMT([+-])(\d{2}):(\d{2})/.exec(name);
+  if (!m) return "(UTC+00:00)";
+  return `(UTC${m[1]}${m[2]}:${m[3]})`;
+}
+
 export function formatDuration(totalSeconds: number): string {
   const s = Math.max(0, Math.floor(totalSeconds));
   const h = Math.floor(s / 3600);

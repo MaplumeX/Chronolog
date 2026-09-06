@@ -38,9 +38,9 @@ New endpoints belong in an existing file if they share the resource, or a new `r
 | POST | `/api/auth/register` | no | seeds default categories; Set-Cookie; 403 when `REGISTRATION_OPEN=false` |
 | POST | `/api/auth/login` | no | Set-Cookie; replaces previous sid |
 | POST | `/api/auth/logout` | cookie optional | always `{ ok: true }` |
-| GET | `/api/auth/me` | session | 401 if logged out; returns `{ id, username, displayName \| null }` |
+| GET | `/api/auth/me` | session | 401 if logged out; returns `{ id, username, displayName \| null, timezone \| null }` |
 | GET | `/api/meta` | no | `{ registrationOpen }` for the login page |
-| PATCH | `/api/profile` | yes | `{ username?, displayName? }`; username dup → 409; empty update → 400 |
+| PATCH | `/api/profile` | yes | `{ username?, displayName?, timezone? }`; username dup → 409; empty update → 400; `timezone` non-empty must be valid IANA (else 400 `VALIDATION`), empty string clears to null (task 09-06-settings-timezone) |
 | PATCH | `/api/account/password` | yes | revokes other sessions, keeps PATs |
 | DELETE | `/api/account` | yes | password confirmation; FK cascade; clears cookie |
 | GET | `/api/categories` | yes | includes `entryCount`, `parentId` (null = top level), `archivedAt: string\|null` (task 08-31-category-archive) |

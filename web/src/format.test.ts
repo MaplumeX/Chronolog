@@ -11,6 +11,8 @@ import {
   formatWeekdayHeader,
   paletteColor,
   paletteForegroundColor,
+  supportedTimezones,
+  tzUtcOffsetLabel,
 } from "./format";
 
 // setup.ts 已将 i18n 固定为 en（localeFor("en") → "en"）。
@@ -237,5 +239,47 @@ describe("browserTz", () => {
     const tz = browserTz();
     expect(typeof tz).toBe("string");
     expect(tz.length).toBeGreaterThan(0);
+  });
+});
+
+describe("supportedTimezones", () => {
+  it("返回非空数组且元素为 IANA 形态字符串", () => {
+    const list = supportedTimezones();
+    expect(list.length).toBeGreaterThan(0);
+    for (const tz of list) {
+      expect(typeof tz).toBe("string");
+      expect(tz.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("无重复项；常见时区在主流运行时存在", () => {
+    const list = supportedTimezones();
+    expect(new Set(list).size).toBe(list.length);
+    // Node ≥ 18 与主流浏览器都支持 Intl.supportedValuesOf("timeZone")
+    if (typeof (Intl as { supportedValuesOf?: unknown }).supportedValuesOf === "function") {
+      expect(list).toContain("Asia/Shanghai");
+      expect(list).toContain("America/New_York");
+    }
+  });
+});
+
+describe("tzUtcOffsetLabel", () => {
+  // 固定瞬时：2026-06-15T00:00:00Z（北半球夏令时生效）
+  const SUMMER = Date.parse("2026-06-15T00:00:00.000Z");
+
+  it("整点偏移时区：Asia/Shanghai → UTC+08:00", () => {
+    expect(tzUtcOffsetLabel("Asia/Shanghai", SUMMER)).toBe("(UTC+08:00)");
+  });
+
+  it("夏令时时区：America/New_York 夏季 → UTC-04:00", () => {
+    expect(tzUtcOffsetLabel("America/New_York", SUMMER)).toBe("(UTC-04:00)");
+  });
+
+  it("半点偏移时区：Asia/Kolkata → UTC+05:30", () => {
+    expect(tzUtcOffsetLabel("Asia/Kolkata", SUMMER)).toBe("(UTC+05:30)");
+  });
+
+  it("UTC → UTC+00:00", () => {
+    expect(tzUtcOffsetLabel("UTC", SUMMER)).toBe("(UTC+00:00)");
   });
 });

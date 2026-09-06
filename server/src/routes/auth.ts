@@ -68,7 +68,7 @@ export function registerAuthRoutes(app: FastifyInstance, deps: Deps) {
 
     const sid = replaceSession(deps, req, userId);
     setSessionCookie(reply, sid, deps);
-    return { id: userId, username: body.username, displayName: null };
+    return { id: userId, username: body.username, displayName: null, timezone: null };
   });
 
   app.post("/api/auth/login", async (req, reply) => {
@@ -80,7 +80,12 @@ export function registerAuthRoutes(app: FastifyInstance, deps: Deps) {
     }
     const sid = replaceSession(deps, req, user.id);
     setSessionCookie(reply, sid, deps);
-    return { id: user.id, username: user.username, displayName: user.displayName ?? null };
+    return {
+      id: user.id,
+      username: user.username,
+      displayName: user.displayName ?? null,
+      timezone: user.timezone ?? null,
+    };
   });
 
   app.post("/api/auth/logout", async (req, reply) => {

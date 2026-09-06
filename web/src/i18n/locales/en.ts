@@ -157,6 +157,7 @@ export const en: Record<keyof typeof zh, string> = {
   "settings.tabTokens": "API Tokens",
   "settings.language": "Language",
   "settings.theme": "Theme",
+  "settings.timezone": "Timezone",
   "settings.logout": "Log out",
   "settings.username": "Username",
   "settings.displayName": "Display name",

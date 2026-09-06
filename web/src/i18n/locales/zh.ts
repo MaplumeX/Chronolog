@@ -150,6 +150,7 @@ export const zh = {
   "settings.tabTokens": "API Tokens",
   "settings.language": "语言",
   "settings.theme": "主题",
+  "settings.timezone": "时区",
   "settings.logout": "退出登录",
   "settings.username": "用户名",
   "settings.displayName": "显示昵称",
