@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/backend/time-and-timezone.md", "reason": "检查修复后时间比较口径与 overlap/clip 语义一致性"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "测试与质量要求基线"}
