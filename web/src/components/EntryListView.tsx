@@ -1,34 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Measurable } from "@radix-ui/rect";
-import { ArrowDown, ArrowUp, Radio } from "lucide-react";
+import { Radio } from "lucide-react";
 import type { Category, Tag, TimeEntry, TodayEntries } from "../api";
 import { formatClock, formatDuration, paletteColor } from "../format";
 import { localeFor } from "../i18n";
 import type { Gap } from "../timeline-gaps";
-import { Button } from "./ui/button";
 import { PopoverAnchor } from "./ui/popover";
 import { Separator } from "./ui/separator";
-
-const SUBVIEW_SORT_KEY = "chronolog-entry-view-sort";
-
-/** localStorage 读取排序偏好（正序默认），隐私模式下静默降级；垃圾值视为正序。 */
-function loadSort(): "asc" | "desc" {
-  try {
-    const v = window.localStorage.getItem(SUBVIEW_SORT_KEY);
-    return v === "desc" ? "desc" : "asc";
-  } catch {
-    return "asc";
-  }
-}
-
-function saveSort(sort: "asc" | "desc"): void {
-  try {
-    window.localStorage.setItem(SUBVIEW_SORT_KEY, sort);
-  } catch {
-    // ignore
-  }
-}
 
 /** 行事件流：条目行与 gap 幽灵卡行合并后的统一渲染单元 */
 type Row =
@@ -58,7 +37,6 @@ export function EntryListView(props: {
 }) {
   const { t, i18n } = useTranslation();
   const { day, nowMs, tz, categories, tags, gaps, selectedId, onSelect, onGapClick } = props;
-  const [sort, setSort] = useState<"asc" | "desc">(loadSort);
   const listRef = useRef<HTMLDivElement>(null);
   // gap 草稿锚点：被点幽灵卡行卡片的固化位置快照（popover 定位 anchor，不随行重排移动）；
   // PopoverAnchor virtualRef 需要 RefObject 形态，快照在点击时写入 ref.current
@@ -69,7 +47,7 @@ export function EntryListView(props: {
   const dayStartMs = day ? Date.parse(day.dayStart) : 0;
   const dayEndMs = day ? Date.parse(day.dayEnd) : 0;
 
-  /** 条目 + gap 按开始时刻合并成时间序事件流（AC9：衔接条目数字呼应靠正序渲染） */
+  /** 条目 + gap 按开始时刻合并成时间序事件流，固定正序（柳比歇夫流水账式） */
   const rows = useMemo<Row[]>(() => {
     if (!day) return [];
     const entryRows: Row[] = day.entries.map((e) => ({
@@ -90,32 +68,25 @@ export function EntryListView(props: {
         };
       })
       .filter((r): r is Row => r != null);
-    const merged = [...entryRows, ...gapRows].sort(
+    return [...entryRows, ...gapRows].sort(
       (a, b) =>
         (a.kind === "entry" ? Date.parse(a.entry.startedAt) : a.vis.startMs) -
         (b.kind === "entry" ? Date.parse(b.entry.startedAt) : b.vis.startMs),
     );
-    return sort === "asc" ? merged : merged.reverse();
-  }, [day, gaps, dayStartMs, dayEndMs, sort]);
+  }, [day, gaps, dayStartMs, dayEndMs]);
 
-  // 初始滚动（挂载/排序/日期切换时执行一次）：今天正序滚到底（运行中在最后）、
-  // 倒序/历史日期滚到顶；不做持续跟随
+  // 初始滚动（挂载/日期切换时执行一次）：今天滚到底（运行中在最后）、
+  // 历史日期滚到顶；不做持续跟随
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
     const isToday = day
       ? nowMs >= Date.parse(day.dayStart) && nowMs < Date.parse(day.dayEnd)
       : false;
-    el.scrollTop = isToday && sort === "asc" ? el.scrollHeight : 0;
-    // 仅在首次挂载、排序切换、日期切换时执行
+    el.scrollTop = isToday ? el.scrollHeight : 0;
+    // 仅在首次挂载、日期切换时执行
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sort, day?.dayStart]);
-
-  const toggleSort = () => {
-    const next = sort === "asc" ? "desc" : "asc";
-    setSort(next);
-    saveSort(next);
-  };
+  }, [day?.dayStart]);
 
   /** 幽灵卡点击：固化行位置快照作为 popover anchor，再上抛 gap（Timeline 的 gapDraft 流程） */
   const handleGhostClick = (gap: Gap, cardEl: HTMLElement) => {
@@ -134,20 +105,6 @@ export function EntryListView(props: {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {/* 头部工具行：排序切换 */}
-      <div className="flex shrink-0 justify-end px-2 py-1 md:px-4">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-xs"
-          className="relative cursor-pointer touch-hit--x text-muted-foreground"
-          aria-label={sort === "asc" ? t("timeline.sortDesc") : t("timeline.sortAsc")}
-          title={sort === "asc" ? t("timeline.sortDesc") : t("timeline.sortAsc")}
-          onClick={toggleSort}
-        >
-          {sort === "asc" ? <ArrowDown /> : <ArrowUp />}
-        </Button>
-      </div>
       <div ref={listRef} className="entry-view-list min-h-0 flex-1 overflow-y-auto">
         {rows.length === 0 ? (
           <div className="flex h-full min-h-40 items-center justify-center text-sm text-muted-foreground">

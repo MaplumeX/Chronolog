@@ -196,24 +196,29 @@ describe("EntryListView", () => {
     expect(onGapClick).toHaveBeenCalledWith(MID_GAP);
   });
 
-  it("排序切换 + localStorage 记忆（chronolog-entry-view-sort）", async () => {
-    const user = userEvent.setup();
-    renderList();
-    // 默认正序：首行时间列 = 02:00（e1 开始）
-    const firstStart = () =>
-      document.querySelector<HTMLElement>(".entry-view-row .entry-view-time--start")!;
-    expect(firstStart().textContent).toBe("02:00");
-
-    // 点击排序切换按钮（aria-label：当前 asc 时显示 sortDesc 文案）
-    await user.click(screen.getByRole("button", { name: "Descending" }));
-    expect(window.localStorage.getItem("chronolog-entry-view-sort")).toBe("desc");
-    // 倒序：首行 = e2 开始（02:00 条目沉底）
-    expect(firstStart().textContent).toBe("04:00");
-
-    // 重挂载（同一 localStorage）验证记忆保持
-    cleanup();
-    renderList();
-    expect(firstStart().textContent).toBe("04:00");
+  it("固定正序渲染：首行时间列 = 最早开始条目", () => {
+    renderList({
+      day: makeToday([
+        makeEntry({
+          id: "e1",
+          startedAt: "2025-01-06T04:00:00.000Z",
+          stoppedAt: "2025-01-06T05:00:00.000Z",
+        }),
+        makeEntry({
+          id: "e2",
+          startedAt: "2025-01-06T02:00:00.000Z",
+          stoppedAt: "2025-01-06T03:00:00.000Z",
+        }),
+      ]),
+      gaps: [],
+    });
+    // 输入顺序与渲染无关：首行始终是开始最早的条目（02:00）
+    const firstStart = document.querySelector<HTMLElement>(
+      ".entry-view-row .entry-view-time--start",
+    )!;
+    expect(firstStart.textContent).toBe("02:00");
+    // 不再读写 chronolog-entry-view-sort
+    expect(window.localStorage.getItem("chronolog-entry-view-sort")).toBeNull();
   });
 
   it("空状态：无条目显示「No entries」", () => {

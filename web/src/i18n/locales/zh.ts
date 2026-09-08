@@ -31,8 +31,6 @@ export const zh = {
   "timeline.viewBlock": "块",
   "timeline.gapGhost": "+ 空档 {{duration}}",
   "timeline.entryViewFooter": "{{date}} · {{total}}",
-  "timeline.sortAsc": "正序",
-  "timeline.sortDesc": "倒序",
   "entry.edit": "编辑条目",
   "entry.create": "新建条目",
   "entry.description": "描述",

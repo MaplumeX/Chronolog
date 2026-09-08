@@ -1,0 +1,3 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "前端规范入口"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "i18n zh/en 同步规则与测试规范"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "localStorage key 记录需同步删除 chronolog-entry-view-sort"}

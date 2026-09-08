@@ -33,8 +33,6 @@ export const en: Record<keyof typeof zh, string> = {
   "timeline.viewBlock": "Blocks",
   "timeline.gapGhost": "+ Gap {{duration}}",
   "timeline.entryViewFooter": "{{date}} · {{total}}",
-  "timeline.sortAsc": "Ascending",
-  "timeline.sortDesc": "Descending",
   "entry.edit": "Edit entry",
   "entry.create": "New entry",
   "entry.description": "Description",

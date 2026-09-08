@@ -35,7 +35,7 @@ One exception: theme preference is persisted in `localStorage["chronolog-theme"]
 
 Second exception: the timer page's viewed date is persisted in `localStorage["chronolog-date-view"]` (`"YYYY-MM-DD"` or removed = today). Same try/catch rule; invalid/garbage values fall back to null (today).
 
-Two more UI-preference keys follow the same pattern (task 09-08-axis-view): `localStorage["chronolog-day-subview"]` (`"block" | "entries"`, removed/invalid = `block` — day-mode subview, owned by `Timeline` local state, not `useTimerController`) and `localStorage["chronolog-entry-view-sort"]` (`"asc" | "desc"`, invalid = `asc` — entries-subview sort order, EntryListView-internal).
+Another UI-preference key follows the same pattern (task 09-08-axis-view): `localStorage["chronolog-day-subview"]` (`"block" | "entries"`, removed/invalid = `block` — day-mode subview, owned by `Timeline` local state, not `useTimerController`).
 
 ## Continuous timing (task 09-08-continuous-timing)
 
