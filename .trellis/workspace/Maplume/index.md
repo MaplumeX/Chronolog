@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 48
+- **Total Sessions**: 49
 - **Last Active**: 2026-09-08
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1065 | Active |
+| `journal-1.md` | ~1086 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 49 | 2026-09-08 | Persist timeline view mode and scale to localStorage | `d6a7b63` | `emdash/tender-banks-attend-t4osu` |
 | 48 | 2026-09-08 | Fix settings tabs scrollbar | `a30c908` | `emdash/hungry-kids-unite-v8p9i` |
 | 47 | 2026-09-08 | 网站移动端适配（触屏体验重设计） | `bb1e000`, `f493752`, `d0c0b2b`, `a39957d`, `644c677` | `emdash/puny-plants-refuse-bud59` |
 | 46 | 2026-09-08 | 无间隙计时功能：停止后自动开始下一段 | `236377c` | `feat/continuous-timing` |
