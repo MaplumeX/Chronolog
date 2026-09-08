@@ -986,3 +986,24 @@ Switched timezone default to detect-then-persist (task 09-06-timezone-autodetect
 ### Status
 
 [OK] **Completed**
+
+
+## Session 45: Fix time-overlap string comparison defect
+
+**Date**: 2026-09-08
+**Task**: Fix time-overlap string comparison defect
+**Branch**: `emdash/wicked-areas-greet-78gtx`
+
+### Summary
+
+确认时间重叠判定语义（半开区间）本身正确，但比较实现有缺陷：z.iso.datetime 不规范化格式，混格式 ISO（无毫秒 Z vs .000Z）入库后字典序比较与时刻序不一致，导致边界相接误报 409 OVERLAP、.5Z 顺序误报 400、真实重叠漏检（API token 外部客户端可触发）。修复：routes/entries.ts 新增 isoInstant schema（z.iso.datetime + toISOString transform），updateBody 与 boundaryQuery 统一规范化为 .000Z；补 POST/PATCH/boundary 混格式回归测试（server 128 pass）；更新 http-routes/time-and-timezone spec 记录规范化约定。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `066b52d` | (see git log) |
+
+### Status
+
+[OK] **Completed**
