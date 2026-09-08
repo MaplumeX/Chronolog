@@ -447,12 +447,15 @@
   }
 
   /* 紧邻式分体按钮组（如 DateNav ‹ 日期 ›）：左右只能向组外侧扩展
-     （上/下/外侧各 8px，贴邻侧 0），避免伪元素重叠互相覆盖命中。 */
+     （上/下/外侧各 8px，贴邻侧 0），避免伪元素重叠互相覆盖命中。
+     基准必须同时声明 left/right（absolute + 无内容时宽度 shrink-to-fit 为 0）。 */
   .touch-hit--x::after {
     content: "";
     position: absolute;
     top: -8px;
     bottom: -8px;
+    left: 0;
+    right: 0;
   }
   .touch-hit--x:first-child::after {
     left: -8px;
