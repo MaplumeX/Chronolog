@@ -1063,3 +1063,24 @@ Fixed a constant vertical scrollbar on the settings page tabs: the active TabsTr
 ### Status
 
 [OK] **Completed**
+
+
+## Session 49: Persist timeline view mode and scale to localStorage
+
+**Date**: 2026-09-08
+**Task**: Persist timeline view mode and scale to localStorage
+**Branch**: `emdash/tender-banks-attend-t4osu`
+
+### Summary
+
+Timer 页时间线偏好持久化：view（day/week）与 scale（60/30/15/5）照 chronolog-date-view 模式写入 localStorage（chronolog-view-mode / chronolog-scale），垃圾值回退默认、隐私模式静默降级；新增 14 个单测，同步更新 state-management.md spec。164 测试全过，typecheck/build 通过。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d6a7b63` | (see git log) |
+
+### Status
+
+[OK] **Completed**
