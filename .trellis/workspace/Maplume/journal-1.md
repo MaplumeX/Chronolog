@@ -988,21 +988,31 @@ Switched timezone default to detect-then-persist (task 09-06-timezone-autodetect
 [OK] **Completed**
 
 
-## Session 45: 无间隙计时功能：停止后自动开始下一段
+## Session 46: 无间隙计时功能：停止后自动开始下一段
 
 **Date**: 2026-09-08
 **Task**: 无间隙计时功能：停止后自动开始下一段
-**Branch**: `emdash/forty-badgers-count-ibzxt`
+**Branch**: `feat/continuous-timing`
 
 ### Summary
 
 实现无间隙计时模式：users.continuous_timing 服务端设置（设置页开关，默认关闭）；开启后 POST /api/timer/stop 在同一事务停止旧段并以同一时间戳创建未分类新段，响应返回新段；前端按 entry.stoppedAt===null 区分换段/完全停止，换段后自动弹出分类选择器（CategoryPicker 新增受控 open/onOpenChange props）。产品决策：开关仅设置页（方案C）、新段说明/标签空+分类NULL、完全停止需先关开关（方案A）。新增 ui/switch.tsx。server 132 / web 135 测试全绿；spec 已更新（http-routes/database/api-client/component/state-management）。
+## Session 45: Fix time-overlap string comparison defect
+
+**Date**: 2026-09-08
+**Task**: Fix time-overlap string comparison defect
+**Branch**: `emdash/wicked-areas-greet-78gtx`
+
+### Summary
+
+确认时间重叠判定语义（半开区间）本身正确，但比较实现有缺陷：z.iso.datetime 不规范化格式，混格式 ISO（无毫秒 Z vs .000Z）入库后字典序比较与时刻序不一致，导致边界相接误报 409 OVERLAP、.5Z 顺序误报 400、真实重叠漏检（API token 外部客户端可触发）。修复：routes/entries.ts 新增 isoInstant schema（z.iso.datetime + toISOString transform），updateBody 与 boundaryQuery 统一规范化为 .000Z；补 POST/PATCH/boundary 混格式回归测试（server 128 pass）；更新 http-routes/time-and-timezone spec 记录规范化约定。
 
 ### Git Commits
 
 | Hash | Message |
 |------|---------|
 | `236377c` | (see git log) |
+| `066b52d` | (see git log) |
 
 ### Status
 

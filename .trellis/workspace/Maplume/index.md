@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 45
+- **Total Sessions**: 46
 - **Last Active**: 2026-09-08
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1009 | Active |
+| `journal-1.md` | ~1010 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,7 +29,8 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
-| 45 | 2026-09-08 | 无间隙计时功能：停止后自动开始下一段 | `236377c` | `emdash/forty-badgers-count-ibzxt` |
+| 46 | 2026-09-08 | 无间隙计时功能：停止后自动开始下一段 | `236377c` | `feat/continuous-timing` |
+| 45 | 2026-09-08 | Fix time-overlap string comparison defect | `066b52d` | `emdash/wicked-areas-greet-78gtx` |
 | 44 | 2026-09-06 | Auto-persist detected browser timezone | `26b2cfc` | `feat/settings-timezone` |
 | 43 | 2026-09-06 | Add user timezone setting with global date/time display | `527e5f5`, `ef0edca` | `feat/settings-timezone` |
 | 42 | 2026-09-05 | Fix row-menu popover closing instantly after add-child/edit | `b5c1278` | `fix/add-child-edit-buttons` |

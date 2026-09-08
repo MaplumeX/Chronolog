@@ -4,7 +4,7 @@
 
 ## Instants
 
-Store and return UTC instants as ISO-8601 strings with `Z` (`deps.now().toISOString()`). TypeScript names: `startedAt` / `stoppedAt`. SQL names: `started_at` / `stopped_at`.
+Store and return UTC instants as ISO-8601 strings with `Z` (`deps.now().toISOString()`). TypeScript names: `startedAt` / `stoppedAt`. SQL names: `started_at` / `stopped_at`. All comparisons (overlap windows, `checkTimeOrder`, `listBoundary`) are **lexicographic on the canonical `.000Z` millisecond format** — `toISOString()` always emits 3-digit milliseconds, which makes string order equal instant order. Client-sent instants must be normalized at the zod boundary (`isoInstant` in `routes/entries.ts`: `z.iso.datetime().transform(v => new Date(v).toISOString())`), because zod accepts both `...T12:00:00Z` and `...T12:00:00.000Z` and mixed formats break the comparison (task 09-08-fix-overlap-string-compare).
 
 Clients never send `startedAt`. The server stamps start (and stop) from `deps.now()`. Tests inject `now` through `buildApp` / `createTestApp`.
 
