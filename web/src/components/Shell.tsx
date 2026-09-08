@@ -1,15 +1,11 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ChartNoAxesColumn,
-  Settings,
-  Tag,
-  Tags,
-  Target,
-  Timer,
-} from "lucide-react";
+import { Settings } from "lucide-react";
 import { formatDuration } from "../format";
-import type { zh } from "../i18n/locales/zh";
+import { useIsMobile } from "../hooks/use-mobile";
+import { MobileTabBar } from "./MobileTabBar";
+import { NAV_ITEMS, type PageId } from "./nav-items";
+import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
@@ -29,16 +25,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-export type PageId =
-  "timer" | "stats" | "goals" | "categories" | "tags" | "settings";
-
-const ITEMS: { id: PageId; labelKey: keyof typeof zh; icon: typeof Timer }[] = [
-  { id: "timer", labelKey: "nav.timer", icon: Timer },
-  { id: "stats", labelKey: "nav.stats", icon: ChartNoAxesColumn },
-  { id: "goals", labelKey: "nav.goals", icon: Target },
-  { id: "categories", labelKey: "nav.categories", icon: Tags },
-  { id: "tags", labelKey: "nav.tags", icon: Tag },
-];
+export type { PageId } from "./nav-items";
 
 function ShellNav(props: {
   page: PageId;
@@ -60,7 +47,7 @@ function ShellNav(props: {
       </SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
-          {ITEMS.map((item) => {
+          {NAV_ITEMS.map((item) => {
             const label = t(item.labelKey);
             const runningLabel =
               item.id === "timer" && props.elapsedSeconds != null
@@ -126,6 +113,25 @@ function ShellSettingsButton(props: { onPage: (page: PageId) => void }) {
   );
 }
 
+/** 移动端设置按钮：右上角图标，命中区 ≥40px（视觉 size-9 + 扩展 hit area）。 */
+function MobileSettingsButton(props: {
+  title: string;
+  onPage: (page: PageId) => void;
+}) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
+      className="relative size-9 shrink-0 after:absolute after:-inset-1.5"
+      aria-label={props.title}
+      onClick={() => props.onPage("settings")}
+    >
+      <Settings className="size-5" />
+    </Button>
+  );
+}
+
 export function Shell(props: {
   username: string;
   displayName?: string | null;
@@ -136,6 +142,30 @@ export function Shell(props: {
   header?: ReactNode;
   children: ReactNode;
 }) {
+  const { t } = useTranslation();
+  const isMobile = useIsMobile();
+
+  if (isMobile) {
+    // 移动端：无侧栏抽屉 —— 顶栏（标题/TimerBar + 设置入口）+ 底部 Tab 栏
+    return (
+      <div className="flex h-dvh min-h-dvh flex-col bg-background">
+        <header className="flex min-h-12 shrink-0 items-center gap-1 border-b px-2">
+          <div className="flex min-w-0 flex-1 items-center overflow-hidden">
+            {props.header}
+          </div>
+          <MobileSettingsButton
+            title={t("nav.settings")}
+            onPage={props.onPage}
+          />
+        </header>
+        <div className="flex min-h-0 flex-1 flex-col overflow-auto pb-[calc(5rem+env(safe-area-inset-bottom))]">
+          {props.children}
+        </div>
+        <MobileTabBar page={props.page} onPage={props.onPage} />
+      </div>
+    );
+  }
+
   return (
     <SidebarProvider className="h-dvh min-h-dvh">
       <Sidebar collapsible="icon">

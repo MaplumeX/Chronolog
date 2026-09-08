@@ -265,10 +265,11 @@ export function StatsPage(props: { tz: string }) {
                 {customLabel}
               </Button>
             </PopoverTrigger>
-            <PopoverContent align="start" className="w-auto p-0">
+            <PopoverContent align="start" className="w-auto max-w-[calc(100vw-1rem)] p-0">
               <Calendar
                 mode="range"
                 numberOfMonths={2}
+                className="mx-auto"
                 selected={rdpRange}
                 defaultMonth={customFrom ? toLocalDate(customFrom) : undefined}
                 locale={i18n.language === "zh" ? zhCN : enUS}
@@ -348,7 +349,7 @@ export function StatsPage(props: { tz: string }) {
               <CardTitle>{t("stats.dailyTrend")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-56">
+              <div className="h-56 min-w-0">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={trendData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
                   <CartesianGrid vertical={false} stroke="var(--border)" />
@@ -409,7 +410,7 @@ export function StatsPage(props: { tz: string }) {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col items-center gap-6 md:flex-row md:items-start">
+              <div className="flex min-w-0 flex-col items-center gap-6 md:flex-row md:items-start">
                 <div className="relative h-48 w-48 shrink-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>

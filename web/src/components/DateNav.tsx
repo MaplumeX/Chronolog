@@ -94,12 +94,12 @@ export function DateNav(props: {
 
   return (
     <>
-      <div className="flex items-center overflow-hidden rounded-md border">
+      <div className="flex items-stretch overflow-hidden rounded-md border">
       <Button
         type="button"
         variant="ghost"
         size="icon-xs"
-        className="rounded-none rounded-l-md hover:bg-transparent dark:hover:bg-transparent cursor-pointer"
+        className="relative rounded-none rounded-l-md hover:bg-transparent dark:hover:bg-transparent cursor-pointer touch-hit--x"
         aria-label={t("timeline.prev")}
         onClick={() => navigate(-step)}
       >
@@ -137,7 +137,7 @@ export function DateNav(props: {
         type="button"
         variant="ghost"
         size="icon-xs"
-        className="rounded-none rounded-r-md hover:bg-transparent dark:hover:bg-transparent cursor-pointer"
+        className="relative rounded-none rounded-r-md hover:bg-transparent dark:hover:bg-transparent cursor-pointer touch-hit--x"
         aria-label={t("timeline.next")}
         onClick={() => navigate(step)}
       >

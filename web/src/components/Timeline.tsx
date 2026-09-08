@@ -13,6 +13,7 @@ import {
   paletteForegroundColor,
 } from "../format";
 import { DateNav } from "./DateNav";
+import { useIsMobile } from "../hooks/use-mobile";
 import { EntryEditor } from "./EntryEditor";
 import { Button } from "./ui/button";
 import { Popover, PopoverAnchor, PopoverContent } from "./ui/popover";
@@ -467,6 +468,7 @@ export function Timeline(props: {
   onEntryUpdated: () => void;
 }) {
   const { t } = useTranslation();
+  const isMobile = useIsMobile();
   const {
     today,
     week,
@@ -616,8 +618,8 @@ export function Timeline(props: {
       }}
     >
       <section className="flex min-h-0 flex-1 flex-col">
-      <div className="flex items-center justify-between gap-3 border-b px-4 py-3">
-        <div className="flex min-w-0 items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b px-2 py-3 md:gap-x-3 md:px-4">
+        <div className="flex min-w-0 flex-wrap items-center gap-2 md:gap-3">
           <Tabs
             value={mode}
             onValueChange={(v) => onModeChange(v === "week" ? "week" : "day")}
@@ -633,6 +635,7 @@ export function Timeline(props: {
               type="button"
               variant="outline"
               size="icon-xs"
+              className="relative touch-hit--x"
               disabled={scaleIndex <= 0}
               onClick={() => setScale(SCALES[scaleIndex - 1])}
               aria-label={t("timeline.zoomOut")}
@@ -643,6 +646,7 @@ export function Timeline(props: {
               type="button"
               variant="outline"
               size="icon-xs"
+              className="relative touch-hit--x"
               disabled={scaleIndex >= SCALES.length - 1}
               onClick={() => setScale(SCALES[scaleIndex + 1])}
               aria-label={t("timeline.zoomIn")}
@@ -664,7 +668,7 @@ export function Timeline(props: {
         </div>
         <span className="font-mono text-sm font-semibold tabular-nums">{formatDuration(total)}</span>
       </div>
-      <div className="min-h-0 flex-1 overflow-auto" ref={scrollRef}>
+      <div className="min-h-0 flex-1 overflow-auto overscroll-x-contain" ref={scrollRef}>
         {isDay ? (
           <DayColumn
             day={today}
@@ -674,7 +678,7 @@ export function Timeline(props: {
             scale={scale}
             selectedId={selectedId}
             onSelect={setSelectedId}
-            onDragCreate={today ? handleDragCreate(today.dayStart) : undefined}
+            onDragCreate={today && !isMobile ? handleDragCreate(today.dayStart) : undefined}
             draftAnchor={draftAnchor?.dayStart === today?.dayStart ? draftAnchor : null}
             gaps={todayGaps}
             onGapClick={today ? handleGapClick(today.dayStart) : undefined}
@@ -685,9 +689,9 @@ export function Timeline(props: {
             tags={tags}
           />
         ) : week ? (
-          <div className="flex min-w-full flex-col">
-            <div className="flex">
-              <div className="w-14 flex-shrink-0" />
+          <div className="flex w-max min-w-full flex-col">
+            <div className="flex w-full">
+              <div className="w-11 flex-shrink-0 md:w-14" />
               {week.days.map((d, i) => {
                 const isToday = isDayAt(d, nowMs);
                 const header = formatWeekdayHeader(d.dayStart, tz);
@@ -713,7 +717,7 @@ export function Timeline(props: {
                 );
               })}
             </div>
-            <div className="flex">
+            <div className="flex w-full">
               <div className="timeline-ruler timeline-ruler--static">
                 {Array.from({ length: tickCount + 1 }, (_, i) => (
                   <div key={i} className="hour" style={{ top: `${(i / tickCount) * 100}%` }}>
@@ -735,7 +739,7 @@ export function Timeline(props: {
                     scale={scale}
                     selectedId={selectedId}
                     onSelect={setSelectedId}
-                    onDragCreate={handleDragCreate(d.dayStart)}
+                    onDragCreate={isMobile ? undefined : handleDragCreate(d.dayStart)}
                     draftAnchor={draftAnchor?.dayStart === d.dayStart ? draftAnchor : null}
                     gaps={weekGaps[i]}
                     onGapClick={handleGapClick(d.dayStart)}
