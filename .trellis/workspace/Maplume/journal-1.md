@@ -1042,3 +1042,24 @@ Switched timezone default to detect-then-persist (task 09-06-timezone-autodetect
 ### Status
 
 [OK] **Completed**
+
+
+## Session 48: Fix settings tabs scrollbar
+
+**Date**: 2026-09-08
+**Task**: Fix settings tabs scrollbar
+**Branch**: `emdash/hungry-kids-unite-v8p9i`
+
+### Summary
+
+Fixed a constant vertical scrollbar on the settings page tabs: the active TabsTrigger underline (after:bottom-[-5px]) overflows the h-9 TabsList, and overflow-x-auto forces overflow-y to auto. Added pb-[5px] to the TabsList so the underline fits; horizontal scrolling preserved for narrow screens.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a30c908` | (see git log) |
+
+### Status
+
+[OK] **Completed**
