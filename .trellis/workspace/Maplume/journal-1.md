@@ -1017,3 +1017,28 @@ Switched timezone default to detect-then-persist (task 09-06-timezone-autodetect
 ### Status
 
 [OK] **Completed**
+
+
+## Session 47: 网站移动端适配（触屏体验重设计）
+
+**Date**: 2026-09-08
+**Task**: 网站移动端适配（触屏体验重设计）
+**Branch**: `emdash/puny-plants-refuse-bud59`
+
+### Summary
+
+移动端全面适配（09-08-mobile-responsive）：①移动端用底部 5 Tab 导航（MobileTabBar，nav-items.ts 共享常量）+ 顶栏设置入口替换 Sidebar 抽屉，桌面路径 DOM 等价不变；②Timeline week 视图 w-max 统一宽度容器实现横向滚动+表头对齐，触屏经 useIsMobile 短路 onDragCreate（gap 点击成为唯一创建路径），styles.css 新增 <768px 刻度尺几何块；③@meida (hover: none) 能力断点实现 touch-hit（≥40px 命中区，伪元素扩展）与 touch-always-visible（hover-reveal 触屏常显），PopoverContent 全局窄屏 clamp，GoalEditorDialog 窄屏堆叠，TabsList overflow-x-auto。三轮 check 抓出并修复 3 个实质缺陷：.timeline-track--full 特异度覆盖（week 列错位 blocker）、空伪元素宽度塌缩为 0（DateNav 命中区失效 blocker）、相邻缩放按钮伪元素互相覆盖（改方向性扩展 touch-hit--x）。测试 144→150 用例全绿；frontend spec 已同步（底部 Tab 推翻旧 drawer 约定、宽度/能力双断点策略、伪元素塌缩 gotcha）。遗留：真机人工验证清单（safe-area、week 滑动手感、Popover 翻转、AC5 端到端闭环）。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `bb1e000` | (see git log) |
+| `f493752` | (see git log) |
+| `d0c0b2b` | (see git log) |
+| `a39957d` | (see git log) |
+| `644c677` | (see git log) |
+
+### Status
+
+[OK] **Completed**
