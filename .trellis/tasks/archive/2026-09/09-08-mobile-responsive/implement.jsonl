@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Shell/导航 IA、页面结构、组件约定（含移动端 Sheet 现状与 IA 表）；改造 Shell 必读"}
+{"file": ".trellis/spec/frontend/design-tokens.md", "reason": "token 化颜色/样式约束，新增 media query 与触屏命中区样式需遵守"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "验证命令与测试要求"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "useIsMobile 等 hook 使用约定"}
