@@ -50,6 +50,7 @@ describe("account: profile", () => {
       username: "alice_2",
       displayName: null,
       timezone: null,
+      continuousTiming: false,
     });
 
     const me = await t.app.inject({

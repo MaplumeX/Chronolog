@@ -9,6 +9,9 @@ export const users = sqliteTable(
     passwordHash: text("password_hash").notNull(),
     displayName: text("display_name"),
     timezone: text("timezone"), // NULL = 未设置，跟随浏览器
+    continuousTiming: integer("continuous_timing", { mode: "boolean" })
+      .notNull()
+      .default(false), // 无间隙计时开关（SQLite 布尔惯例）
     createdAt: text("created_at").notNull(),
   },
   (t) => [uniqueIndex("users_username_unique").on(t.username)],

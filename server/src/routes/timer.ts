@@ -5,7 +5,7 @@ import { newId, requireUser } from "../auth.js";
 import type { Deps } from "../db.js";
 import { getEntry, getRunningEntry } from "../entries.js";
 import { AppError, isUniqueViolation, parseBody } from "../errors.js";
-import { categories, entryTags, tags, timeEntries } from "../schema.js";
+import { categories, entryTags, tags, timeEntries, users } from "../schema.js";
 
 const startBody = z.object({
   categoryId: z.string().min(1, "请选择分类"),
@@ -180,19 +180,47 @@ export function registerTimerRoutes(app: FastifyInstance, deps: Deps) {
   app.post("/api/timer/stop", async (req) => {
     const user = requireUser(req, deps);
     const nowIso = deps.now().toISOString();
-    const running = deps.db
-      .select()
-      .from(timeEntries)
-      .where(and(eq(timeEntries.userId, user.id), isNull(timeEntries.stoppedAt)))
-      .get();
-    if (!running) {
-      throw new AppError(409, "CONFLICT", "当前没有正在运行的计时");
-    }
-    deps.db
-      .update(timeEntries)
-      .set({ stoppedAt: nowIso })
-      .where(eq(timeEntries.id, running.id))
-      .run();
-    return { entry: getEntry(deps.db, user.id, running.id, deps.now()) };
+    // 停止旧段 + （开启无间隙模式时）创建新段在同一事务：前段 stoppedAt = 新段 startedAt，
+    // 同一 nowIso 保证无间隙不变量；响应 entry = 新段（运行中）或刚停止的段，
+    // 前端靠 entry.stoppedAt === null 区分「换段」与「完全停止」。
+    const stoppedId = deps.db.transaction((tx) => {
+      const running = tx
+        .select()
+        .from(timeEntries)
+        .where(and(eq(timeEntries.userId, user.id), isNull(timeEntries.stoppedAt)))
+        .get();
+      if (!running) {
+        throw new AppError(409, "CONFLICT", "当前没有正在运行的计时");
+      }
+
+      const u = tx
+        .select({ continuousTiming: users.continuousTiming })
+        .from(users)
+        .where(eq(users.id, user.id))
+        .get();
+
+      tx.update(timeEntries)
+        .set({ stoppedAt: nowIso })
+        .where(eq(timeEntries.id, running.id))
+        .run();
+
+      if (!u?.continuousTiming) {
+        return running.id;
+      }
+      // 无间隙模式：旧段已停止，同一时刻开始新段（分类 NULL、说明空、标签空）
+      const newEntryId = newId();
+      tx.insert(timeEntries)
+        .values({
+          id: newEntryId,
+          userId: user.id,
+          categoryId: null,
+          description: "",
+          startedAt: nowIso,
+          stoppedAt: null,
+        })
+        .run();
+      return newEntryId;
+    });
+    return { entry: getEntry(deps.db, user.id, stoppedId, deps.now()) };
   });
 }

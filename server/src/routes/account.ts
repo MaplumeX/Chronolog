@@ -18,12 +18,15 @@ const profileBody = z
       .optional(),
     // IANA 时区名；空串 = 清除（跟随浏览器），非空值需为有效 IANA 区
     timezone: z.string().max(64).optional(),
+    // 无间隙计时开关（SQLite 布尔）
+    continuousTiming: z.boolean().optional(),
   })
   .refine(
     (body) =>
       body.username !== undefined ||
       body.displayName !== undefined ||
-      body.timezone !== undefined,
+      body.timezone !== undefined ||
+      body.continuousTiming !== undefined,
     {
       message: "至少提供一个字段",
     },
@@ -47,6 +50,7 @@ export function registerAccountRoutes(app: FastifyInstance, deps: Deps) {
       username: string;
       displayName: string | null;
       timezone: string | null;
+      continuousTiming: boolean;
     }> = {};
     if (body.username !== undefined) updates.username = body.username;
     if (body.displayName !== undefined) {
@@ -58,6 +62,7 @@ export function registerAccountRoutes(app: FastifyInstance, deps: Deps) {
       }
       updates.timezone = body.timezone === "" ? null : body.timezone;
     }
+    if (body.continuousTiming !== undefined) updates.continuousTiming = body.continuousTiming;
 
     try {
       deps.db.update(users).set(updates).where(eq(users.id, user.id)).run();
@@ -75,6 +80,7 @@ export function registerAccountRoutes(app: FastifyInstance, deps: Deps) {
       username: row.username,
       displayName: row.displayName ?? null,
       timezone: row.timezone ?? null,
+      continuousTiming: Boolean(row.continuousTiming),
     };
   });
 

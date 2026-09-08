@@ -38,9 +38,9 @@ New endpoints belong in an existing file if they share the resource, or a new `r
 | POST | `/api/auth/register` | no | seeds default categories; Set-Cookie; 403 when `REGISTRATION_OPEN=false` |
 | POST | `/api/auth/login` | no | Set-Cookie; replaces previous sid |
 | POST | `/api/auth/logout` | cookie optional | always `{ ok: true }` |
-| GET | `/api/auth/me` | session | 401 if logged out; returns `{ id, username, displayName \| null, timezone \| null }` |
+| GET | `/api/auth/me` | session | 401 if logged out; returns `{ id, username, displayName \| null, timezone \| null, continuousTiming: boolean }` |
 | GET | `/api/meta` | no | `{ registrationOpen }` for the login page |
-| PATCH | `/api/profile` | yes | `{ username?, displayName?, timezone? }`; username dup → 409; empty update → 400; `timezone` non-empty must be valid IANA (else 400 `VALIDATION`), empty string clears to null (task 09-06-settings-timezone) |
+| PATCH | `/api/profile` | yes | `{ username?, displayName?, timezone?, continuousTiming? }`; username dup → 409; empty update → 400; `timezone` non-empty must be valid IANA (else 400 `VALIDATION`), empty string clears to null (task 09-06-settings-timezone); `continuousTiming` is `z.boolean().optional()` (task 09-08-continuous-timing) |
 | PATCH | `/api/account/password` | yes | revokes other sessions, keeps PATs |
 | DELETE | `/api/account` | yes | password confirmation; FK cascade; clears cookie |
 | GET | `/api/categories` | yes | includes `entryCount`, `parentId` (null = top level), `archivedAt: string\|null` (task 08-31-category-archive) |
@@ -55,7 +55,7 @@ New endpoints belong in an existing file if they share the resource, or a new `r
 | DELETE | `/api/tags/:id` | yes | cascades children (goal refs block) and unlinks entries |
 | GET | `/api/timer/current` | yes | `{ entry: EntryDto \| null }` |
 | POST | `/api/timer/start` | yes | `{ categoryId, description?, tagIds? }` |
-| POST | `/api/timer/stop` | yes | no running → 409 |
+| POST | `/api/timer/stop` | yes | no running → 409. Reads the user's `continuous_timing` setting (task 09-08-continuous-timing): **off (default)** — stops the running entry, response `{ entry }` is the just-stopped entry; **on** — in one transaction sets the old entry's `stoppedAt = nowIso` and inserts a new running entry with the **same** `startedAt = nowIso`, `categoryId: null` (uncategorized), empty description, no tags; response `{ entry }` is the **new running entry** (`stoppedAt: null`). Clients distinguish "switched segment" from "fully stopped" solely by `entry.stoppedAt === null`. The single shared `nowIso` guarantees zero gap (old `stoppedAt` === new `startedAt`); update-before-insert order satisfies the partial unique index; no retry loop needed (better-sqlite3 is synchronous — no interleaving inside the transaction). |
 | PATCH | `/api/timer/current` | yes | update running entry: `{ description?, categoryId?, tagIds? }` (zod `strictObject` — rejects `startedAt`/`stoppedAt`); trim description ≤ 200; no running → 409 `CONFLICT`; category/tags not owned → 404; returns `{ entry: EntryDto }` (task 08-30-edit-while-timing) |
 | GET | `/api/entries/today?tz=` | yes | overlapping entries + `clippedSeconds` |
 | GET | `/api/entries/week?tz=` | yes | ISO week (Mon–Sun) as 7 day buckets: `{ tz, weekStart, weekEnd, days: TodayEntries[] }` |

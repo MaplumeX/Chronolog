@@ -432,3 +432,239 @@ describe("timer + archived categories (task 08-31)", () => {
     assert.equal(switchToArchived.statusCode, 409);
   });
 });
+
+describe("timer + continuous timing (task 09-08)", () => {
+  let t: TestApp;
+  afterEach(async () => {
+    await t?.close();
+  });
+
+  async function firstCategory(app: TestApp["app"], sid: string) {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/categories",
+      headers: cookieHeader(sid),
+    });
+    return json(res).categories as { id: string; name: string }[];
+  }
+
+  async function setContinuousTiming(app: TestApp["app"], sid: string, enabled: boolean) {
+    const res = await app.inject({
+      method: "PATCH",
+      url: "/api/profile",
+      headers: cookieHeader(sid),
+      payload: { continuousTiming: enabled },
+    });
+    assert.equal(res.statusCode, 200);
+    return json(res) as { continuousTiming: boolean };
+  }
+
+  it("switch off (default): stop fully stops, no new entry is created (AC3)", async () => {
+    t = await createTestApp();
+    const { sid } = await registerUser(t.app, "ct_off");
+    const cats = await firstCategory(t.app, sid);
+
+    await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: cats[0].id, description: "seg one" },
+    });
+
+    const stop = await t.app.inject({
+      method: "POST",
+      url: "/api/timer/stop",
+      headers: cookieHeader(sid),
+    });
+    assert.equal(stop.statusCode, 200);
+    const entry = json(stop).entry as { id: string; stoppedAt: string | null };
+    assert.ok(entry.stoppedAt !== null);
+
+    // 无运行条目
+    const current = await t.app.inject({
+      method: "GET",
+      url: "/api/timer/current",
+      headers: cookieHeader(sid),
+    });
+    assert.equal(json(current).entry, null);
+  });
+
+  it("switch on: stop closes the old segment and starts a new one seamlessly (AC2)", async () => {
+    t = await createTestApp();
+    const { sid } = await registerUser(t.app, "ct_on");
+    const cats = await firstCategory(t.app, sid);
+
+    const updated = await setContinuousTiming(t.app, sid, true);
+    assert.equal(updated.continuousTiming, true);
+
+    const start = await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: cats[0].id, description: "seg one" },
+    });
+    assert.equal(start.statusCode, 200);
+    const oldId = (json(start).entry as { id: string }).id;
+
+    const stop = await t.app.inject({
+      method: "POST",
+      url: "/api/timer/stop",
+      headers: cookieHeader(sid),
+    });
+    assert.equal(stop.statusCode, 200);
+    const newEntry = json(stop).entry as {
+      id: string;
+      categoryId: string | null;
+      categoryName: string;
+      description: string;
+      tags: unknown[];
+      startedAt: string;
+      stoppedAt: string | null;
+    };
+    assert.notEqual(newEntry.id, oldId);
+    // 新段：运行中、未分类、说明空、标签空
+    assert.equal(newEntry.stoppedAt, null);
+    assert.equal(newEntry.categoryId, null);
+    assert.equal(newEntry.categoryName, "未分类");
+    assert.equal(newEntry.description, "");
+    assert.deepEqual(newEntry.tags, []);
+
+    // current = 新段
+    const current = await t.app.inject({
+      method: "GET",
+      url: "/api/timer/current",
+      headers: cookieHeader(sid),
+    });
+    const running = json(current).entry as { id: string; stoppedAt: string | null };
+    assert.equal(running.id, newEntry.id);
+    assert.equal(running.stoppedAt, null);
+
+    // 旧段 stoppedAt === 新段 startedAt（无间隙）
+    const today = await t.app.inject({
+      method: "GET",
+      url: "/api/entries/today?tz=UTC",
+      headers: cookieHeader(sid),
+    });
+    const entries = json(today).entries as {
+      id: string;
+      stoppedAt: string | null;
+      startedAt: string;
+    }[];
+    const old = entries.find((e) => e.id === oldId);
+    assert.ok(old?.stoppedAt);
+    assert.equal(old.stoppedAt, newEntry.startedAt);
+    // 只有一条运行中
+    assert.equal(entries.filter((e) => e.stoppedAt === null).length, 1);
+  });
+
+  it("switch on without a running timer is 409, nothing created (AC4)", async () => {
+    t = await createTestApp();
+    const { sid } = await registerUser(t.app, "ct_none");
+    await setContinuousTiming(t.app, sid, true);
+
+    const stop = await t.app.inject({
+      method: "POST",
+      url: "/api/timer/stop",
+      headers: cookieHeader(sid),
+    });
+    assert.equal(stop.statusCode, 409);
+    assert.equal((json(stop).error as { code: string }).code, "CONFLICT");
+
+    // 未创建任何条目
+    const today = await t.app.inject({
+      method: "GET",
+      url: "/api/entries/today?tz=UTC",
+      headers: cookieHeader(sid),
+    });
+    assert.equal((json(today).entries as unknown[]).length, 0);
+  });
+
+  it("switching the toggle back off restores full stop (AC6)", async () => {
+    t = await createTestApp();
+    const { sid } = await registerUser(t.app, "ct_toggle");
+    const cats = await firstCategory(t.app, sid);
+
+    await setContinuousTiming(t.app, sid, true);
+    await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: cats[0].id },
+    });
+    // 无间隙模式停止 → 新段在跑
+    await t.app.inject({
+      method: "POST",
+      url: "/api/timer/stop",
+      headers: cookieHeader(sid),
+    });
+    let current = json(
+      await t.app.inject({
+        method: "GET",
+        url: "/api/timer/current",
+        headers: cookieHeader(sid),
+      }),
+    ).entry as { id: string } | null;
+    assert.ok(current);
+
+    // 关闭开关（不影响正在运行的条目）后停止 → 完全停止
+    await setContinuousTiming(t.app, sid, false);
+    current = json(
+      await t.app.inject({
+        method: "GET",
+        url: "/api/timer/current",
+        headers: cookieHeader(sid),
+      }),
+    ).entry as { id: string } | null;
+    assert.ok(current); // 运行中条目仍在
+
+    const stop = await t.app.inject({
+      method: "POST",
+      url: "/api/timer/stop",
+      headers: cookieHeader(sid),
+    });
+    assert.equal(stop.statusCode, 200);
+    const entry = json(stop).entry as { stoppedAt: string | null };
+    assert.ok(entry.stoppedAt !== null);
+
+    current = json(
+      await t.app.inject({
+        method: "GET",
+        url: "/api/timer/current",
+        headers: cookieHeader(sid),
+      }),
+    ).entry as { id: string } | null;
+    assert.equal(current, null);
+  });
+
+  it("switch on: the new segment can be re-categorized via PATCH current (R2)", async () => {
+    t = await createTestApp();
+    const { sid } = await registerUser(t.app, "ct_recat");
+    const cats = await firstCategory(t.app, sid);
+    await setContinuousTiming(t.app, sid, true);
+
+    await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: cats[0].id },
+    });
+    const stop = await t.app.inject({
+      method: "POST",
+      url: "/api/timer/stop",
+      headers: cookieHeader(sid),
+    });
+    const newEntry = json(stop).entry as { id: string; categoryId: string | null };
+    assert.equal(newEntry.categoryId, null);
+
+    const upd = await t.app.inject({
+      method: "PATCH",
+      url: "/api/timer/current",
+      headers: cookieHeader(sid),
+      payload: { categoryId: cats[1].id },
+    });
+    assert.equal(upd.statusCode, 200);
+    const updated = json(upd).entry as { id: string; categoryId: string };
+    assert.equal(updated.id, newEntry.id);
+    assert.equal(updated.categoryId, cats[1].id);
+  });
+});

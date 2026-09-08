@@ -89,6 +89,7 @@ export type AuthUser = {
   username: string;
   displayName: string | null;
   timezone: string | null;
+  continuousTiming: boolean;
 };
 
 export function loadUser(req: FastifyRequest, deps: Deps): AuthUser | null {
@@ -116,6 +117,7 @@ export function loadUser(req: FastifyRequest, deps: Deps): AuthUser | null {
       username: tokenUser.username,
       displayName: tokenUser.displayName ?? null,
       timezone: tokenUser.timezone ?? null,
+      continuousTiming: Boolean(tokenUser.continuousTiming),
     };
   }
 
@@ -134,6 +136,7 @@ export function loadUser(req: FastifyRequest, deps: Deps): AuthUser | null {
     username: user.username,
     displayName: user.displayName ?? null,
     timezone: user.timezone ?? null,
+    continuousTiming: Boolean(user.continuousTiming),
   };
 }
 
