@@ -1063,3 +1063,24 @@ Added a block/entries subview toggle to day mode (persisted chronolog-day-subvie
 ### Status
 
 [OK] **Completed**
+
+
+## Session 49: Remove entries-subview sort toggle
+
+**Date**: 2026-09-08
+**Task**: Remove entries-subview sort toggle
+**Branch**: `emdash/floppy-glasses-hunt-qvw14`
+
+### Summary
+
+Removed the asc/desc sort toggle from the entries axis subview per user feedback: rows are fixed ascending by start time. Dropped the chronolog-entry-view-sort persistence, timeline.sortAsc/sortDesc i18n keys, updated tests (ascending-order assertion + no-write assertion) and spec docs. 161 tests green.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `78aa57a` | (see git log) |
+
+### Status
+
+[OK] **Completed**
