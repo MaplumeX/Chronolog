@@ -17,6 +17,9 @@ export function CategoryPicker(props: {
   colorName: string;
   disabled?: boolean;
   onChange: (id: string) => void;
+  /** 受控打开状态（透传 DropdownMenu Root）；未传时非受控，行为不变 */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const selected = props.categories.find((c) => c.id === props.value);
   const color = selected
@@ -24,7 +27,7 @@ export function CategoryPicker(props: {
     : paletteColor(null, props.colorName);
 
   return (
-    <DropdownMenu>
+    <DropdownMenu open={props.open} onOpenChange={props.onOpenChange}>
       <DropdownMenuTrigger asChild>
         <Button
           type="button"

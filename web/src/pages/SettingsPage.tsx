@@ -15,6 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
 import type { ThemeMode } from "../hooks/use-theme";
 import { LanguageSwitcher } from "../i18n/LanguageSwitcher";
 import { ThemeSwitcher } from "../components/ThemeSwitcher";
@@ -47,6 +48,8 @@ export function SettingsPage(props: {
   const [displayName, setDisplayName] = useState(props.user.displayName ?? "");
   // null（首次访问且自动持久化未完成）时以 browserTz() 初始化，正常走差异提交
   const [timezone, setTimezone] = useState(props.user.timezone ?? browserTz());
+  // 无间隙计时开关（服务端持久化，随资料表单差异提交）
+  const [continuousTiming, setContinuousTiming] = useState(props.user.continuousTiming);
   const [profileSaved, setProfileSaved] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [profileBusy, setProfileBusy] = useState(false);
@@ -75,11 +78,17 @@ export function SettingsPage(props: {
     setProfileSaved(false);
     setProfileBusy(true);
     try {
-      const body: { username?: string; displayName?: string; timezone?: string } = {};
+      const body: {
+        username?: string;
+        displayName?: string;
+        timezone?: string;
+        continuousTiming?: boolean;
+      } = {};
       const trimmedUsername = username.trim();
       if (trimmedUsername !== props.user.username) body.username = trimmedUsername;
       if ((props.user.displayName ?? "") !== displayName) body.displayName = displayName;
       if (timezone !== (props.user.timezone ?? browserTz())) body.timezone = timezone;
+      if (continuousTiming !== props.user.continuousTiming) body.continuousTiming = continuousTiming;
       const updated = await api.updateProfile(body);
       props.onUserUpdated(updated);
       setProfileSaved(true);
@@ -196,6 +205,17 @@ export function SettingsPage(props: {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-4">
+                <Label htmlFor="settings-continuous-timing">{t("settings.continuousTiming")}</Label>
+                <Switch
+                  id="settings-continuous-timing"
+                  checked={continuousTiming}
+                  onCheckedChange={setContinuousTiming}
+                />
+              </div>
+              <p className="text-sm text-muted-foreground">{t("settings.continuousTimingHint")}</p>
+            </div>
             {profileSaved ? (
               <p className="text-sm text-muted-foreground">{t("settings.saved")}</p>
             ) : null}
@@ -207,7 +227,8 @@ export function SettingsPage(props: {
                 profileBusy ||
                 (username.trim() === props.user.username &&
                   (props.user.displayName ?? "") === displayName &&
-                  timezone === (props.user.timezone ?? browserTz()))
+                  timezone === (props.user.timezone ?? browserTz()) &&
+                  continuousTiming === props.user.continuousTiming)
               }
               onClick={() => void saveProfile()}
             >

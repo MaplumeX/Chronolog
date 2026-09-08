@@ -1,5 +1,6 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import assert from "node:assert/strict";
 import type { TimeEntry, TodayEntries } from "../api";
 import { useTimerController } from "./use-timer-controller";
 
@@ -153,6 +154,135 @@ describe("enabled 门控", () => {
     const paths = fetchSpy.mock.calls.map((c) => String(c[0]));
     const todayPath = paths.find((p) => p.startsWith("/api/entries/today"));
     expect(todayPath).toContain(encodeURIComponent("America/New_York"));
+    unmount();
+  });
+});
+
+const RUNNING_ENTRY: TimeEntry = {
+  id: "entry-old",
+  categoryId: "cat-1",
+  categoryName: "Work",
+  description: "seg one",
+  startedAt: "2025-01-01T00:00:00.000Z",
+  stoppedAt: null,
+  durationSeconds: 60,
+  tags: [],
+};
+
+const NEXT_ENTRY: TimeEntry = {
+  id: "entry-new",
+  categoryId: null,
+  categoryName: "未分类",
+  description: "",
+  startedAt: "2025-01-01T01:00:00.000Z",
+  stoppedAt: null,
+  durationSeconds: 0,
+  tags: [],
+};
+
+const STOPPED_ENTRY: TimeEntry = {
+  ...RUNNING_ENTRY,
+  stoppedAt: "2025-01-01T01:00:00.000Z",
+};
+
+/** stop + 后续刷新所需的接口响应（按请求路径分派）。 */
+function stubToggleFetch(opts: { stopEntry: TimeEntry }) {
+  return vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
+    const path = String(input);
+    let body: unknown = {};
+    if (path.startsWith("/api/timer/stop")) {
+      assert.equal(init?.method, "POST");
+      body = { entry: opts.stopEntry };
+    } else if (path.startsWith("/api/categories")) body = { categories: [] };
+    else if (path.startsWith("/api/tags")) body = { tags: [] };
+    else if (path.startsWith("/api/timer/current")) body = { entry: null };
+    else if (path.startsWith("/api/entries/today")) body = TODAY_FIXTURE;
+    else if (path.startsWith("/api/entries/boundary")) body = { before: null, after: null };
+    return Promise.resolve(
+      new Response(JSON.stringify(body), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+  });
+}
+
+describe("onToggle 停止分支（无间隙计时，task 09-08）", () => {
+  it("普通模式：stop 返回已停止段 → onCurrent(null)，分类选择器不自动打开", async () => {
+    const fetchSpy = stubToggleFetch({ stopEntry: STOPPED_ENTRY });
+    vi.stubGlobal("fetch", fetchSpy);
+    const onCurrent = vi.fn();
+    const { result, unmount } = renderController({
+      enabled: false,
+      current: RUNNING_ENTRY,
+      onCurrent,
+    });
+    expect(result.current.barProps.error).toBe("");
+    await act(async () => {
+      await result.current.barProps.onToggle();
+    });
+    expect(onCurrent).toHaveBeenCalledWith(null);
+    // 完全停止：分类选择器不自动打开（open 为 undefined = 非受控）
+    expect(result.current.barProps.categoryPicker).toBeDefined();
+    expect(result.current.barProps.categoryPicker.props.open).toBeUndefined();
+    unmount();
+  });
+
+  it("无间隙模式：stop 返回新段（stoppedAt null）→ onCurrent(新段) 且选择器标记自动打开", async () => {
+    const fetchSpy = stubToggleFetch({ stopEntry: NEXT_ENTRY });
+    vi.stubGlobal("fetch", fetchSpy);
+    const onCurrent = vi.fn();
+    const { result, unmount } = renderController({
+      enabled: false,
+      current: RUNNING_ENTRY,
+      onCurrent,
+    });
+    expect(result.current.barProps.categoryPicker).toBeDefined();
+    await act(async () => {
+      await result.current.barProps.onToggle();
+    });
+    // 换段成功：全局 current 替换为新段，且分类选择器受控自动打开（AC5）
+    expect(onCurrent).toHaveBeenCalledTimes(1);
+    expect(onCurrent).toHaveBeenCalledWith(NEXT_ENTRY);
+    expect(result.current.barProps.categoryPicker.props.open).toBe(true);
+    // 刷新 today 数据
+    const paths = fetchSpy.mock.calls.map((c) => String(c[0]));
+    expect(paths.some((p) => p.startsWith("/api/entries/today"))).toBe(true);
+    unmount();
+  });
+
+  it("stop 409（无运行计时）→ 错误展示，onCurrent 不被调用", async () => {
+    const fetchSpy = vi.fn((input: RequestInfo | URL) => {
+      const path = String(input);
+      let body: unknown = { error: { code: "CONFLICT", message: "当前没有正在运行的计时" } };
+      let status = 409;
+      if (path.startsWith("/api/categories")) {
+        body = { categories: [] };
+        status = 200;
+      } else if (path.startsWith("/api/entries/today")) {
+        body = TODAY_FIXTURE;
+        status = 200;
+      }
+      return Promise.resolve(
+        new Response(JSON.stringify(body), {
+          status,
+          headers: { "Content-Type": "application/json" },
+        }),
+      );
+    });
+    vi.stubGlobal("fetch", fetchSpy);
+    const onCurrent = vi.fn();
+    const { result, unmount } = renderController({
+      enabled: false,
+      current: RUNNING_ENTRY,
+      onCurrent,
+    });
+    await act(async () => {
+      await result.current.barProps.onToggle();
+    });
+    expect(onCurrent).not.toHaveBeenCalled();
+    expect(result.current.barProps.error).not.toBe("");
+    expect(result.current.barProps.categoryPicker.props.open).toBeUndefined();
     unmount();
   });
 });

@@ -151,6 +151,9 @@ export const zh = {
   "settings.language": "语言",
   "settings.theme": "主题",
   "settings.timezone": "时区",
+  "settings.continuousTiming": "无间隙计时",
+  "settings.continuousTimingHint":
+    "开启后，点停止会结束当前段并自动开始下一段（两段无缝相接）；完全停止请先关闭此开关。",
   "settings.logout": "退出登录",
   "settings.username": "用户名",
   "settings.displayName": "显示昵称",

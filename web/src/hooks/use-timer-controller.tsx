@@ -69,6 +69,8 @@ export function useTimerController(props: {
   const [runningDraft, setRunningDraft] = useState<string | null>(null);
   // 说明防抖：待发送的 setTimeout id
   const descriptionDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 无间隙换段成功后自动打开分类选择器（受控）；用户选中/关闭后复位
+  const [categoryPickerAutoOpen, setCategoryPickerAutoOpen] = useState(false);
 
   /** 拉取窗口紧邻外侧条目（gap 插槽边界）；失败静默降级为 null，不阻塞主数据 */
   function loadBoundary(start: string, end: string) {
@@ -138,9 +140,11 @@ export function useTimerController(props: {
   const activeCategories = filterActive(categories);
 
   // running 切换（开始新计时/停止）时重置说明草稿并取消 pending 防抖，
-  // 避免停止后把草稿误发到 timer 接口（409）或残留到新计时表单
+  // 避免停止后把草稿误发到 timer 接口（409）或残留到新计时表单；
+  // 换段自动打开标记同理：running 消失时复位，避免残留 true 强制打开开始表单的选择器
   useEffect(() => {
     setRunningDraft(running ? running.description : null);
+    if (!running) setCategoryPickerAutoOpen(false);
     if (descriptionDebounceRef.current) {
       clearTimeout(descriptionDebounceRef.current);
       descriptionDebounceRef.current = null;
@@ -213,8 +217,15 @@ export function useTimerController(props: {
     setError("");
     try {
       if (running) {
-        await api.stop();
-        props.onCurrent(null);
+        const { entry } = await api.stop();
+        // 无间隙模式：响应是新段（stoppedAt === null，仍在计时），换段成功后自动打开
+        // 分类选择器引导选分类；普通模式：完全停止，entry.stoppedAt 非 null
+        if (entry.stoppedAt === null) {
+          props.onCurrent(entry);
+          setCategoryPickerAutoOpen(true);
+        } else {
+          props.onCurrent(null);
+        }
       } else {
         if (!categoryId) return;
         const { entry } = await api.start(categoryId, description, tagIds);
@@ -295,7 +306,12 @@ export function useTimerController(props: {
         value={running ? (running.categoryId ?? "") : categoryId}
         label={pickerLabel}
         colorName={pickerColor}
+        open={categoryPickerAutoOpen ? true : undefined}
+        onOpenChange={(open: boolean) => {
+          if (!open) setCategoryPickerAutoOpen(false);
+        }}
         onChange={running ? (id: string) => {
+          setCategoryPickerAutoOpen(false);
           void onRunningCategoryChange(id);
         } : setCategoryId}
       />

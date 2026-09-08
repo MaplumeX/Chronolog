@@ -158,6 +158,9 @@ export const en: Record<keyof typeof zh, string> = {
   "settings.language": "Language",
   "settings.theme": "Theme",
   "settings.timezone": "Timezone",
+  "settings.continuousTiming": "Continuous timing",
+  "settings.continuousTimingHint":
+    "When enabled, stopping the timer ends the current segment and immediately starts the next one (no gap). To fully stop, turn this off first.",
   "settings.logout": "Log out",
   "settings.username": "Username",
   "settings.displayName": "Display name",

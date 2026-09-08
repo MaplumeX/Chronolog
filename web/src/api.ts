@@ -6,6 +6,8 @@ export type User = {
   displayName: string | null;
   /** null = 未设置，前端回退 browserTz() */
   timezone: string | null;
+  /** 无间隙计时开关：开启后 stop 停旧段同时自动开始下一段 */
+  continuousTiming: boolean;
 };
 
 export type Meta = { registrationOpen: boolean };
@@ -178,6 +180,7 @@ export const api = {
     displayName?: string;
     /** 空串 = 清除（跟随浏览器） */
     timezone?: string;
+    continuousTiming?: boolean;
   }) =>
     request<User>("/api/profile", {
       method: "PATCH",
