@@ -48,4 +48,4 @@ Prefer existing primitives (`Button`, `Input`, `Table`, `DropdownMenu`, `Sidebar
 
 Exercise as a user: register, start/stop, switch 计时 / 统计 / 分类, logout, refresh while running. Confirm the timer still runs after refresh.
 
-Layout: desktop expand/collapse the sidebar (icon rail reclaims width). At a narrow window (`<768px`) open the drawer, switch pages, and logout. Do not add a second mobile nav.
+Layout: desktop expand/collapse the sidebar (icon rail reclaims width). At a narrow window (`<768px`) verify the bottom tab bar (timer/stats/goals/categories/tags) switches pages and the top-right settings icon reaches the settings page — the sidebar drawer no longer exists on mobile (task 09-08-mobile-responsive). Also check touch-specific behavior if available: week-view horizontal swipe, row actions always visible (no hover), gap-slot tap creating an entry.
