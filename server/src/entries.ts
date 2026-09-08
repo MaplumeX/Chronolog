@@ -1,4 +1,4 @@
-import { and, desc, eq, exists, gt, gte, inArray, isNull, lt, lte, or, sql } from "drizzle-orm";
+import { and, desc, eq, exists, gt, gte, inArray, isNotNull, isNull, lt, lte, notInArray, or, sql } from "drizzle-orm";
 import type { Db } from "./db.js";
 import { AppError } from "./errors.js";
 import {
@@ -227,6 +227,110 @@ export function listBoundary(
   };
 
   return { tz, prevEntry: toDto(prevRow), nextEntry: toDto(nextRow) };
+}
+
+/** POST /api/entries/:id/merge：把 :id 条目与其时间序相邻的上一条/下一条合并为一条。
+ *
+ * - keep 条只改时间：startedAt = 两条中较早者，stoppedAt = 两条中较晚者（中间空隙一并覆盖）；
+ *   分类/标签/说明原样保留（属性整条二选一，方案 A）
+ * - 被并入条删除，entry_tags 随 ON DELETE CASCADE 清理
+ * - 校验顺序（同一事务，服务端权威重判）：所有权 404 → self 运行中 409 → 相邻条存在 409 →
+ *   相邻条运行中 409 → 两条本身重叠（脏数据）409 → 中间存在第三条 409 → 合并区间重叠兜底 409 OVERLAP
+ * - ISO 字符串比较均为字符串序（恒定 .000Z 格式），min/max 直接用字符串比较
+ */
+export function mergeEntries(
+  db: Db,
+  userId: string,
+  id: string,
+  direction: "prev" | "next",
+  keep: "self" | "other",
+): string {
+  return db.transaction((tx) => {
+    const entry = tx
+      .select({ id: timeEntries.id, startedAt: timeEntries.startedAt, stoppedAt: timeEntries.stoppedAt })
+      .from(timeEntries)
+      .where(and(eq(timeEntries.id, id), eq(timeEntries.userId, userId)))
+      .get();
+    if (!entry) throw new AppError(404, "NOT_FOUND", "条目不存在");
+    if (!entry.stoppedAt) throw new AppError(409, "CONFLICT", "运行中的条目不可合并");
+
+    // 相邻条查找（服务端权威，不信任前端候选）：
+    // prev = startedAt 严格早于当前条且已停止的条目中 startedAt 最大的一条
+    //   （运行中条目右端为 ∞ 必然覆盖当前条目区间，排除后候选必为已停止条目）；
+    // next = startedAt 晚于当前条的条目中 startedAt 最小的一条（可能是运行中，由下一步拒绝）
+    const neighbor =
+      direction === "prev"
+        ? tx
+            .select({ id: timeEntries.id, startedAt: timeEntries.startedAt, stoppedAt: timeEntries.stoppedAt })
+            .from(timeEntries)
+            .where(
+              and(
+                eq(timeEntries.userId, userId),
+                lt(timeEntries.startedAt, entry.startedAt),
+                isNotNull(timeEntries.stoppedAt),
+              ),
+            )
+            .orderBy(desc(timeEntries.startedAt))
+            .get()
+        : tx
+            .select({ id: timeEntries.id, startedAt: timeEntries.startedAt, stoppedAt: timeEntries.stoppedAt })
+            .from(timeEntries)
+            .where(and(eq(timeEntries.userId, userId), gt(timeEntries.startedAt, entry.startedAt)))
+            .orderBy(timeEntries.startedAt)
+            .get();
+    if (!neighbor) {
+      throw new AppError(409, "CONFLICT", direction === "prev" ? "没有可合并的上一条" : "没有可合并的下一条");
+    }
+    if (!neighbor.stoppedAt) throw new AppError(409, "CONFLICT", "运行中的条目不可合并");
+
+    // 两条本身重叠（违反既有不变量的脏数据）→ 无法合并
+    const [earlier, later] = entry.startedAt < neighbor.startedAt ? [entry, neighbor] : [neighbor, entry];
+    if (earlier.stoppedAt! > later.startedAt) {
+      throw new AppError(409, "CONFLICT", "条目时间重叠，无法合并");
+    }
+
+    // 相邻性重判：两条 startedAt 之间不存在第三条条目（防前端过期数据误合并；
+    // 运行中横跨条目其 startedAt 必然落在开区间内，同样被捕获）
+    const between = tx
+      .select({ id: timeEntries.id })
+      .from(timeEntries)
+      .where(
+        and(
+          eq(timeEntries.userId, userId),
+          gt(timeEntries.startedAt, earlier.startedAt),
+          lt(timeEntries.startedAt, later.startedAt),
+        ),
+      )
+      .get();
+    if (between) throw new AppError(409, "CONFLICT", "条目不相邻");
+
+    const minStart = earlier.startedAt;
+    const maxStop = entry.stoppedAt! > neighbor.stoppedAt! ? entry.stoppedAt! : neighbor.stoppedAt!;
+    const keepId = keep === "self" ? entry.id : neighbor.id;
+    const otherId = keep === "self" ? neighbor.id : entry.id;
+
+    // 兜底：合并区间与其它条目重叠（极端并发下的脏数据）→ 409，排除两条自身
+    const overlapRow = tx
+      .select({ id: timeEntries.id })
+      .from(timeEntries)
+      .where(
+        and(
+          eq(timeEntries.userId, userId),
+          notInArray(timeEntries.id, [keepId, otherId]),
+          lt(timeEntries.startedAt, maxStop),
+          or(isNull(timeEntries.stoppedAt), gt(timeEntries.stoppedAt, minStart)),
+        ),
+      )
+      .get();
+    if (overlapRow) throw new AppError(409, "OVERLAP", "该时间段与其它条目重叠");
+
+    tx.update(timeEntries)
+      .set({ startedAt: minStart, stoppedAt: maxStop })
+      .where(eq(timeEntries.id, keepId))
+      .run();
+    tx.delete(timeEntries).where(eq(timeEntries.id, otherId)).run();
+    return keepId;
+  });
 }
 
 export function statsToday(

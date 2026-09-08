@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { ArrowDownToLine, ArrowUpToLine } from "lucide-react";
 import { ApiError, api, type Category, type Tag, type TimeEntry } from "../api";
 import { CategoryPicker } from "./CategoryPicker";
 import { DateTimePicker } from "./DateTimePicker";
+import { MergeDialog } from "./MergeDialog";
 import { TagPicker } from "./TagPicker";
 import { formatDuration } from "../format";
 import { filterActive } from "../hierarchy";
@@ -25,6 +27,11 @@ export function EntryEditor(props: {
   draft?: { startedAt: string; stoppedAt: string };
   categories: Category[];
   tags: Tag[];
+  /** 相邻候选（合并功能）：全时序前驱/后继，null = 不存在或不可用（运行中） */
+  prevEntry?: TimeEntry | null;
+  nextEntry?: TimeEntry | null;
+  /** 展示时区（相邻合并对话框预览用） */
+  tz?: string;
   onSaved: () => void;
   onClose: () => void;
 }) {
@@ -42,6 +49,10 @@ export function EntryEditor(props: {
   const [deleting, setDeleting] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [error, setError] = useState("");
+  // 相邻合并：mergeDialog 非空即挂载 MergeDialog（关闭时卸置，重开重置 keep 选择）
+  const [mergeDialog, setMergeDialog] = useState<"prev" | "next" | null>(null);
+  const [merging, setMerging] = useState(false);
+  const [mergeError, setMergeError] = useState("");
 
   const isDraft = props.draft != null;
   const startMs = Date.parse(startedAt);
@@ -117,6 +128,23 @@ export function EntryEditor(props: {
     props.onSaved();
   }
 
+  /** 合并相邻条目：成功后 onSaved()（关 popover + 刷新）；失败错误留在对话框内可重试 */
+  async function onMerge(keep: "self" | "other") {
+    if (!mergeDialog) return;
+    setMerging(true);
+    setMergeError("");
+    try {
+      await api.mergeEntry(props.entry!.id, { direction: mergeDialog, keep });
+    } catch (err) {
+      setMergeError(
+        err instanceof ApiError ? err.message : t("entry.mergeFailed"),
+      );
+      setMerging(false);
+      return;
+    }
+    props.onSaved();
+  }
+
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-semibold">{isDraft ? t("entry.create") : t("entry.edit")}</h3>
@@ -184,30 +212,79 @@ export function EntryEditor(props: {
           onConfirm={() => void onDelete()}
         />
       ) : null}
-      <div className="flex justify-end gap-2">
+      {!isDraft && mergeDialog && (mergeDialog === "prev" ? props.prevEntry : props.nextEntry) ? (
+        <MergeDialog
+          open
+          onOpenChange={(open) => {
+            if (!open && !merging) setMergeDialog(null);
+          }}
+          self={props.entry!}
+          other={
+            (mergeDialog === "prev" ? props.prevEntry : props.nextEntry)!
+          }
+          direction={mergeDialog}
+          tz={props.tz ?? "UTC"}
+          pending={merging}
+          error={mergeError}
+          onConfirm={(keep) => void onMerge(keep)}
+        />
+      ) : null}
+      <div className="flex flex-wrap justify-end gap-2">
         {!isDraft ? (
           <Button
             type="button"
             variant="ghost"
             className="mr-auto text-destructive hover:text-destructive"
             onClick={() => setDeleteDialogOpen(true)}
-            disabled={saving || deleting}
+            disabled={saving || deleting || merging}
           >
             {t("entry.delete")}
+          </Button>
+        ) : null}
+        {!isDraft ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            disabled={saving || deleting || merging || props.prevEntry == null}
+            title={props.prevEntry ? t("entry.mergePrev") : t("entry.mergeNoPrev")}
+            onClick={() => {
+              setMergeError("");
+              setMergeDialog("prev");
+            }}
+          >
+            <ArrowUpToLine />
+            {t("entry.mergePrev")}
+          </Button>
+        ) : null}
+        {!isDraft ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="xs"
+            disabled={saving || deleting || merging || props.nextEntry == null}
+            title={props.nextEntry ? t("entry.mergeNext") : t("entry.mergeNoNext")}
+            onClick={() => {
+              setMergeError("");
+              setMergeDialog("next");
+            }}
+          >
+            <ArrowDownToLine />
+            {t("entry.mergeNext")}
           </Button>
         ) : null}
         <Button
           type="button"
           variant="outline"
           onClick={props.onClose}
-          disabled={saving || deleting}
+          disabled={saving || deleting || merging}
         >
           {t("entry.cancel")}
         </Button>
         <Button
           type="button"
           onClick={() => void onSave()}
-          disabled={saving || deleting || categoryId === ""}
+          disabled={saving || deleting || merging || categoryId === ""}
         >
           {t("entry.save")}
         </Button>

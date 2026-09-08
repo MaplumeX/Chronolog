@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { afterEach, describe, it } from "node:test";
+import Database from "better-sqlite3";
 import { cookieHeader, createTestApp, json, registerUser, type TestApp } from "./helpers.js";
 
 type Clock = { value: Date };
@@ -833,6 +834,403 @@ describe("entries", () => {
       });
       assert.equal((json(today).entries as { id: string }[]).length, 1);
     });
+  });
+});
+
+describe("POST /api/entries/:id/merge (task 09-08)", () => {
+  let t: TestApp;
+  afterEach(async () => {
+    await t?.close();
+  });
+
+  async function categories(sid: string) {
+    const res = await t.app.inject({
+      method: "GET",
+      url: "/api/categories",
+      headers: cookieHeader(sid),
+    });
+    return json(res).categories as { id: string; name: string }[];
+  }
+
+  async function createTag(sid: string, name: string) {
+    const res = await t.app.inject({
+      method: "POST",
+      url: "/api/tags",
+      headers: cookieHeader(sid),
+      payload: { name },
+    });
+    assert.equal(res.statusCode, 200);
+    return json(res).id as string;
+  }
+
+  async function createStopped(
+    sid: string,
+    categoryId: string,
+    c: Clock,
+    startIso: string,
+    stopIso: string,
+    opts: { description?: string; tagIds?: string[] } = {},
+  ) {
+    c.value = new Date(startIso);
+    const startRes = await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId, description: opts.description, tagIds: opts.tagIds },
+    });
+    assert.equal(startRes.statusCode, 200);
+    const id = (json(startRes).entry as { id: string }).id;
+    c.value = new Date(stopIso);
+    const stopRes = await t.app.inject({
+      method: "POST",
+      url: "/api/timer/stop",
+      headers: cookieHeader(sid),
+    });
+    assert.equal(stopRes.statusCode, 200);
+    return id;
+  }
+
+  async function merge(
+    sid: string,
+    id: string,
+    payload: { direction: "prev" | "next"; keep: "self" | "other" },
+  ) {
+    return t.app.inject({
+      method: "POST",
+      url: `/api/entries/${id}/merge`,
+      headers: cookieHeader(sid),
+      payload,
+    });
+  }
+
+  it("merges prev direction keeping self attributes (AC1)", async () => {
+    const c: Clock = { value: new Date("2026-08-25T02:00:00.000Z") };
+    t = await createTestApp({ now: () => c.value });
+    const { sid } = await registerUser(t.app, "merge_prev");
+    const cats = await categories(sid);
+    const work = cats.find((x) => x.name === "工作");
+    const study = cats.find((x) => x.name === "学习");
+    assert.ok(work && study);
+    const tagA = await createTag(sid, "深度");
+    const tagB = await createTag(sid, "专注");
+    // A（早）：工作 + tagA；B（晚）：学习 + tagB，中间有 1h 空隙
+    await createStopped(sid, work.id, c, "2026-08-25T01:00:00.000Z", "2026-08-25T02:00:00.000Z", {
+      description: "A",
+      tagIds: [tagA],
+    });
+    const bId = await createStopped(sid, study.id, c, "2026-08-25T03:00:00.000Z", "2026-08-25T04:00:00.000Z", {
+      description: "B",
+      tagIds: [tagB],
+    });
+
+    const res = await merge(sid, bId, { direction: "prev", keep: "self" });
+    assert.equal(res.statusCode, 200, JSON.stringify(res.json()));
+    const entry = json(res).entry as {
+      id: string;
+      description: string;
+      categoryId: string;
+      startedAt: string;
+      stoppedAt: string;
+      durationSeconds: number;
+      tags: { id: string }[];
+    };
+    // 区间覆盖两段 + 空隙；属性 = B（self）
+    assert.equal(entry.id, bId);
+    assert.equal(entry.startedAt, "2026-08-25T01:00:00.000Z");
+    assert.equal(entry.stoppedAt, "2026-08-25T04:00:00.000Z");
+    assert.equal(entry.durationSeconds, 3 * 3600);
+    assert.equal(entry.description, "B");
+    assert.equal(entry.categoryId, study.id);
+    assert.deepEqual(entry.tags.map((x) => x.id), [tagB]);
+
+    // 只剩一条，且是 bId
+    const today = await t.app.inject({
+      method: "GET",
+      url: "/api/entries/today?tz=UTC",
+      headers: cookieHeader(sid),
+    });
+    const entries = json(today).entries as { id: string }[];
+    assert.equal(entries.length, 1);
+    assert.equal(entries[0].id, bId);
+
+    // 被并入条的标签被 CASCADE 清理（entryCount 归 0）
+    const tagsRes = await t.app.inject({
+      method: "GET",
+      url: "/api/tags",
+      headers: cookieHeader(sid),
+    });
+    const tagRow = (json(tagsRes).tags as { id: string; entryCount: number }[]).find((x) => x.id === tagA);
+    assert.ok(tagRow);
+    assert.equal(tagRow.entryCount, 0);
+  });
+
+  it("merges next direction keeping other attributes (AC2)", async () => {
+    const c: Clock = { value: new Date("2026-08-25T02:00:00.000Z") };
+    t = await createTestApp({ now: () => c.value });
+    const { sid } = await registerUser(t.app, "merge_next");
+    const cats = await categories(sid);
+    const work = cats.find((x) => x.name === "工作");
+    const study = cats.find((x) => x.name === "学习");
+    assert.ok(work && study);
+    const tagA = await createTag(sid, "深度");
+    const tagB = await createTag(sid, "专注");
+    const aId = await createStopped(sid, work.id, c, "2026-08-25T01:00:00.000Z", "2026-08-25T02:00:00.000Z", {
+      description: "A",
+      tagIds: [tagA],
+    });
+    const bId = await createStopped(sid, study.id, c, "2026-08-25T03:00:00.000Z", "2026-08-25T04:00:00.000Z", {
+      description: "B",
+      tagIds: [tagB],
+    });
+
+    // 在 A 上「与下一条合并」，属性保留 B（other）：keep 条 = B（被删 = A）
+    const res = await merge(sid, aId, { direction: "next", keep: "other" });
+    assert.equal(res.statusCode, 200, JSON.stringify(res.json()));
+    const entry = json(res).entry as {
+      id: string;
+      description: string;
+      categoryId: string;
+      startedAt: string;
+      stoppedAt: string;
+      tags: { id: string }[];
+    };
+    assert.equal(entry.id, bId);
+    assert.equal(entry.startedAt, "2026-08-25T01:00:00.000Z");
+    assert.equal(entry.stoppedAt, "2026-08-25T04:00:00.000Z");
+    assert.equal(entry.description, "B");
+    assert.equal(entry.categoryId, study.id);
+    assert.deepEqual(entry.tags.map((x) => x.id), [tagB]);
+
+    const today = await t.app.inject({
+      method: "GET",
+      url: "/api/entries/today?tz=UTC",
+      headers: cookieHeader(sid),
+    });
+    const entries = json(today).entries as { id: string }[];
+    assert.equal(entries.length, 1);
+    assert.equal(entries[0].id, bId);
+  });
+
+  it("merges across a gap without OVERLAP (AC3); touching entries too", async () => {
+    const c: Clock = { value: new Date("2026-08-25T02:00:00.000Z") };
+    t = await createTestApp({ now: () => c.value });
+    const { sid } = await registerUser(t.app, "merge_gap");
+    const cats = await categories(sid);
+    const work = cats.find((x) => x.name === "工作");
+    assert.ok(work);
+    // 大空隙：前一天 ↔ 当天（跨天）
+    await createStopped(sid, work.id, c, "2026-08-24T20:00:00.000Z", "2026-08-24T21:00:00.000Z");
+    const bId = await createStopped(sid, work.id, c, "2026-08-25T10:00:00.000Z", "2026-08-25T11:00:00.000Z");
+
+    const res = await merge(sid, bId, { direction: "prev", keep: "self" });
+    assert.equal(res.statusCode, 200, JSON.stringify(res.json()));
+    const entry = json(res).entry as { id: string; startedAt: string; stoppedAt: string; durationSeconds: number };
+    assert.equal(entry.startedAt, "2026-08-24T20:00:00.000Z");
+    assert.equal(entry.stoppedAt, "2026-08-25T11:00:00.000Z");
+    assert.equal(entry.durationSeconds, 15 * 3600);
+
+    // 边界相接（无空隙）也可合并
+    const cId = await createStopped(sid, work.id, c, "2026-08-25T12:00:00.000Z", "2026-08-25T13:00:00.000Z");
+    const touching = await merge(sid, entry.id, { direction: "next", keep: "self" });
+    assert.equal(touching.statusCode, 200, JSON.stringify(touching.json()));
+    const touchingEntry = json(touching).entry as { startedAt: string; stoppedAt: string; id: string };
+    assert.equal(touchingEntry.startedAt, "2026-08-24T20:00:00.000Z");
+    assert.equal(touchingEntry.stoppedAt, "2026-08-25T13:00:00.000Z");
+    // cId 已被并入
+    const today = await t.app.inject({
+      method: "GET",
+      url: "/api/entries/today?tz=UTC",
+      headers: cookieHeader(sid),
+    });
+    assert.equal((json(today).entries as { id: string }[]).filter((e) => e.id === cId).length, 0);
+  });
+
+  it("running entries are rejected in both directions (AC4)", async () => {
+    const c: Clock = { value: new Date("2026-08-25T02:00:00.000Z") };
+    t = await createTestApp({ now: () => c.value });
+    const { sid } = await registerUser(t.app, "merge_running");
+    const cats = await categories(sid);
+    const work = cats.find((x) => x.name === "工作");
+    assert.ok(work);
+    // A（早，已停止），B（晚，运行中）
+    const aId = await createStopped(sid, work.id, c, "2026-08-25T01:00:00.000Z", "2026-08-25T02:00:00.000Z");
+    c.value = new Date("2026-08-25T03:00:00.000Z");
+    const startB = await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: work.id },
+    });
+    assert.equal(startB.statusCode, 200);
+    const bId = (json(startB).entry as { id: string }).id;
+
+    // B（self）运行中 → 409
+    const resB = await merge(sid, bId, { direction: "prev", keep: "self" });
+    assert.equal(resB.statusCode, 409);
+    assert.equal((json(resB).error as { code: string; message: string }).code, "CONFLICT");
+
+    // A 合并 next，相邻条 B 运行中 → 409
+    const resA = await merge(sid, aId, { direction: "next", keep: "self" });
+    assert.equal(resA.statusCode, 409);
+    assert.equal((json(resA).error as { code: string }).code, "CONFLICT");
+
+    // 原数据未变：A 仍在，B 仍在运行
+    const current = await t.app.inject({
+      method: "GET",
+      url: "/api/timer/current",
+      headers: cookieHeader(sid),
+    });
+    assert.equal((json(current).entry as { id: string } | null)?.id, bId);
+  });
+
+  it("non-adjacent entries (third in between) are 409 (AC5)", async () => {
+    const c: Clock = { value: new Date("2026-08-25T02:00:00.000Z") };
+    t = await createTestApp({ now: () => c.value });
+    const { sid } = await registerUser(t.app, "merge_far");
+    const cats = await categories(sid);
+    const work = cats.find((x) => x.name === "工作");
+    assert.ok(work);
+    // A（01:00–02:00）C（02:30–02:40）B（03:00–04:00）：对 B 调 prev 的相邻条是 C（服务端权威），合并 B+C 后应只剩 2 条
+    await createStopped(sid, work.id, c, "2026-08-25T01:00:00.000Z", "2026-08-25T02:00:00.000Z");
+    const cId = await createStopped(sid, work.id, c, "2026-08-25T02:30:00.000Z", "2026-08-25T02:40:00.000Z");
+    const bId = await createStopped(sid, work.id, c, "2026-08-25T03:00:00.000Z", "2026-08-25T04:00:00.000Z");
+
+    // 正常 API 无法进设出「跳过中间条」的合并请求（服务端总会重判出紧邻的 C）；
+    // 直接写库模拟脏数据：把 C 改为运行中并横跨在 A 与 B 之间（违反 API 不变量的极端并发场景），
+    // 再对 B 调 prev（此时 prev 候选为 A）→ 相邻性重判必须拒绝
+    const db = new Database(t.dbPath);
+    db.prepare("UPDATE time_entries SET stopped_at = NULL WHERE id = ?").run(cId);
+    db.close();
+
+    const res = await merge(sid, bId, { direction: "prev", keep: "self" });
+    assert.equal(res.statusCode, 409, JSON.stringify(res.json()));
+    const error = json(res).error as { code: string; message: string };
+    assert.equal(error.code, "CONFLICT");
+    assert.equal(error.message, "条目不相邻");
+
+    // 数据未变：3 条都在（事务回滚）
+    const today = await t.app.inject({
+      method: "GET",
+      url: "/api/entries/today?tz=UTC",
+      headers: cookieHeader(sid),
+    });
+    assert.equal((json(today).entries as { id: string }[]).length, 3);
+
+    // 对照：没有脏数据时（删掉 C）同一请求成功
+    const db2 = new Database(t.dbPath);
+    db2.prepare("DELETE FROM time_entries WHERE id = ?").run(cId);
+    db2.close();
+    const ok = await merge(sid, bId, { direction: "prev", keep: "self" });
+    assert.equal(ok.statusCode, 200, JSON.stringify(ok.json()));
+    const merged = json(ok).entry as { startedAt: string; stoppedAt: string };
+    assert.equal(merged.startedAt, "2026-08-25T01:00:00.000Z");
+    assert.equal(merged.stoppedAt, "2026-08-25T04:00:00.000Z");
+  });
+
+  it("foreign or missing entry is 404 (AC5)", async () => {
+    const c: Clock = { value: new Date("2026-08-25T02:00:00.000Z") };
+    t = await createTestApp({ now: () => c.value });
+    const a = await registerUser(t.app, "alice_merge");
+    const b = await registerUser(t.app, "bob_merge");
+    const cats = await categories(a.sid);
+    const work = cats.find((x) => x.name === "工作");
+    assert.ok(work);
+    const id = await createStopped(a.sid, work.id, c, "2026-08-25T01:00:00.000Z", "2026-08-25T02:00:00.000Z");
+    await createStopped(a.sid, work.id, c, "2026-08-25T03:00:00.000Z", "2026-08-25T04:00:00.000Z");
+
+    const foreign = await merge(b.sid, id, { direction: "prev", keep: "self" });
+    assert.equal(foreign.statusCode, 404);
+    assert.equal((json(foreign).error as { code: string }).code, "NOT_FOUND");
+
+    const missing = await merge(a.sid, "no-such-entry", { direction: "prev", keep: "self" });
+    assert.equal(missing.statusCode, 404);
+
+    // 条目未被合并
+    const today = await t.app.inject({
+      method: "GET",
+      url: "/api/entries/today?tz=UTC",
+      headers: cookieHeader(a.sid),
+    });
+    assert.equal((json(today).entries as { id: string }[]).length, 2);
+  });
+
+  it("no previous entry is 409", async () => {
+    const c: Clock = { value: new Date("2026-08-25T02:00:00.000Z") };
+    t = await createTestApp({ now: () => c.value });
+    const { sid } = await registerUser(t.app, "merge_first");
+    const cats = await categories(sid);
+    const work = cats.find((x) => x.name === "工作");
+    assert.ok(work);
+    const bId = await createStopped(sid, work.id, c, "2026-08-25T03:00:00.000Z", "2026-08-25T04:00:00.000Z");
+
+    const res = await merge(sid, bId, { direction: "prev", keep: "self" });
+    assert.equal(res.statusCode, 409);
+    assert.equal((json(res).error as { code: string; message: string }).code, "CONFLICT");
+    assert.equal((json(res).error as { message: string }).message, "没有可合并的上一条");
+
+    const next = await merge(sid, bId, { direction: "next", keep: "self" });
+    assert.equal(next.statusCode, 409);
+    assert.equal((json(next).error as { message: string }).message, "没有可合并的下一条");
+  });
+
+  it("invalid body is 400", async () => {
+    const c: Clock = { value: new Date("2026-08-25T02:00:00.000Z") };
+    t = await createTestApp({ now: () => c.value });
+    const { sid } = await registerUser(t.app, "merge_bad_body");
+    const cats = await categories(sid);
+    const work = cats.find((x) => x.name === "工作");
+    assert.ok(work);
+    const id = await createStopped(sid, work.id, c, "2026-08-25T01:00:00.000Z", "2026-08-25T02:00:00.000Z");
+
+    const badDirection = await merge(sid, id, { direction: "up", keep: "self" } as never);
+    assert.equal(badDirection.statusCode, 400);
+    assert.equal((json(badDirection).error as { code: string }).code, "VALIDATION");
+
+    const missingKeep = await merge(sid, id, { direction: "prev" } as never);
+    assert.equal(missingKeep.statusCode, 400);
+  });
+
+  it("merged entry with tags: entry_tags of the deleted entry are cleaned, keep entry tags intact", async () => {
+    const c: Clock = { value: new Date("2026-08-25T02:00:00.000Z") };
+    t = await createTestApp({ now: () => c.value });
+    const { sid } = await registerUser(t.app, "merge_tags");
+    const cats = await categories(sid);
+    const work = cats.find((x) => x.name === "工作");
+    assert.ok(work);
+    const tagA = await createTag(sid, "深度");
+    const tagB = await createTag(sid, "专注");
+    const tagC = await createTag(sid, "会议");
+    // keep 条带 tagA+tagB，被并入条带 tagC
+    const aId = await createStopped(sid, work.id, c, "2026-08-25T01:00:00.000Z", "2026-08-25T02:00:00.000Z", {
+      tagIds: [tagA, tagB],
+    });
+    const bId = await createStopped(sid, work.id, c, "2026-08-25T03:00:00.000Z", "2026-08-25T04:00:00.000Z", {
+      tagIds: [tagC],
+    });
+
+    // 合并保留 A（在 B 上调 prev，keep = other）
+    const res = await merge(sid, bId, { direction: "prev", keep: "other" });
+    assert.equal(res.statusCode, 200, JSON.stringify(res.json()));
+    const entry = json(res).entry as { id: string; tags: { id: string; name: string }[] };
+    assert.equal(entry.id, aId);
+    // 按 name 排序：专注、深度
+    assert.deepEqual(entry.tags.map((x) => x.id), [tagB, tagA]);
+
+    // entry_tags 验证：通过标签 entryCount 确认 bId 的关联行已 CASCADE 清理，aId 的保留
+    const tagsRes = await t.app.inject({
+      method: "GET",
+      url: "/api/tags",
+      headers: cookieHeader(sid),
+    });
+    const tagRows = json(tagsRes).tags as { id: string; entryCount: number }[];
+    assert.deepEqual(
+      tagRows.filter((x) => [tagA, tagB, tagC].includes(x.id)).map((x) => [x.id, x.entryCount]),
+      [
+        [tagA, 1],
+        [tagB, 1],
+        [tagC, 0],
+      ],
+    );
   });
 });
 
