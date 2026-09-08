@@ -1042,3 +1042,24 @@ Switched timezone default to detect-then-persist (task 09-06-timezone-autodetect
 ### Status
 
 [OK] **Completed**
+
+
+## Session 48: Day timeline entries axis subview
+
+**Date**: 2026-09-08
+**Task**: Day timeline entries axis subview
+**Branch**: `emdash/floppy-glasses-hunt-qvw14`
+
+### Summary
+
+Added a block/entries subview toggle to day mode (persisted chronolog-day-subview). EntryListView renders a non-proportional flow list: two-line time column (start/end, running '···'), variable-height category-tinted cards with running breathe animation, dashed ghost cards for gap backfill, asc/desc sort with persistence, and a footer tally. computeGaps extracted to timeline-gaps.ts shared by both subviews; week mode unchanged. Fixed check-found regressions: week zoom buttons preserved, hover lift moved to CSS, single-line running indicator, day-switch rescroll, ghost touch target 44px. 161 tests green.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `0ba3e2d` | (see git log) |
+
+### Status
+
+[OK] **Completed**
