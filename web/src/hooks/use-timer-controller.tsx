@@ -16,6 +16,7 @@ import { clipSeconds, elapsedSeconds } from "../format";
 import { filterActive } from "../hierarchy";
 
 const DATE_VIEW_KEY = "chronolog-date-view";
+const VIEW_MODE_KEY = "chronolog-view-mode";
 
 /** localStorage 读取查看的日期（"YYYY-MM-DD" | null = 今天），隐私模式下静默降级；垃圾值视为今天。 */
 function loadDateView(): string | null {
@@ -31,6 +32,24 @@ function saveDateView(date: string | null): void {
   try {
     if (date === null) window.localStorage.removeItem(DATE_VIEW_KEY);
     else window.localStorage.setItem(DATE_VIEW_KEY, date);
+  } catch {
+    // ignore
+  }
+}
+
+/** localStorage 读取视图模式（"day" | "week"），隐私模式下静默降级；垃圾值视为 day。 */
+function loadViewMode(): "day" | "week" {
+  try {
+    const v = window.localStorage.getItem(VIEW_MODE_KEY);
+    return v === "week" ? "week" : "day";
+  } catch {
+    return "day";
+  }
+}
+
+function saveViewMode(mode: "day" | "week"): void {
+  try {
+    window.localStorage.setItem(VIEW_MODE_KEY, mode);
   } catch {
     // ignore
   }
@@ -58,7 +77,7 @@ export function useTimerController(props: {
   const [week, setWeek] = useState<WeekEntries | null>(null);
   // 当前视图窗口的紧邻外侧条目（gap 插槽边界）；null = 未加载/加载失败，静默降级
   const [boundary, setBoundary] = useState<BoundaryEntries | null>(null);
-  const [view, setView] = useState<"day" | "week">("day");
+  const [view, setView] = useState<"day" | "week">(loadViewMode);
   // "YYYY-MM-DD" | null；null = 今天（默认）。查看的日期，day/week 视图共用
   const [date, setDate] = useState<string | null>(loadDateView);
   const [categoryId, setCategoryId] = useState("");
@@ -248,6 +267,7 @@ export function useTimerController(props: {
 
   async function onModeChange(mode: "day" | "week") {
     setView(mode);
+    saveViewMode(mode);
     // 切换视图时始终按当前 date 重新拉取目标视图数据：另一视图的数据可能是
     // 在其他日期下拉取的（如先看本周再导航到上周），直接复用会展示错位的周/日
     try {
