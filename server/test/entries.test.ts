@@ -630,6 +630,90 @@ describe("entries", () => {
       });
       assert.equal(beforeRunning.statusCode, 201);
     });
+
+    it("normalizes millisecond-less / varied-precision ISO strings (mixed-format regression)", async () => {
+      const c: Clock = { value: new Date("2026-08-25T02:00:00.000Z") };
+      t = await createTestApp({ now: () => c.value });
+      const { sid } = await registerUser(t.app, "mixed_format");
+      const cats = await categories(sid);
+      const work = cats.find((x) => x.name === "工作");
+      assert.ok(work);
+      const base = { description: "x", categoryId: work.id, tagIds: [] };
+
+      // 存量条目以无毫秒格式创建：入库后返回值恒为 .000Z 格式
+      const legacy = await t.app.inject({
+        method: "POST",
+        url: "/api/entries",
+        headers: cookieHeader(sid),
+        payload: { ...base, startedAt: "2026-08-25T02:00:00Z", stoppedAt: "2026-08-25T03:00:00Z" },
+      });
+      assert.equal(legacy.statusCode, 201);
+      const legacyEntry = json(legacy).entry as { startedAt: string; stoppedAt: string };
+      assert.equal(legacyEntry.startedAt, "2026-08-25T02:00:00.000Z");
+      assert.equal(legacyEntry.stoppedAt, "2026-08-25T03:00:00.000Z");
+
+      // 边界相接（新条目 start == 存量 end）：存量已规范化为 .000Z，不误报 409
+      const touching = await t.app.inject({
+        method: "POST",
+        url: "/api/entries",
+        headers: cookieHeader(sid),
+        payload: { ...base, startedAt: "2026-08-25T03:00:00.000Z", stoppedAt: "2026-08-25T03:30:00.000Z" },
+      });
+      assert.equal(touching.statusCode, 201);
+
+      // 无毫秒/毫秒混比不再误报顺序错误：stoppedAt 比 startedAt 晚 0.5s，但宁典序 '...00.5Z' > '...00Z' 曾误判为 <=
+      const halfSec = await t.app.inject({
+        method: "POST",
+        url: "/api/entries",
+        headers: cookieHeader(sid),
+        payload: { ...base, startedAt: "2026-08-25T04:00:00Z", stoppedAt: "2026-08-25T04:00:00.5Z" },
+      });
+      assert.equal(halfSec.statusCode, 201);
+      const halfSecEntry = json(halfSec).entry as { startedAt: string; stoppedAt: string };
+      assert.equal(halfSecEntry.startedAt, "2026-08-25T04:00:00.000Z");
+      assert.equal(halfSecEntry.stoppedAt, "2026-08-25T04:00:00.500Z");
+
+      // 毫秒位数不同（.125Z）也统一为 3 位毫秒格式
+      const millis = await t.app.inject({
+        method: "POST",
+        url: "/api/entries",
+        headers: cookieHeader(sid),
+        payload: { ...base, startedAt: "2026-08-25T05:00:00.125Z", stoppedAt: "2026-08-25T05:10:00Z" },
+      });
+      assert.equal(millis.statusCode, 201);
+      const millisEntry = json(millis).entry as { startedAt: string; stoppedAt: string };
+      assert.equal(millisEntry.startedAt, "2026-08-25T05:00:00.125Z");
+      assert.equal(millisEntry.stoppedAt, "2026-08-25T05:10:00.000Z");
+
+      // PATCH 同一 schema 边界：无毫秒/毫秒混格式编辑也规范化为 .000Z，不误报 400/409
+      const patchId = await createStopped(
+        sid,
+        work.id,
+        c,
+        "2026-08-25T06:00:00.000Z",
+        "2026-08-25T07:00:00.000Z",
+      );
+      const patched = await t.app.inject({
+        method: "PATCH",
+        url: `/api/entries/${patchId}`,
+        headers: cookieHeader(sid),
+        payload: { ...base, startedAt: "2026-08-25T06:30:00.5Z", stoppedAt: "2026-08-25T07:00:00Z" },
+      });
+      assert.equal(patched.statusCode, 200);
+      const patchedEntry = json(patched).entry as { startedAt: string; stoppedAt: string };
+      assert.equal(patchedEntry.startedAt, "2026-08-25T06:30:00.500Z");
+      assert.equal(patchedEntry.stoppedAt, "2026-08-25T07:00:00.000Z");
+
+      // 真实重叠不漏检：存量 02:00–03:00（无毫秒格式创建、入库已规范化），新条目 02:30 开始 → 409
+      const overlap = await t.app.inject({
+        method: "POST",
+        url: "/api/entries",
+        headers: cookieHeader(sid),
+        payload: { ...base, startedAt: "2026-08-25T02:30:00.000Z", stoppedAt: "2026-08-25T02:40:00.000Z" },
+      });
+      assert.equal(overlap.statusCode, 409);
+      assert.equal((json(overlap).error as { code: string }).code, "OVERLAP");
+    });
   });
 
   describe("DELETE /api/entries/:id", () => {

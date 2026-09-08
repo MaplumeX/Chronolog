@@ -8,6 +8,14 @@ import { requireTz } from "../time.js";
 import { AppError, parseBody } from "../errors.js";
 import { categories, entryTags, tags, timeEntries } from "../schema.js";
 
+// ISO 时刻统一规范化为 toISOString()（恒为 .000Z 毫秒格式）：
+// z.iso.datetime 只校验格式不规范化（同时接受 ...T12:00:00Z 与 ...T12:00:00.000Z），
+// 混格式原样入库会让下游的字典序比较（SQL TEXT 列 lt/gt、checkTimeOrder 的 <=）
+// 与真实时刻大小不一致（'Z' vs '.000Z'），导致重叠误报/漏检。边界统一在此规范化。
+const isoInstant = z
+  .iso.datetime("时间格式无效")
+  .transform((v) => new Date(v).toISOString());
+
 const updateBody = z.object({
   description: z
     .string()
@@ -15,8 +23,8 @@ const updateBody = z.object({
     .pipe(z.string().max(200, "说明过长")),
   categoryId: z.string().min(1, "请选择分类"),
   tagIds: z.array(z.string().min(1)),
-  startedAt: z.iso.datetime("时间格式无效"),
-  stoppedAt: z.iso.datetime("时间格式无效"),
+  startedAt: isoInstant,
+  stoppedAt: isoInstant,
 });
 
 type UpsertBody = z.infer<typeof updateBody>;
@@ -163,8 +171,8 @@ function deleteOnce(deps: Deps, userId: string, id: string) {
 
 const boundaryQuery = z.object({
   tz: z.string().min(1, "时区无效"),
-  start: z.iso.datetime("时间格式无效"),
-  end: z.iso.datetime("时间格式无效"),
+  start: isoInstant,
+  end: isoInstant,
 });
 
 export function registerEntryRoutes(app: FastifyInstance, deps: Deps) {

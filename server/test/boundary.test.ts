@@ -243,4 +243,39 @@ describe("entries/boundary", () => {
     assert.equal(res.body.prevEntry, null);
     assert.equal(res.body.nextEntry, null);
   });
+
+  it("normalizes millisecond-less start/end query params (mixed-format regression)", async () => {
+    const c: Clock = { value: new Date(BASE) };
+    t = await createTestApp({ now: () => c.value });
+    const { sid } = await registerUser(t.app, "boundary_mixed");
+    const cats = await categories(sid);
+    const work = cats.find((x) => x.name === "工作");
+    assert.ok(work);
+
+    // 存量为服务端生成的 .000Z 格式：prev 条目结束于 08:00，next 条目恰好开始于 16:00
+    const prevId = await createStopped(
+      sid,
+      work.id,
+      c,
+      "2026-08-25T01:00:00.000Z",
+      "2026-08-25T08:00:00.000Z",
+    );
+    const nextId = await createStopped(
+      sid,
+      work.id,
+      c,
+      "2026-08-25T16:00:00.000Z",
+      "2026-08-25T17:00:00.000Z",
+    );
+
+    // query 用无毫秒格式：规范化前 '...00.000Z' >= '...00Z' 字典序为 false，nextEntry 会被漏掉
+    const res = await boundary(sid, "2026-08-25T08:00:00Z", "2026-08-25T16:00:00Z");
+    assert.equal(res.status, 200);
+    const prev = entryOf(res, "prevEntry");
+    const next = entryOf(res, "nextEntry");
+    assert.ok(prev);
+    assert.equal(prev.id, prevId); // touching（stoppedAt == start）仍算 prev
+    assert.ok(next);
+    assert.equal(next.id, nextId); // startedAt == end 的条目作为 next 返回
+  });
 });
