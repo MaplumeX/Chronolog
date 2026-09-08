@@ -408,3 +408,20 @@
   border-radius: 4px;
   white-space: nowrap;
 }
+
+/* 移动端（<768px）时间线几何：刻度尺收窄给色块让位，数值与 Timeline.tsx 中
+   week 列头的 w-11 占位（44px）保持同步；与 .timeline-track 的 left 同步收缩。 */
+@media (max-width: 767px) {
+  .timeline-ruler {
+    width: 44px;
+  }
+
+  .timeline-ruler .hour {
+    padding-left: 6px;
+    font-size: 11px;
+  }
+
+  .timeline-track:not(.timeline-track--full) {
+    left: 44px;
+  }
+}
