@@ -541,6 +541,31 @@ export function Timeline(props: {
       ).find((e) => e.id === selectedId) ?? null
     : null;
 
+  // 合并功能的相邻候选：视图内条目 + boundary 外邻合并去重排序后取前驱/后继。
+  // 只用已停止条目（运行中不参与合并）；boundary 未加载或为空时只看视图内，
+  // 两侧都没有 → 对应方向禁用（按钮 disabled，合并语义最终由服务端重判）。
+  const { prevCandidate, nextCandidate } = useMemo(() => {
+    if (!selectedEntry) return { prevCandidate: null, nextCandidate: null };
+    const viewEntries = isDay
+      ? (today?.entries ?? [])
+      : (week?.days.flatMap((d) => d.entries) ?? []);
+    const byId = new Map<string, TimeEntry>();
+    for (const e of viewEntries) {
+      if (e.stoppedAt != null) byId.set(e.id, e);
+    }
+    for (const e of [boundary?.prevEntry, boundary?.nextEntry]) {
+      if (e && e.stoppedAt != null) byId.set(e.id, e);
+    }
+    const sorted = [...byId.values()].sort((a, b) =>
+      a.startedAt.localeCompare(b.startedAt),
+    );
+    const idx = sorted.findIndex((e) => e.id === selectedEntry.id);
+    return {
+      prevCandidate: idx > 0 ? sorted[idx - 1]! : null,
+      nextCandidate: idx >= 0 && idx < sorted.length - 1 ? sorted[idx + 1]! : null,
+    };
+  }, [selectedEntry, today, week, boundary, isDay]);
+
   // 滚动锚点：day 模式为当天（查看过去日期时锚定所查看的日期）；week 模式为 nowMs 所在的那一列
   const anchorDay = isDay
     ? today
@@ -786,6 +811,9 @@ export function Timeline(props: {
             entry={selectedEntry}
             categories={categories}
             tags={tags}
+            prevEntry={prevCandidate}
+            nextEntry={nextCandidate}
+            tz={tz}
             onSaved={() => {
               // 保存成功：关闭 popover 并刷新时间线数据（R5）
               setSelectedId(null);

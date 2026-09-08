@@ -305,6 +305,14 @@ export const api = {
     }),
   deleteEntry: (id: string) =>
     request<{ ok: boolean }>(`/api/entries/${id}`, { method: "DELETE" }),
+  mergeEntry: (
+    id: string,
+    body: { direction: "prev" | "next"; keep: "self" | "other" },
+  ) =>
+    request<{ entry: TimeEntry }>(`/api/entries/${id}/merge`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
   todayStats: (tz: string, tagId?: string, rollup?: boolean) =>
     request<TodayStats>(
       `/api/stats/today?tz=${encodeURIComponent(tz)}${tagId ? `&tagId=${encodeURIComponent(tagId)}` : ""}${rollup ? "&rollup=true" : ""}`,
