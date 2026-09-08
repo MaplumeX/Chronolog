@@ -1044,7 +1044,7 @@ Switched timezone default to detect-then-persist (task 09-06-timezone-autodetect
 [OK] **Completed**
 
 
-## Session 48: 相邻时间条目上下合并功能
+## Session 50: 相邻时间条目上下合并功能
 
 **Date**: 2026-09-08
 **Task**: 相邻时间条目上下合并功能
@@ -1053,12 +1053,43 @@ Switched timezone default to detect-then-persist (task 09-06-timezone-autodetect
 ### Summary
 
 实现条目与紧邻上一条/下一条合并：后端 POST /api/entries/:id/merge（事务内服务端权威重判相邻性/所有权/停止状态，区间取 min/max 覆盖空隙，属性整条二选一保留）；前端 EntryEditor 合并按钮 + 新 MergeDialog 双卡预览二选一，Timeline 用视图条目+boundary 提供相邻候选。server 143 测试、web 154 测试全绿，spec 已同步（http-routes/api-client/component-guidelines）。
+## Session 48: Fix settings tabs scrollbar
+
+**Date**: 2026-09-08
+**Task**: Fix settings tabs scrollbar
+**Branch**: `emdash/hungry-kids-unite-v8p9i`
+
+### Summary
+
+Fixed a constant vertical scrollbar on the settings page tabs: the active TabsTrigger underline (after:bottom-[-5px]) overflows the h-9 TabsList, and overflow-x-auto forces overflow-y to auto. Added pb-[5px] to the TabsList so the underline fits; horizontal scrolling preserved for narrow screens.
 
 ### Git Commits
 
 | Hash | Message |
 |------|---------|
 | `c909093` | (see git log) |
+| `a30c908` | (see git log) |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 49: Persist timeline view mode and scale to localStorage
+
+**Date**: 2026-09-08
+**Task**: Persist timeline view mode and scale to localStorage
+**Branch**: `emdash/tender-banks-attend-t4osu`
+
+### Summary
+
+Timer 页时间线偏好持久化：view（day/week）与 scale（60/30/15/5）照 chronolog-date-view 模式写入 localStorage（chronolog-view-mode / chronolog-scale），垃圾值回退默认、隐私模式静默降级；新增 14 个单测，同步更新 state-management.md spec。164 测试全过，typecheck/build 通过。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d6a7b63` | (see git log) |
 
 ### Status
 

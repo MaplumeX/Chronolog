@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { PointerEventsCheckLevel } from "@testing-library/user-event";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -189,6 +189,78 @@ async function openEditor(entryId: string) {
     );
   });
 }
+
+const SCALE_KEY = "chronolog-scale";
+
+/** 点 −/+ 档位按钮（Zoom out / Zoom in 的 aria-label）。 */
+async function clickScaleButton(label: "Zoom out" | "Zoom in") {
+  await act(async () => {
+    fireEvent.click(screen.getByRole("button", { name: label }));
+  });
+}
+
+describe("Timeline 比例档位持久化", () => {
+  beforeEach(() => {
+    stubMatchMedia();
+    stubPointerCapture();
+    useIsMobileMock.mockReturnValue(false);
+  });
+
+  it("localStorage 预设 15 → 初始档位为 15（刻度总数 96）", () => {
+    window.localStorage.setItem(SCALE_KEY, "15");
+    renderTimeline();
+    // 每刻度 15 分钟：1440/15 = 96 格，刻度标签 0..96 → 97 个
+    expect(document.querySelectorAll(".timeline-ruler .hour").length).toBe(97);
+  });
+
+  it("未预设任何值 → 初始档位为 60（默认）", () => {
+    renderTimeline();
+    expect(document.querySelectorAll(".timeline-ruler .hour").length).toBe(25);
+  });
+
+  it("localStorage 预设垃圾值 → 初始档位回退 60", () => {
+    window.localStorage.setItem(SCALE_KEY, "7");
+    renderTimeline();
+    expect(document.querySelectorAll(".timeline-ruler .hour").length).toBe(25);
+  });
+
+  it("点击放大按钮后档位写入 localStorage", async () => {
+    renderTimeline();
+    await clickScaleButton("Zoom in"); // 60 → 30
+    expect(window.localStorage.getItem(SCALE_KEY)).toBe("30");
+    expect(document.querySelectorAll(".timeline-ruler .hour").length).toBe(49);
+  });
+
+  it("点击缩小按钮后档位写入 localStorage；最粗档位按钮禁用", async () => {
+    window.localStorage.setItem(SCALE_KEY, "15");
+    renderTimeline();
+    await clickScaleButton("Zoom out"); // 15 → 30（SCALES = [60, 30, 15, 5] 相邻档）
+    expect(window.localStorage.getItem(SCALE_KEY)).toBe("30");
+    await clickScaleButton("Zoom out"); // 30 → 60
+    expect(window.localStorage.getItem(SCALE_KEY)).toBe("60");
+    // 60 是最粗档：缩小按钮禁用
+    expect(
+      (screen.getByRole("button", { name: "Zoom out" }) as HTMLButtonElement).disabled,
+    ).toBe(true);
+  });
+
+  it("localStorage.getItem 抛异常（隐私模式）→ 初始档位为 60 且不炸", () => {
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("storage unavailable");
+    });
+    renderTimeline();
+    expect(document.querySelectorAll(".timeline-ruler .hour").length).toBe(25);
+  });
+
+  it("localStorage.setItem 抛异常（隐私模式）→ 切档仅内存态生效，不报错", async () => {
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("storage unavailable");
+    });
+    renderTimeline();
+    await clickScaleButton("Zoom in"); // 60 → 30
+    expect(document.querySelectorAll(".timeline-ruler .hour").length).toBe(49);
+  });
+});
 
 describe("Timeline 拖拽创建（day 视图）", () => {
   beforeEach(() => {

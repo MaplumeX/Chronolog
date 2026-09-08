@@ -24,6 +24,27 @@ const SCALES = [60, 30, 15, 5] as const;
 type Scale = (typeof SCALES)[number];
 const PX_PER_TICK = 40;
 
+const SCALE_KEY = "chronolog-scale";
+
+/** localStorage 读取比例档位（SCALES 之一），隐私模式下静默降级；垃圾值回退 60。 */
+function loadScale(): Scale {
+  try {
+    const v = window.localStorage.getItem(SCALE_KEY);
+    const n = v === null ? NaN : Number(v);
+    return (SCALES as readonly number[]).includes(n) ? (n as Scale) : 60;
+  } catch {
+    return 60;
+  }
+}
+
+function saveScale(scale: Scale): void {
+  try {
+    window.localStorage.setItem(SCALE_KEY, String(scale));
+  } catch {
+    // ignore
+  }
+}
+
 /** 档位 → 每档分钟数对应的时间线总高：(1440 / 分钟数) × 40px */
 const innerHeightFor = (scale: Scale) => (1440 / scale) * PX_PER_TICK;
 
@@ -495,7 +516,12 @@ export function Timeline(props: {
   } | null>(null);
   // 拖拽结束后的固化预览块（仅渲染在发起拖拽的那一列），同时作为 draft popover 的 anchor
   const [draftAnchor, setDraftAnchor] = useState<{ dayStart: string; startMs: number; endMs: number } | null>(null);
-  const [scale, setScale] = useState<Scale>(60);
+  const [scale, setScale] = useState<Scale>(loadScale);
+  /** 切换档位：更新状态并持久化（隐私模式下保存失败静默降级） */
+  const changeScale = (next: Scale) => {
+    setScale(next);
+    saveScale(next);
+  };
   const scaleIndex = SCALES.indexOf(scale);
   const tickCount = 1440 / scale;
   // gap 草稿：点击 slot 时的完整空档（全局时刻，可跨天）+ 被点 slot 可见段的固化快照
@@ -662,7 +688,7 @@ export function Timeline(props: {
               size="icon-xs"
               className="relative touch-hit--x"
               disabled={scaleIndex <= 0}
-              onClick={() => setScale(SCALES[scaleIndex - 1])}
+              onClick={() => changeScale(SCALES[scaleIndex - 1])}
               aria-label={t("timeline.zoomOut")}
             >
               <Minus />
@@ -673,7 +699,7 @@ export function Timeline(props: {
               size="icon-xs"
               className="relative touch-hit--x"
               disabled={scaleIndex >= SCALES.length - 1}
-              onClick={() => setScale(SCALES[scaleIndex + 1])}
+              onClick={() => changeScale(SCALES[scaleIndex + 1])}
               aria-label={t("timeline.zoomIn")}
             >
               <Plus />
