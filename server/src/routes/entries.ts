@@ -3,7 +3,7 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { newId, requireUser } from "../auth.js";
 import type { Db, Deps } from "../db.js";
-import { getEntry, listBoundary } from "../entries.js";
+import { getEntry, listBoundary, mergeEntries } from "../entries.js";
 import { requireTz } from "../time.js";
 import { AppError, parseBody } from "../errors.js";
 import { categories, entryTags, tags, timeEntries } from "../schema.js";
@@ -175,6 +175,11 @@ const boundaryQuery = z.object({
   end: isoInstant,
 });
 
+const mergeBody = z.object({
+  direction: z.enum(["prev", "next"]),
+  keep: z.enum(["self", "other"]),
+});
+
 export function registerEntryRoutes(app: FastifyInstance, deps: Deps) {
   // 查询窗口紧邻外侧的条目（前端 gap 插槽边界）：start/end 为 ISO 时刻，tz 仅做校验
   app.get("/api/entries/boundary", async (req) => {
@@ -212,5 +217,16 @@ export function registerEntryRoutes(app: FastifyInstance, deps: Deps) {
     const { id } = parseBody(z.object({ id: z.string().min(1) }), req.params);
     deleteOnce(deps, user.id, id);
     return { ok: true };
+  });
+
+  // 合并相邻条目：direction 相对 :id 的方向；keep = 属性保留来源（self = :id 条，other = 相邻条）。
+  // 相邻性/所有权/运行中状态由服务端事务内重判（mergeEntries）。
+  app.post("/api/entries/:id/merge", async (req) => {
+    const user = requireUser(req, deps);
+    const { id } = parseBody(z.object({ id: z.string().min(1) }), req.params);
+    const body = parseBody(mergeBody, req.body);
+    const keepId = mergeEntries(deps.db, user.id, id, body.direction, body.keep);
+    const entry = getEntry(deps.db, user.id, keepId, deps.now());
+    return { entry };
   });
 }

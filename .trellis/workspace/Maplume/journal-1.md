@@ -1053,12 +1053,32 @@ Switched timezone default to detect-then-persist (task 09-06-timezone-autodetect
 ### Summary
 
 Added a block/entries subview toggle to day mode (persisted chronolog-day-subview). EntryListView renders a non-proportional flow list: two-line time column (start/end, running '···'), variable-height category-tinted cards with running breathe animation, dashed ghost cards for gap backfill, asc/desc sort with persistence, and a footer tally. computeGaps extracted to timeline-gaps.ts shared by both subviews; week mode unchanged. Fixed check-found regressions: week zoom buttons preserved, hover lift moved to CSS, single-line running indicator, day-switch rescroll, ghost touch target 44px. 161 tests green.
+## Session 50: 相邻时间条目上下合并功能
+
+**Date**: 2026-09-08
+**Task**: 相邻时间条目上下合并功能
+**Branch**: `emdash/fiery-candies-train-x65eg`
+
+### Summary
+
+实现条目与紧邻上一条/下一条合并：后端 POST /api/entries/:id/merge（事务内服务端权威重判相邻性/所有权/停止状态，区间取 min/max 覆盖空隙，属性整条二选一保留）；前端 EntryEditor 合并按钮 + 新 MergeDialog 双卡预览二选一，Timeline 用视图条目+boundary 提供相邻候选。server 143 测试、web 154 测试全绿，spec 已同步（http-routes/api-client/component-guidelines）。
+## Session 48: Fix settings tabs scrollbar
+
+**Date**: 2026-09-08
+**Task**: Fix settings tabs scrollbar
+**Branch**: `emdash/hungry-kids-unite-v8p9i`
+
+### Summary
+
+Fixed a constant vertical scrollbar on the settings page tabs: the active TabsTrigger underline (after:bottom-[-5px]) overflows the h-9 TabsList, and overflow-x-auto forces overflow-y to auto. Added pb-[5px] to the TabsList so the underline fits; horizontal scrolling preserved for narrow screens.
 
 ### Git Commits
 
 | Hash | Message |
 |------|---------|
 | `0ba3e2d` | (see git log) |
+| `c909093` | (see git log) |
+| `a30c908` | (see git log) |
 
 ### Status
 
@@ -1074,12 +1094,22 @@ Added a block/entries subview toggle to day mode (persisted chronolog-day-subvie
 ### Summary
 
 Removed the asc/desc sort toggle from the entries axis subview per user feedback: rows are fixed ascending by start time. Dropped the chronolog-entry-view-sort persistence, timeline.sortAsc/sortDesc i18n keys, updated tests (ascending-order assertion + no-write assertion) and spec docs. 161 tests green.
+## Session 49: Persist timeline view mode and scale to localStorage
+
+**Date**: 2026-09-08
+**Task**: Persist timeline view mode and scale to localStorage
+**Branch**: `emdash/tender-banks-attend-t4osu`
+
+### Summary
+
+Timer 页时间线偏好持久化：view（day/week）与 scale（60/30/15/5）照 chronolog-date-view 模式写入 localStorage（chronolog-view-mode / chronolog-scale），垃圾值回退默认、隐私模式静默降级；新增 14 个单测，同步更新 state-management.md spec。164 测试全过，typecheck/build 通过。
 
 ### Git Commits
 
 | Hash | Message |
 |------|---------|
 | `78aa57a` | (see git log) |
+| `d6a7b63` | (see git log) |
 
 ### Status
 

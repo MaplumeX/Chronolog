@@ -133,7 +133,7 @@ export function SettingsPage(props: {
   return (
     <PageContainer size="default">
       <Tabs defaultValue="account">
-        <TabsList className="max-w-full overflow-x-auto">
+        <TabsList className="max-w-full overflow-x-auto pb-[5px]">
           <TabsTrigger value="general">{t("settings.tabGeneral")}</TabsTrigger>
           <TabsTrigger value="account">{t("settings.tabAccount")}</TabsTrigger>
           <TabsTrigger value="tokens">{t("settings.tabTokens")}</TabsTrigger>

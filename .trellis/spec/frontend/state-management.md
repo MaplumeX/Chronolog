@@ -23,7 +23,7 @@ Each page keeps its own list/error/form state. `useTimerController` holds the Ti
 
 `useTimerController` recomputes the visible day total from `today.dayStart` / `dayEnd` plus `nowMs` (`clipSeconds` in `format.ts`). That is display state, not a store.
 
-It also owns a `view: "day" | "week"` state (default `"day"`, not persisted) and the week data (`WeekEntries | null`). Week data loads lazily on first switch to the week view; after start/stop, refresh the week data too if it was already loaded, so switching back shows fresh entries.
+It also owns a `view: "day" | "week"` state (default `"day"`, persisted in `localStorage["chronolog-view-mode"]` by task 09-08-persist-view-prefs — same try/catch rule as the date key, garbage values fall back to `"day"`) and the week data (`WeekEntries | null`). Week data loads lazily on first switch to the week view; after start/stop, refresh the week data too if it was already loaded, so switching back shows fresh entries.
 
 It also owns a `date: string | null` view anchor (`null` = today/this week), persisted in `localStorage["chronolog-date-view"]` (try/catch, garbage values treated as null). Any date change or day↔week view switch re-fetches the target view's data for that `date` — never reuse cached week data across date changes (stale-data bug fixed in the date-switcher task). `DateNav` renders the `← [label] → [今天]` navigation; picking today from the calendar normalizes back to `null`.
 
@@ -34,6 +34,8 @@ The only persistence is the HttpOnly `sid` cookie. No JWT, no saved elapsed.
 One exception: theme preference is persisted in `localStorage["chronolog-theme"]` (`"light" | "dark" | "system"`, missing = `"system"`) by `use-theme.ts`. The inline script in `index.html` applies the `.dark` class before React mounts to avoid flash; `useTheme()` in `App.tsx` owns the state and the `matchMedia` listener (registered only in `system` mode). Wrap all `localStorage` access in `try/catch` — privacy mode throws `SecurityError`.
 
 Second exception: the timer page's viewed date is persisted in `localStorage["chronolog-date-view"]` (`"YYYY-MM-DD"` or removed = today). Same try/catch rule; invalid/garbage values fall back to null (today).
+
+Third and fourth exceptions (task 09-08-persist-view-prefs): the timer page's view mode (`"day" | "week"`) is persisted in `localStorage["chronolog-view-mode"]` by `useTimerController`, and the timeline scale (60/30/15/5) in `localStorage["chronolog-scale"]` by `Timeline.tsx`. Same try/catch rule; garbage values fall back to the defaults (`"day"` / `60`).
 
 Another UI-preference key follows the same pattern (task 09-08-axis-view): `localStorage["chronolog-day-subview"]` (`"block" | "entries"`, removed/invalid = `block` — day-mode subview, owned by `Timeline` local state, not `useTimerController`).
 

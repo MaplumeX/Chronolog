@@ -48,6 +48,27 @@ function saveSubview(subview: Subview): void {
   }
 }
 
+const SCALE_KEY = "chronolog-scale";
+
+/** localStorage 读取比例档位（SCALES 之一），隐私模式下静默降级；垃圾值回退 60。 */
+function loadScale(): Scale {
+  try {
+    const v = window.localStorage.getItem(SCALE_KEY);
+    const n = v === null ? NaN : Number(v);
+    return (SCALES as readonly number[]).includes(n) ? (n as Scale) : 60;
+  } catch {
+    return 60;
+  }
+}
+
+function saveScale(scale: Scale): void {
+  try {
+    window.localStorage.setItem(SCALE_KEY, String(scale));
+  } catch {
+    // ignore
+  }
+}
+
 /** 档位 → 每档分钟数对应的时间线总高：(1440 / 分钟数) × 40px */
 const innerHeightFor = (scale: Scale) => (1440 / scale) * PX_PER_TICK;
 
@@ -453,7 +474,12 @@ export function Timeline(props: {
   } | null>(null);
   // 拖拽结束后的固化预览块（仅渲染在发起拖拽的那一列），同时作为 draft popover 的 anchor
   const [draftAnchor, setDraftAnchor] = useState<{ dayStart: string; startMs: number; endMs: number } | null>(null);
-  const [scale, setScale] = useState<Scale>(60);
+  const [scale, setScale] = useState<Scale>(loadScale);
+  /** 切换档位：更新状态并持久化（隐私模式下保存失败静默降级） */
+  const changeScale = (next: Scale) => {
+    setScale(next);
+    saveScale(next);
+  };
   // day 子视图（块/条目）：Timeline 局部状态，与 scale 同级同生命周期；
   // 切换仅影响渲染，scale 状态保留（切回块视图时缩放档位恢复）
   const [subview, setSubview] = useState<Subview>(loadSubview);
@@ -475,6 +501,31 @@ export function Timeline(props: {
         : (week?.days.flatMap((d) => d.entries) ?? [])
       ).find((e) => e.id === selectedId) ?? null
     : null;
+
+  // 合并功能的相邻候选：视图内条目 + boundary 外邻合并去重排序后取前驱/后继。
+  // 只用已停止条目（运行中不参与合并）；boundary 未加载或为空时只看视图内，
+  // 两侧都没有 → 对应方向禁用（按钮 disabled，合并语义最终由服务端重判）。
+  const { prevCandidate, nextCandidate } = useMemo(() => {
+    if (!selectedEntry) return { prevCandidate: null, nextCandidate: null };
+    const viewEntries = isDay
+      ? (today?.entries ?? [])
+      : (week?.days.flatMap((d) => d.entries) ?? []);
+    const byId = new Map<string, TimeEntry>();
+    for (const e of viewEntries) {
+      if (e.stoppedAt != null) byId.set(e.id, e);
+    }
+    for (const e of [boundary?.prevEntry, boundary?.nextEntry]) {
+      if (e && e.stoppedAt != null) byId.set(e.id, e);
+    }
+    const sorted = [...byId.values()].sort((a, b) =>
+      a.startedAt.localeCompare(b.startedAt),
+    );
+    const idx = sorted.findIndex((e) => e.id === selectedEntry.id);
+    return {
+      prevCandidate: idx > 0 ? sorted[idx - 1]! : null,
+      nextCandidate: idx >= 0 && idx < sorted.length - 1 ? sorted[idx + 1]! : null,
+    };
+  }, [selectedEntry, today, week, boundary, isDay]);
 
   // 滚动锚点：day 模式为当天（查看过去日期时锚定所查看的日期）；week 模式为 nowMs 所在的那一列
   const anchorDay = isDay
@@ -641,7 +692,7 @@ export function Timeline(props: {
                 size="icon-xs"
                 className="relative touch-hit--x"
                 disabled={scaleIndex <= 0}
-                onClick={() => setScale(SCALES[scaleIndex - 1])}
+                onClick={() => changeScale(SCALES[scaleIndex - 1])}
                 aria-label={t("timeline.zoomOut")}
               >
                 <Minus />
@@ -652,14 +703,13 @@ export function Timeline(props: {
                 size="icon-xs"
                 className="relative touch-hit--x"
                 disabled={scaleIndex >= SCALES.length - 1}
-                onClick={() => setScale(SCALES[scaleIndex + 1])}
+                onClick={() => changeScale(SCALES[scaleIndex + 1])}
                 aria-label={t("timeline.zoomIn")}
               >
                 <Plus />
               </Button>
             </div>
-          ) : null}
-          {onDateChange ? (
+          ) : null}          {onDateChange ? (
             <DateNav view={mode} date={date ?? null} tz={tz} onChange={onDateChange} />
           ) : (
             <span className="truncate text-sm font-semibold tracking-tight">
@@ -787,6 +837,9 @@ export function Timeline(props: {
             entry={selectedEntry}
             categories={categories}
             tags={tags}
+            prevEntry={prevCandidate}
+            nextEntry={nextCandidate}
+            tz={tz}
             onSaved={() => {
               // 保存成功：关闭 popover 并刷新时间线数据（R5）
               setSelectedId(null);
