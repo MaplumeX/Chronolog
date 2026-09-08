@@ -176,6 +176,30 @@ describe("HierarchicalListCard 树形渲染", () => {
       screen.queryByRole("button", { name: "Expand sub-items" }),
     ).toBeNull();
   });
+
+  it("触屏适配：⋯ 菜单按钮带扩展命中区，操作容器常显（hover: none 降级钩子）", () => {
+    renderCard();
+    for (const name of ["Work", "Dev", "Life"]) {
+      const row = rowOf(name);
+      // ⋯ 按钮保留视觉尺寸（size-8），叠加 touch-hit 命中区扩展
+      //（CSS @media (hover: none) ::after -8px → 48px）
+      const menuBtn = within(row).getByRole("button", {
+        name: "More actions",
+      });
+      expect(menuBtn).toHaveClass("touch-hit");
+      expect(menuBtn).toHaveClass("size-8");
+    }
+    // 行操作 reveal 容器带常显钩子（触屏无 hover，opacity-0 降级为常显）
+    const workMenuBtn = within(rowOf("Work")).getByRole("button", {
+      name: "More actions",
+    });
+    expect(workMenuBtn.parentElement).toHaveClass("touch-always-visible");
+    // chevron 折叠按钮同样带命中区扩展
+    const chevron = screen.getByRole("button", {
+      name: "Collapse sub-items",
+    });
+    expect(chevron).toHaveClass("touch-hit");
+  });
 });
 
 describe("HierarchicalListCard 行操作 ⋯ 菜单", () => {

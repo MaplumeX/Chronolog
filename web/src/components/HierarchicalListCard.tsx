@@ -265,7 +265,7 @@ export function HierarchicalListCard<T extends HierarchyItem>(
             type="button"
             variant="ghost"
             size="icon-sm"
-            className="text-muted-foreground"
+            className="relative text-muted-foreground touch-hit"
             aria-label={t(`${ns}.moreActions`)}
             ref={(el) => {
               if (el) triggerEls.current.set(item.id, el);
@@ -359,7 +359,7 @@ export function HierarchicalListCard<T extends HierarchyItem>(
               type="button"
               variant="ghost"
               size="icon-sm"
-              className="text-muted-foreground"
+              className="relative text-muted-foreground touch-hit"
               aria-expanded={!collapsed}
               aria-label={collapsed ? t(`${ns}.expand`) : t(`${ns}.collapse`)}
               onClick={() => toggleCollapse(item.id)}
@@ -401,7 +401,7 @@ export function HierarchicalListCard<T extends HierarchyItem>(
         </span>
         <div
           className={cn(
-            "flex shrink-0 items-center gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover/row:opacity-100",
+            "touch-always-visible flex shrink-0 items-center gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover/row:opacity-100",
           )}
         >
           {popoverTarget?.item.id === item.id &&

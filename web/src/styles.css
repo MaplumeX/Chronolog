@@ -425,3 +425,39 @@
     left: 44px;
   }
 }
+
+/* 触屏适配（hover: none，含手机与触屏平板；桌面鼠标不受影响）
+   —— 命中区 ≥40px：保持视觉尺寸不变，用伪元素扩展 hit area；
+   行内 hover-reveal 操作（分类/标签行 ⋯ 菜单）常显，触屏无 hover 不可发现。
+   宽度断点不用：能力断点才能覆盖「窄窗口 + 鼠标」与「宽屏触屏」两端。 */
+@media (hover: none) {
+  /* 行操作 reveal 容器（HierarchicalListCard）：opacity-0 → 常显
+     （本块 unlayered，天然优先于 Tailwind utilities layer） */
+  .touch-always-visible {
+    opacity: 1;
+  }
+
+  /* 扩展小图标按钮命中区（伪元素不参与布局，视觉尺寸不变）：
+     size-6（24px）→ 40px；size-8（32px）→ 48px，均 ≥40px。
+     向外全周扩展，相邻控件间的间距需 ≥16px 才不重叠。 */
+  .touch-hit::after {
+    content: "";
+    position: absolute;
+    inset: -8px;
+  }
+
+  /* 紧邻式分体按钮组（如 DateNav ‹ 日期 ›）：左右只能向组外侧扩展
+     （上/下/外侧各 8px，贴邻侧 0），避免伪元素重叠互相覆盖命中。 */
+  .touch-hit--x::after {
+    content: "";
+    position: absolute;
+    top: -8px;
+    bottom: -8px;
+  }
+  .touch-hit--x:first-child::after {
+    left: -8px;
+  }
+  .touch-hit--x:last-child::after {
+    right: -8px;
+  }
+}
