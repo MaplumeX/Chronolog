@@ -35,6 +35,8 @@ One exception: theme preference is persisted in `localStorage["chronolog-theme"]
 
 Second exception: the timer page's viewed date is persisted in `localStorage["chronolog-date-view"]` (`"YYYY-MM-DD"` or removed = today). Same try/catch rule; invalid/garbage values fall back to null (today).
 
+Two more UI-preference keys follow the same pattern (task 09-08-axis-view): `localStorage["chronolog-day-subview"]` (`"block" | "entries"`, removed/invalid = `block` — day-mode subview, owned by `Timeline` local state, not `useTimerController`) and `localStorage["chronolog-entry-view-sort"]` (`"asc" | "desc"`, invalid = `asc` — entries-subview sort order, EntryListView-internal).
+
 ## Continuous timing (task 09-08-continuous-timing)
 
 When the user's `continuousTiming` setting is on, `api.stop()` returns the **new running** entry (server stops the old one and starts a new uncategorized one in one transaction — see backend http-routes.md). `useTimerController.onToggle` branches on `entry.stoppedAt === null`: null → segment switched, call `props.onCurrent(newEntry)` and set `categoryPickerAutoOpen` so the CategoryPicker (controlled via its optional `open`/`onOpenChange` props) auto-opens to prompt for a category; non-null → fully stopped, `props.onCurrent(null)`. `categoryPickerAutoOpen` resets when the user picks a category / closes the dropdown, and the `running?.id` effect clears it when running disappears (e.g. the new entry was stopped from another device) — a stale `true` would force-open the start-form's picker. Do not infer the mode client-side from `user.continuousTiming` in the stop path — the server response is the source of truth.

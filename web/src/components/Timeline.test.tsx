@@ -1,4 +1,5 @@
 import { act, cleanup, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Category, Tag, TodayEntries, WeekEntries } from "../api";
 import { useIsMobile } from "../hooks/use-mobile";
@@ -223,7 +224,6 @@ describe("Timeline week 视图", () => {
     stubPointerCapture();
     useIsMobileMock.mockReturnValue(false);
   });
-
   it("渲染 7 列与共享刻度尺，移动端拖拽不创建草稿", async () => {
     stubTrackRect();
     useIsMobileMock.mockReturnValue(true);
@@ -237,5 +237,55 @@ describe("Timeline week 视图", () => {
     await fireTrackPointer("pointermove", (11 / 24) * 100);
     await fireTrackPointer("pointerup", (11 / 24) * 100);
     expect(screen.queryByText("New entry")).toBeNull();
+  });
+});
+
+describe("Timeline day 子视图（块/条目切换）", () => {
+  beforeEach(() => {
+    stubMatchMedia();
+    stubPointerCapture();
+    useIsMobileMock.mockReturnValue(false);
+  });
+
+  it("day 模式：点击「条目」按钮切换到条目视图，再切回块视图", async () => {
+    // 默认 block：渲染 .timeline-track（today 带一条条目）
+    renderTimeline({ today: makeToday([makeEntry({})]) });
+    expect(document.querySelector(".timeline-track")).not.toBeNull();
+    expect(document.querySelector(".entry-view-list")).toBeNull();
+
+    // 点击「条目」子视图按钮（aria-label = timeline.viewEntries 英文文案）
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Entries" }));
+    // EntryListView 替代 DayColumn：块视图轨道消失，出现 .entry-view-* DOM + 结账线
+    expect(document.querySelector(".timeline-track")).toBeNull();
+    expect(document.querySelector(".entry-view-list")).not.toBeNull();
+    expect(document.querySelector(".entry-view-card")).not.toBeNull();
+    expect(document.querySelector(".entry-view-footer")).not.toBeNull();
+    // 缩放按钮（±）仅 block 子视图显示
+    expect(screen.queryByRole("button", { name: "Zoom in" })).toBeNull();
+    // 切换记忆落到 localStorage
+    expect(window.localStorage.getItem("chronolog-day-subview")).toBe("entries");
+
+    // 切回块视图：.timeline-track 恢复，缩放按钮回来
+    await user.click(screen.getByRole("button", { name: "Blocks" }));
+    expect(document.querySelector(".timeline-track")).not.toBeNull();
+    expect(document.querySelector(".entry-view-list")).toBeNull();
+    expect(screen.getByRole("button", { name: "Zoom in" })).toBeInTheDocument();
+    expect(window.localStorage.getItem("chronolog-day-subview")).toBe("block");
+  });
+
+  it("week 模式：无子视图切换按钮（无 Entries/Blocks）", () => {
+    renderTimeline({ mode: "week" });
+    expect(screen.queryByRole("button", { name: "Entries" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Blocks" })).toBeNull();
+    // week 模式仍然渲染 7 列块视图
+    expect(document.querySelectorAll(".timeline-track").length).toBe(7);
+  });
+
+  it("子视图记忆：localStorage chronolog-day-subview=entries 时挂载直接渲染条目视图", () => {
+    window.localStorage.setItem("chronolog-day-subview", "entries");
+    renderTimeline();
+    expect(document.querySelector(".entry-view-list")).not.toBeNull();
+    expect(document.querySelector(".timeline-track")).toBeNull();
   });
 });
