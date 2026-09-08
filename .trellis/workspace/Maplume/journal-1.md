@@ -1042,3 +1042,24 @@ Switched timezone default to detect-then-persist (task 09-06-timezone-autodetect
 ### Status
 
 [OK] **Completed**
+
+
+## Session 48: 相邻时间条目上下合并功能
+
+**Date**: 2026-09-08
+**Task**: 相邻时间条目上下合并功能
+**Branch**: `emdash/fiery-candies-train-x65eg`
+
+### Summary
+
+实现条目与紧邻上一条/下一条合并：后端 POST /api/entries/:id/merge（事务内服务端权威重判相邻性/所有权/停止状态，区间取 min/max 覆盖空隙，属性整条二选一保留）；前端 EntryEditor 合并按钮 + 新 MergeDialog 双卡预览二选一，Timeline 用视图条目+boundary 提供相邻候选。server 143 测试、web 154 测试全绿，spec 已同步（http-routes/api-client/component-guidelines）。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c909093` | (see git log) |
+
+### Status
+
+[OK] **Completed**
