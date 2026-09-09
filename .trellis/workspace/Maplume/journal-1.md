@@ -1166,3 +1166,24 @@ Restyled the day timeline entries (axis) subview per user decision: dropped the 
 ### Status
 
 [OK] **Completed**
+
+
+## Session 56: 统计页四视图重构（柳比歇夫完整记录前提）
+
+**Date**: 2026-09-09
+**Task**: 统计页四视图重构（柳比歇夫完整记录前提）
+**Branch**: `feat/redesign-stats-view`
+
+### Summary
+
+将统计页从「一套图表换查询窗口」重构为四种结构导向视图：日（24h 环形图+小时堆叠柱+覆盖度）、周（归一化堆叠柱+逐分类环比）、月（分类可选热力图+记录纪律 KPI）、自定义（区间+堆叠趋势+分布）。核心产品前提：完整记录 24h，总量类指标全部废除，未记录灰桶贯穿四视图。后端仅 statsRange 加 entries 字段。stats-utils DST 安全纯函数 44 单测；前端 234 测试、后端 150 测试全绿。spec 更新：component-guidelines StatsPage 节重写、api-client RangeStats、backend time-and-timezone statsRange 契约。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9f87062` | (see git log) |
+
+### Status
+
+[OK] **Completed**
