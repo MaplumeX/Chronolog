@@ -668,3 +668,170 @@ describe("timer + continuous timing (task 09-08)", () => {
     assert.equal(updated.categoryId, cats[1].id);
   });
 });
+
+describe("timer timestamps align to whole seconds (task 09-09)", () => {
+  let t: TestApp;
+  afterEach(async () => {
+    await t?.close();
+  });
+
+  async function firstCategory(app: TestApp["app"], sid: string) {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/categories",
+      headers: cookieHeader(sid),
+    });
+    return json(res).categories as { id: string; name: string }[];
+  }
+
+  it("start truncates startedAt to the second; auto-stopped old entry too (AC1)", async () => {
+    let now = new Date("2026-08-25T02:00:10.500Z");
+    t = await createTestApp({ now: () => now });
+    const { sid } = await registerUser(t.app, "ts_start");
+    const cats = await firstCategory(t.app, sid);
+
+    const first = await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: cats[0].id },
+    });
+    assert.equal(first.statusCode, 200);
+    const firstEntry = json(first).entry as { id: string; startedAt: string };
+    assert.equal(firstEntry.startedAt, "2026-08-25T02:00:10.000Z");
+
+    // 旧段在运行中时再次 start：旧段被自动停止，stoppedAt 同样为整秒
+    now = new Date("2026-08-25T02:00:30.500Z");
+    const second = await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: cats[1].id },
+    });
+    assert.equal(second.statusCode, 200);
+    const secondEntry = json(second).entry as { id: string; startedAt: string };
+    assert.equal(secondEntry.startedAt, "2026-08-25T02:00:30.000Z");
+
+    const today = await t.app.inject({
+      method: "GET",
+      url: "/api/entries/today?tz=UTC",
+      headers: cookieHeader(sid),
+    });
+    const entries = json(today).entries as { id: string; stoppedAt: string | null }[];
+    const old = entries.find((e) => e.id === firstEntry.id);
+    assert.equal(old?.stoppedAt, "2026-08-25T02:00:30.000Z");
+  });
+
+  it("stop truncates stoppedAt to the second; continuous mode keeps the no-gap invariant (AC2)", async () => {
+    let now = new Date("2026-08-25T02:00:10.500Z");
+    t = await createTestApp({ now: () => now });
+    const { sid } = await registerUser(t.app, "ts_stop");
+    const cats = await firstCategory(t.app, sid);
+
+    await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: cats[0].id },
+    });
+
+    // 默认模式：stop → stoppedAt 整秒
+    now = new Date("2026-08-25T02:00:50.250Z");
+    const stop = await t.app.inject({
+      method: "POST",
+      url: "/api/timer/stop",
+      headers: cookieHeader(sid),
+    });
+    assert.equal(stop.statusCode, 200);
+    const stopped = json(stop).entry as { id: string; stoppedAt: string | null };
+    assert.equal(stopped.stoppedAt, "2026-08-25T02:00:50.000Z");
+
+    // 开启无间隙模式：stop → 新段 startedAt = 旧段 stoppedAt，均为整秒
+    const profile = await t.app.inject({
+      method: "PATCH",
+      url: "/api/profile",
+      headers: cookieHeader(sid),
+      payload: { continuousTiming: true },
+    });
+    assert.equal(profile.statusCode, 200);
+
+    now = new Date("2026-08-25T02:01:20.750Z");
+    await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: cats[0].id },
+    });
+    const stop2 = await t.app.inject({
+      method: "POST",
+      url: "/api/timer/stop",
+      headers: cookieHeader(sid),
+    });
+    assert.equal(stop2.statusCode, 200);
+    const newEntry = json(stop2).entry as { startedAt: string; stoppedAt: string | null };
+    assert.equal(newEntry.startedAt, "2026-08-25T02:01:20.000Z");
+    assert.equal(newEntry.stoppedAt, null);
+
+    const today = await t.app.inject({
+      method: "GET",
+      url: "/api/entries/today?tz=UTC",
+      headers: cookieHeader(sid),
+    });
+    const entries = json(today).entries as { stoppedAt: string | null }[];
+    // 旧段 stoppedAt === 新段 startedAt（无间隙不变量），且均为 .000Z
+    const oldSeg = entries.find((e) => e.stoppedAt === "2026-08-25T02:01:20.000Z");
+    assert.ok(oldSeg);
+    assert.equal(entries.filter((e) => e.stoppedAt === null).length, 1);
+  });
+
+  it("entry created at a timer boundary is 201, not 409 OVERLAP (AC3, ghost placeholder regression)", async () => {
+    let now = new Date("2026-08-25T02:00:10.500Z");
+    t = await createTestApp({ now: () => now });
+    const { sid } = await registerUser(t.app, "ts_ghost");
+    const cats = await firstCategory(t.app, sid);
+
+    // 用计时器产生相邻整秒条目：start → stop → start → stop
+    await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: cats[0].id },
+    });
+    now = new Date("2026-08-25T02:00:30.500Z");
+    await t.app.inject({
+      method: "POST",
+      url: "/api/timer/stop",
+      headers: cookieHeader(sid),
+    });
+    now = new Date("2026-08-25T02:00:30.500Z");
+    await t.app.inject({
+      method: "POST",
+      url: "/api/timer/start",
+      headers: cookieHeader(sid),
+      payload: { categoryId: cats[1].id },
+    });
+    now = new Date("2026-08-25T02:00:45.500Z");
+    await t.app.inject({
+      method: "POST",
+      url: "/api/timer/stop",
+      headers: cookieHeader(sid),
+    });
+
+    // 幽灵占位场景：创建一条「起点 = 前条目 stoppedAt」的条目（编辑器读出即秒精度）
+    const create = await t.app.inject({
+      method: "POST",
+      url: "/api/entries",
+      headers: cookieHeader(sid),
+      payload: {
+        description: "ghost slot",
+        categoryId: cats[0].id,
+        tagIds: [],
+        startedAt: "2026-08-25T02:00:45.000Z",
+        stoppedAt: "2026-08-25T02:00:50.000Z",
+      },
+    });
+    assert.equal(create.statusCode, 201);
+    const created = json(create).entry as { startedAt: string };
+    assert.equal(created.startedAt, "2026-08-25T02:00:45.000Z");
+  });
+});
