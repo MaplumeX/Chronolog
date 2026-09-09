@@ -1145,3 +1145,24 @@ Replace the 31-based polynomial category hash (degenerate alternating sum mod 8,
 ### Status
 
 [OK] **Completed**
+
+
+## Session 55: Entries axis view tinted cards and width cap
+
+**Date**: 2026-09-09
+**Task**: Entries axis view tinted cards and width cap
+**Branch**: `feat/axis-view-entry-styling-width`
+
+### Summary
+
+Restyled the day timeline entries (axis) subview per user decision: dropped the 3px left category-color bar and card border, the 10% category-color tint is now the card container itself (hover 18%, radius --radius-md); running entries breathe via background tint 10%-22% keyframes instead of the ::before bar overlay; list body capped at 520px centered on >=768px. Explored card-form options via an HTML mockup (user rejected all left vertical bar designs, picked option H). Also npm-installed the web worktree (vitest+typecheck green, 182 tests). Spec component-guidelines EntryListView paragraph updated.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `250fada` | (see git log) |
+
+### Status
+
+[OK] **Completed**
