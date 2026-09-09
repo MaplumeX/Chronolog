@@ -7,6 +7,13 @@ import { getEntry, getRunningEntry } from "../entries.js";
 import { AppError, isUniqueViolation, parseBody } from "../errors.js";
 import { categories, entryTags, tags, timeEntries, users } from "../schema.js";
 
+/** 计时器写入的时间戳统一 floor 到整秒（毫秒归零）。
+ *  条目时间轴按 `.000Z` 秒精度自洽（gap 边界、编辑器、overlap 字符串比较），
+ *  不截断时毫秒只进不出，会在相邻条目边界上产生 <1s 的幽灵重叠。 */
+function floorToSecondIso(now: Date): string {
+  return new Date(Math.floor(now.getTime() / 1000) * 1000).toISOString();
+}
+
 const startBody = z.object({
   categoryId: z.string().min(1, "请选择分类"),
   description: z.string().max(200, "说明过长").optional(),
@@ -155,7 +162,7 @@ export function registerTimerRoutes(app: FastifyInstance, deps: Deps) {
     const body = parseBody(startBody, req.body);
     const description = (body.description ?? "").trim();
     const tagIds = [...new Set(body.tagIds ?? [])];
-    const nowIso = deps.now().toISOString();
+    const nowIso = floorToSecondIso(deps.now());
 
     let createdId: string;
     try {
@@ -179,7 +186,7 @@ export function registerTimerRoutes(app: FastifyInstance, deps: Deps) {
 
   app.post("/api/timer/stop", async (req) => {
     const user = requireUser(req, deps);
-    const nowIso = deps.now().toISOString();
+    const nowIso = floorToSecondIso(deps.now());
     // 停止旧段 + （开启无间隙模式时）创建新段在同一事务：前段 stoppedAt = 新段 startedAt，
     // 同一 nowIso 保证无间隙不变量；响应 entry = 新段（运行中）或刚停止的段，
     // 前端靠 entry.stoppedAt === null 区分「换段」与「完全停止」。

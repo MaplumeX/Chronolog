@@ -8,6 +8,8 @@ Store and return UTC instants as ISO-8601 strings with `Z` (`deps.now().toISOStr
 
 Clients never send `startedAt`. The server stamps start (and stop) from `deps.now()`. Tests inject `now` through `buildApp` / `createTestApp`.
 
+Timer-stamped instants (`/api/timer/start`, `/api/timer/stop`) are **floored to whole seconds** (`floorToSecondIso` in `routes/timer.ts`, task 09-09-timer-timestamp-second-alignment): `Math.floor(ms / 1000) * 1000` before `toISOString()`. Rationale: gap-slot creation reuses a neighbor's `stoppedAt` as the new entry's `startedAt`, and the frontend editor truncates to seconds on read (`toLocalInput` keeps no milliseconds) — a millisecond-carrying stop time would make the re-saved boundary land *before* the neighbor's stop and 409 `OVERLAP` on a <1s overlap. Whole-second stamping keeps write, gap math, editor round-trip, and overlap judgment all on the same second grid. Other `deps.now().toISOString()` call sites (createdAt, session expiry) keep full millisecond precision — they never enter the entry timeline.
+
 ## `tz` query
 
 `GET /api/entries/today` and `GET /api/stats/today` require `?tz=`. `requireTz` in `server/src/time.ts` rejects missing, empty, or non-IANA values with 400 `VALIDATION` `"时区无效"`.
