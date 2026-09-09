@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "shadcn 原语复用、light card 风格、i18n/文案规则"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "测试栈（Vitest+jsdom+userEvent、i18n pin en）、typecheck/test 命令、UI 手动检查清单"}
+{"file": ".trellis/spec/frontend/state-management.md", "reason": "受控 props 与状态所有权约定（EntryEditor 持有 startedAt/stoppedAt）"}
+{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "新组件文件位置（components/）与命名约定"}

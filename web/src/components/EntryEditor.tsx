@@ -3,10 +3,9 @@ import { useTranslation } from "react-i18next";
 import { ArrowDownToLine, ArrowUpToLine } from "lucide-react";
 import { ApiError, api, type Category, type Tag, type TimeEntry } from "../api";
 import { CategoryPicker } from "./CategoryPicker";
-import { DateTimePicker } from "./DateTimePicker";
+import { EntryTimeRangeEditor } from "./EntryTimeRangeEditor";
 import { MergeDialog } from "./MergeDialog";
 import { TagPicker } from "./TagPicker";
-import { formatDuration } from "../format";
 import { filterActive } from "../hierarchy";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,9 +56,6 @@ export function EntryEditor(props: {
   const isDraft = props.draft != null;
   const startMs = Date.parse(startedAt);
   const stopMs = Date.parse(stoppedAt);
-  const duration = Number.isNaN(startMs) || Number.isNaN(stopMs)
-    ? 0
-    : Math.max(0, Math.floor((stopMs - startMs) / 1000));
   const selectedCategory = filterActive(props.categories).find(
     (c) => c.id === categoryId,
   );
@@ -78,6 +74,11 @@ export function EntryEditor(props: {
   async function onSave() {
     if (Number.isNaN(startMs) || Number.isNaN(stopMs)) {
       setError(t("entry.invalidTime"));
+      return;
+    }
+    // 硬校验：end ≤ start 拒绝保存（R9）；编辑期间不联动、不自动修改另一端
+    if (stopMs <= startMs) {
+      setError(t("entry.invalidRange"));
       return;
     }
     setSaving(true);
@@ -177,26 +178,13 @@ export function EntryEditor(props: {
         />
       </div>
       <div className="space-y-1.5">
-        <Label htmlFor="entry-start">{t("entry.startTime")}</Label>
-        <DateTimePicker
-          id="entry-start"
-          ariaLabel={t("entry.startTime")}
-          value={startedAt}
-          onChange={setStartedAt}
+        <Label>{t("entry.timeRange.label")}</Label>
+        <EntryTimeRangeEditor
+          startedAt={startedAt}
+          stoppedAt={stoppedAt}
+          onStartChange={setStartedAt}
+          onStopChange={setStoppedAt}
         />
-      </div>
-      <div className="space-y-1.5">
-        <Label htmlFor="entry-end">{t("entry.endTime")}</Label>
-        <DateTimePicker
-          id="entry-end"
-          ariaLabel={t("entry.endTime")}
-          value={stoppedAt}
-          onChange={setStoppedAt}
-        />
-      </div>
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-muted-foreground">{t("entry.duration")}</span>
-        <span className="font-mono tabular-nums">{formatDuration(duration)}</span>
       </div>
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
       {!isDraft ? (
