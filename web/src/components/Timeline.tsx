@@ -18,11 +18,35 @@ import { EntryEditor } from "./EntryEditor";
 import { Button } from "./ui/button";
 import { Popover, PopoverAnchor, PopoverContent } from "./ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, RectangleVertical, Rows3 } from "lucide-react";
+import { computeGaps, type Gap } from "../timeline-gaps";
+import { EntryListView } from "./EntryListView";
 
 const SCALES = [60, 30, 15, 5] as const;
 type Scale = (typeof SCALES)[number];
 const PX_PER_TICK = 40;
+
+/** day 模式子视图：块（比例尺）/ 条目（轴视图，非比例流水列表） */
+type Subview = "block" | "entries";
+const SUBVIEW_KEY = "chronolog-day-subview";
+
+/** localStorage 读取 day 子视图偏好，隐私模式下静默降级；垃圾值回退 block。 */
+function loadSubview(): Subview {
+  try {
+    const v = window.localStorage.getItem(SUBVIEW_KEY);
+    return v === "entries" ? "entries" : "block";
+  } catch {
+    return "block";
+  }
+}
+
+function saveSubview(subview: Subview): void {
+  try {
+    window.localStorage.setItem(SUBVIEW_KEY, subview);
+  } catch {
+    // ignore
+  }
+}
 
 const SCALE_KEY = "chronolog-scale";
 
@@ -64,74 +88,8 @@ const SNAP_MINUTES: Record<Scale, number> = { 60: 15, 30: 10, 15: 5, 5: 1 };
 /** 拖拽创建预览状态：track 像素坐标内的起止（snap 后，自动排序） */
 type DragPreview = { startMs: number; endMs: number };
 
-/** 空档：全局绝对时刻（可跨天/跨多天）；点击后以其起止创建条目 */
-export type Gap = { startMs: number; endMs: number };
-
 /** gap 可见段最小像素高度：低于则不渲染插槽 */
 const MIN_SLOT_PX = 10;
-
-/**
- * 计算视图窗口内全部条目（含 boundary 外邻）之间的空档（design §4）：
- * 把窗口内条目（运行中按 nowMs 为右端）与 prevEntry/nextEntry 合并为覆盖区间序列，
- * gap = 相邻区间之间的空隙，输出全局绝对时刻（可跨天/跨多天）。各列渲染时与自身窗口求交：
- * - 列内相邻条目、跨午夜条目前后、空列（多天空档中间投影，需双侧 boundary 都存在）自然正确；
- * - prevEntry 缺失则首条前无 gap，nextEntry 缺失则末条后无 gap（R1/R3，
- *   同样适用于空列：单侧缺失不渲染，无另一侧边界不算「两个已有条目之间」）。
- */
-function computeGaps(
-  viewWindow: { startMs: number; endMs: number },
-  entries: TimeEntry[],
-  boundary: { prevEntry: TimeEntry | null; nextEntry: TimeEntry | null } | null,
-  nowMs: number,
-): Gap[] {
-  const { startMs: wStart, endMs: wEnd } = viewWindow;
-  if (wEnd <= wStart) return [];
-
-  // 覆盖区间：运行中条目右端 = nowMs（同用户唯一 running，无后继）
-  const rightEdge = (e: TimeEntry) =>
-    e.stoppedAt ? Date.parse(e.stoppedAt) : nowMs;
-  // 去重：周视图同一条目会出现在多个 day bucket（跨午夜）
-  const byId = new Map<string, { start: number; end: number }>();
-  for (const e of entries) {
-    byId.set(e.id, { start: Date.parse(e.startedAt), end: rightEdge(e) });
-  }
-  const intervals = [...byId.values()].sort((a, b) => a.start - b.start);
-
-  const gaps: Gap[] = [];
-  const push = (startMs: number, endMs: number) => {
-    if (endMs - startMs <= 0) return;
-    // 只保留与视图窗口有交集的 gap（外邻之前的空隙不关心）
-    if (endMs <= wStart || startMs >= wEnd) return;
-    gaps.push({ startMs, endMs });
-  };
-
-  const prev = boundary?.prevEntry ?? null;
-  const next = boundary?.nextEntry ?? null;
-
-  // 前邻是运行中条目（右端 = nowMs 仍在推进，覆盖窗口起点）：窗口起点侧无空档
-  if (prev && !prev.stoppedAt) return gaps;
-
-  if (intervals.length === 0) {
-    // 空窗口：仅两侧**都**存在边界条目时渲染（= 跨多天空档的中间投影）。
-    // 单侧存在（未来无条目日 / 有史以来最早条目之前的日期）或双侧缺失
-    // （新用户零条目 / boundary 请求失败降级）都不渲染——「两个已有条目」
-    // 之间才算 gap（R1/R3），单侧没有另一侧边界（design §4 规则 4、§6）
-    if (!prev || !next) return gaps;
-    push(rightEdge(prev), Date.parse(next.startedAt));
-    return gaps;
-  }
-
-  // 顶部：prevEntry 右端 → 首条（prevEntry 跨午夜伸入窗口时它也在 entries 里，
-  // 排序后首条即它，gap 非正被跳过，公式自动正确）
-  if (prev) push(rightEdge(prev), intervals[0].start);
-  // 相邻区间之间（含跨列、跨午夜条目两侧）
-  for (let i = 0; i + 1 < intervals.length; i++) {
-    push(intervals[i].end, intervals[i + 1].start);
-  }
-  // 底部：末条右端 → nextEntry.startedAt
-  if (next) push(intervals[intervals.length - 1].end, Date.parse(next.startedAt));
-  return gaps;
-}
 
 /** 单日 24h 纵向时间线：ruler + track + blocks + now-line。day 与 week 模式共用。 */
 function DayColumn(props: {
@@ -522,6 +480,9 @@ export function Timeline(props: {
     setScale(next);
     saveScale(next);
   };
+  // day 子视图（块/条目）：Timeline 局部状态，与 scale 同级同生命周期；
+  // 切换仅影响渲染，scale 状态保留（切回块视图时缩放档位恢复）
+  const [subview, setSubview] = useState<Subview>(loadSubview);
   const scaleIndex = SCALES.indexOf(scale);
   const tickCount = 1440 / scale;
   // gap 草稿：点击 slot 时的完整空档（全局时刻，可跨天）+ 被点 slot 可见段的固化快照
@@ -681,31 +642,74 @@ export function Timeline(props: {
               <TabsTrigger value="week">{t("timeline.viewWeek")}</TabsTrigger>
             </TabsList>
           </Tabs>
-          <div className="flex items-center gap-1">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon-xs"
-              className="relative touch-hit--x"
-              disabled={scaleIndex <= 0}
-              onClick={() => changeScale(SCALES[scaleIndex - 1])}
-              aria-label={t("timeline.zoomOut")}
-            >
-              <Minus />
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon-xs"
-              className="relative touch-hit--x"
-              disabled={scaleIndex >= SCALES.length - 1}
-              onClick={() => changeScale(SCALES[scaleIndex + 1])}
-              aria-label={t("timeline.zoomIn")}
-            >
-              <Plus />
-            </Button>
-          </div>
-          {onDateChange ? (
+          {isDay ? (
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant={subview === "entries" ? "default" : "outline"}
+                size="icon-xs"
+                className="relative cursor-pointer touch-hit--x"
+                onClick={() => {
+                  if (subview !== "entries") {
+                    // 切换子视图时关闭打开的编辑/创建 popover（anchor 随视图切换失效）
+                    setSelectedId(null);
+                    clearDraft();
+                  }
+                  setSubview("entries");
+                  saveSubview("entries");
+                }}
+                aria-label={t("timeline.viewEntries")}
+                title={t("timeline.viewEntries")}
+              >
+                <Rows3 />
+              </Button>
+              <Button
+                type="button"
+                variant={subview === "block" ? "default" : "outline"}
+                size="icon-xs"
+                className="relative cursor-pointer touch-hit--x"
+                onClick={() => {
+                  if (subview !== "block") {
+                    setSelectedId(null);
+                    clearDraft();
+                  }
+                  setSubview("block");
+                  saveSubview("block");
+                }}
+                aria-label={t("timeline.viewBlock")}
+                title={t("timeline.viewBlock")}
+              >
+                <RectangleVertical />
+              </Button>
+            </div>
+          ) : null}
+          {/* 缩放按钮：仅条目子视图隐藏（无比例概念）；week 模式与 day 块视图均显示 */}
+          {!(isDay && subview === "entries") ? (
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-xs"
+                className="relative touch-hit--x"
+                disabled={scaleIndex <= 0}
+                onClick={() => changeScale(SCALES[scaleIndex - 1])}
+                aria-label={t("timeline.zoomOut")}
+              >
+                <Minus />
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon-xs"
+                className="relative touch-hit--x"
+                disabled={scaleIndex >= SCALES.length - 1}
+                onClick={() => changeScale(SCALES[scaleIndex + 1])}
+                aria-label={t("timeline.zoomIn")}
+              >
+                <Plus />
+              </Button>
+            </div>
+          ) : null}          {onDateChange ? (
             <DateNav view={mode} date={date ?? null} tz={tz} onChange={onDateChange} />
           ) : (
             <span className="truncate text-sm font-semibold tracking-tight">
@@ -721,24 +725,46 @@ export function Timeline(props: {
       </div>
       <div className="min-h-0 flex-1 overflow-auto overscroll-x-contain" ref={scrollRef}>
         {isDay ? (
-          <DayColumn
-            day={today}
-            nowMs={nowMs}
-            tz={tz}
-            isToday={date == null || (today ? isDayAt(today, nowMs) : true)}
-            scale={scale}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
-            onDragCreate={today && !isMobile ? handleDragCreate(today.dayStart) : undefined}
-            draftAnchor={draftAnchor?.dayStart === today?.dayStart ? draftAnchor : null}
-            gaps={todayGaps}
-            onGapClick={today ? handleGapClick(today.dayStart) : undefined}
-            gapAnchor={
-              gapDraft && gapDraft.anchor.dayStart === today?.dayStart ? gapDraft.anchor : null
-            }
-            categories={categories}
-            tags={tags}
-          />
+          subview === "entries" ? (
+            <EntryListView
+              day={today}
+              nowMs={nowMs}
+              tz={tz}
+              categories={categories}
+              tags={tags}
+              gaps={todayGaps}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              onGapClick={
+                today
+                  ? (gap) =>
+                      handleGapClick(today.dayStart)(gap, {
+                        startMs: Math.max(gap.startMs, Date.parse(today.dayStart)),
+                        endMs: Math.min(gap.endMs, Date.parse(today.dayEnd)),
+                      })
+                  : undefined
+              }
+            />
+          ) : (
+            <DayColumn
+              day={today}
+              nowMs={nowMs}
+              tz={tz}
+              isToday={date == null || (today ? isDayAt(today, nowMs) : true)}
+              scale={scale}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+              onDragCreate={today && !isMobile ? handleDragCreate(today.dayStart) : undefined}
+              draftAnchor={draftAnchor?.dayStart === today?.dayStart ? draftAnchor : null}
+              gaps={todayGaps}
+              onGapClick={today ? handleGapClick(today.dayStart) : undefined}
+              gapAnchor={
+                gapDraft && gapDraft.anchor.dayStart === today?.dayStart ? gapDraft.anchor : null
+              }
+              categories={categories}
+              tags={tags}
+            />
+          )
         ) : week ? (
           <div className="flex w-max min-w-full flex-col">
             <div className="flex w-full">

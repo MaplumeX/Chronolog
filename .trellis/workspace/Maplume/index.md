@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 50
+- **Total Sessions**: 52
 - **Last Active**: 2026-09-08
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1096 | Active |
+| `journal-1.md` | ~1100 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,8 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 52 | 2026-09-08 | Remove entries-subview sort toggle | `78aa57a` | `feat/entries-axis-subview` |
+| 51 | 2026-09-08 | Day timeline entries axis subview | `0ba3e2d` | `feat/entries-axis-subview` |
 | 50 | 2026-09-08 | 相邻时间条目上下合并功能 | `c909093` | `feat/adjacent-entry-merge` |
 | 49 | 2026-09-08 | Persist timeline view mode and scale to localStorage | `d6a7b63` | `emdash/tender-banks-attend-t4osu` |
 | 48 | 2026-09-08 | Fix settings tabs scrollbar | `a30c908` | `emdash/hungry-kids-unite-v8p9i` |

@@ -1044,6 +1044,15 @@ Switched timezone default to detect-then-persist (task 09-06-timezone-autodetect
 [OK] **Completed**
 
 
+## Session 48: Day timeline entries axis subview
+
+**Date**: 2026-09-08
+**Task**: Day timeline entries axis subview
+**Branch**: `emdash/floppy-glasses-hunt-qvw14`
+
+### Summary
+
+Added a block/entries subview toggle to day mode (persisted chronolog-day-subview). EntryListView renders a non-proportional flow list: two-line time column (start/end, running '···'), variable-height category-tinted cards with running breathe animation, dashed ghost cards for gap backfill, asc/desc sort with persistence, and a footer tally. computeGaps extracted to timeline-gaps.ts shared by both subviews; week mode unchanged. Fixed check-found regressions: week zoom buttons preserved, hover lift moved to CSS, single-line running indicator, day-switch rescroll, ghost touch target 44px. 161 tests green.
 ## Session 50: 相邻时间条目上下合并功能
 
 **Date**: 2026-09-08
@@ -1067,6 +1076,7 @@ Fixed a constant vertical scrollbar on the settings page tabs: the active TabsTr
 
 | Hash | Message |
 |------|---------|
+| `0ba3e2d` | (see git log) |
 | `c909093` | (see git log) |
 | `a30c908` | (see git log) |
 
@@ -1075,6 +1085,15 @@ Fixed a constant vertical scrollbar on the settings page tabs: the active TabsTr
 [OK] **Completed**
 
 
+## Session 49: Remove entries-subview sort toggle
+
+**Date**: 2026-09-08
+**Task**: Remove entries-subview sort toggle
+**Branch**: `emdash/floppy-glasses-hunt-qvw14`
+
+### Summary
+
+Removed the asc/desc sort toggle from the entries axis subview per user feedback: rows are fixed ascending by start time. Dropped the chronolog-entry-view-sort persistence, timeline.sortAsc/sortDesc i18n keys, updated tests (ascending-order assertion + no-write assertion) and spec docs. 161 tests green.
 ## Session 49: Persist timeline view mode and scale to localStorage
 
 **Date**: 2026-09-08
@@ -1089,6 +1108,7 @@ Timer 页时间线偏好持久化：view（day/week）与 scale（60/30/15/5）�
 
 | Hash | Message |
 |------|---------|
+| `78aa57a` | (see git log) |
 | `d6a7b63` | (see git log) |
 
 ### Status

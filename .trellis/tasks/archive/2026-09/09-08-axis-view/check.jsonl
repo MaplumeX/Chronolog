@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "前端规范入口"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "检查测试覆盖与质量基线"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "检查新组件是否符合纯 UI + props 注入规范"}
+{"file": ".trellis/spec/frontend/design-tokens.md", "reason": "检查样式是否走 token/CSS 变量"}
+{"file": ".trellis/spec/frontend/type-safety.md", "reason": "检查类型扩展无 any/断言滥用"}
