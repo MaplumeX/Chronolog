@@ -1114,3 +1114,24 @@ Timer 页时间线偏好持久化：view（day/week）与 scale（60/30/15/5）�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 53: fix: timer 时间戳整秒化，修复幽灵占位毫秒重叠
+
+**Date**: 2026-09-09
+**Task**: fix: timer 时间戳整秒化，修复幽灵占位毫秒重叠
+**Branch**: `emdash/sweet-mirrors-look-9o4jd`
+
+### Summary
+
+根因：timer start/stop 用真实时钟写入带毫秒的 startedAt/stoppedAt，而 EntryEditor toLocalInput 只保留到秒，gap 幽灵占位草稿保存后边界比邻条目早 <1s，被 checkOverlap 正确判为 409 OVERLAP。修复：server/src/routes/timer.ts 两处 nowIso 用 floorToSecondIso floor 到整秒（同一请求内共享，保持无间隙模式旧 stoppedAt = 新 startedAt 不变量）；补 AC1-AC3 测试；更新 backend spec（time-and-timezone.md、http-routes.md）。前端安全取整与历史毫秒数据迁移按 PRD 明确不做。typecheck + server 146 测试 + web 179 测试全绿。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `c189ffc` | (see git log) |
+
+### Status
+
+[OK] **Completed**
