@@ -1114,3 +1114,24 @@ Timer 页时间线偏好持久化：view（day/week）与 scale（60/30/15/5）�
 ### Status
 
 [OK] **Completed**
+
+
+## Session 53: FNV-1a color hash + NULL color backfill migration
+
+**Date**: 2026-09-09
+**Task**: FNV-1a color hash + NULL color backfill migration
+**Branch**: `emdash/salty-eels-see-vgfru`
+
+### Summary
+
+Replace the 31-based polynomial category hash (degenerate alternating sum mod 8, biased for Chinese names) with FNV-1a 32-bit in web/src/format.ts and a verbatim-matched server copy server/src/color-hash.ts, anchored by shared known-vector tests on both sides. Add idempotent startup migration in db.ts migrate() backfilling color IS NULL rows in categories/tags (new hash, single transaction) and give registered default categories explicit colors. Lift the old 'hash logic must not change' constraint and update design-tokens.md spec; server 147 / web 182 tests green.
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `dbab37e` | (see git log) |
+
+### Status
+
+[OK] **Completed**
