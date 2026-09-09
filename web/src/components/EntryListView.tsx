@@ -178,7 +178,7 @@ function EntryRow(props: {
     ? Math.max(0, Math.floor((nowMs - Date.parse(e.startedAt)) / 1000))
     : e.durationSeconds;
 
-  // 颜色：分类显式色优先，未设定回退名称 hash 色（hash 逻辑不可改动，同 timeline-block）
+  // 颜色：分类显式色优先，未设定回退名称 hash 色（防御性回退，同 timeline-block）
   const categoryColor = categories.find((c) => c.id === e.categoryId)?.color ?? null;
   const color = paletteColor(categoryColor, e.categoryName);
 

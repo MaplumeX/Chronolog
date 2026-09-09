@@ -162,7 +162,7 @@ export function formatEntryTimeRange(
 }
 
 // 分类色板：token 引用（值定义在 web/src/styles.css 的 :root（light）/ .dark（dark）两套 --category-1..8）。
-// 色相绕色环均匀分布；185–225 青色区间留给 primary，避免混淆。分类颜色不落库，始终由名称 hash 分配。
+// 色相绕色环均匀分布；185–225 青色区间留给 primary，避免混淆。
 const CATEGORY_VARS = [
   "var(--category-1)",
   "var(--category-2)",
@@ -174,10 +174,22 @@ const CATEGORY_VARS = [
   "var(--category-8)",
 ];
 
-/** 分类名称 → 色板索引（0–7）。hash 逻辑不可改动：分类颜色不落库，改 hash 会改变既有映射。 */
+// FNV-1a 32-bit：offset basis 0x811c9dc5、prime 0x01000193。旧 31 进制多项式 hash 因
+// 31 ≡ -1 (mod 8) 退化为码点交错和，对中文分布有系统性偏差（task 09-09 换用 FNV-1a）。
+const FNV_OFFSET = 0x811c9dc5;
+const FNV_PRIME = 0x01000193;
+
+/**
+ * 分类名称 → 色板索引（0–7）。颜色已由服务端启动迁移固化落库（task 09-09，NULL 行回填 1–8），
+ * 此 hash 仅作 NULL 防御性回退。与服务端双实现逐字一致：server/src/color-hash.ts
+ * （无共享包机制，两侧测试用同一批已知向量锚定）。
+ */
 export function categoryIndex(name: string): number {
-  let h = 0;
-  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  let h = FNV_OFFSET;
+  for (let i = 0; i < name.length; i++) {
+    h ^= name.charCodeAt(i);
+    h = Math.imul(h, FNV_PRIME) >>> 0;
+  }
   return h % CATEGORY_VARS.length;
 }
 
@@ -196,7 +208,7 @@ const CATEGORY_FOREGROUND_VARS = [
   "var(--category-8-foreground)",
 ];
 
-/** 名称 hash → 前景色 token（色块上文字用，随主题翻转）。hash 逻辑不可改动。 */
+/** 名称 hash → 前景色 token（色块上文字用，随主题翻转）。hash 语义见 categoryIndex（FNV-1a，仅防御性回退）。 */
 export function categoryForegroundColor(name: string): string {
   return CATEGORY_FOREGROUND_VARS[categoryIndex(name)];
 }

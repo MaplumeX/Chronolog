@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   browserTz,
+  categoryIndex,
   clipSeconds,
   elapsedSeconds,
   formatClock,
@@ -207,6 +208,41 @@ describe("clipSeconds", () => {
     expect(
       clipSeconds("2025-11-20T01:00:00.500Z", "2025-11-20T01:00:01.900Z", dayStart, dayEnd, nowMs),
     ).toBe(1);
+  });
+});
+
+describe("categoryIndex (FNV-1a)", () => {
+  // 已知向量锚定：与服务端 server/test/color-hash.test.ts 用同一批名称与期望值，
+  // 锚定双实现一致性（web/src/format.ts ↔ server/src/color-hash.ts）。
+  const KNOWN_VECTORS: [string, number][] = [
+    ["读书", 4],
+    ["工作", 4],
+    ["学习", 3],
+    ["休息", 1],
+    ["事务", 1],
+    ["English", 3],
+    ["a", 4],
+  ];
+
+  it("已知向量锚定", () => {
+    for (const [name, expected] of KNOWN_VECTORS) {
+      expect(categoryIndex(name), name).toBe(expected);
+    }
+  });
+
+  it("确定性：同名两次调用一致", () => {
+    for (const [name] of KNOWN_VECTORS) {
+      expect(categoryIndex(name)).toBe(categoryIndex(name));
+    }
+  });
+
+  it("结果恒在 0–7", () => {
+    for (const [name] of KNOWN_VECTORS) {
+      const idx = categoryIndex(name);
+      expect(idx).toBeGreaterThanOrEqual(0);
+      expect(idx).toBeLessThanOrEqual(7);
+      expect(Number.isInteger(idx)).toBe(true);
+    }
   });
 });
 

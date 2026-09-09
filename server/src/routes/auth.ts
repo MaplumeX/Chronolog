@@ -10,6 +10,7 @@ import {
   setSessionCookie,
   verifyPassword,
 } from "../auth.js";
+import { categoryIndex } from "../color-hash.js";
 import type { Deps } from "../db.js";
 import { AppError, isUniqueViolation, parseBody } from "../errors.js";
 import { DEFAULT_CATEGORIES, categories, sessions, users } from "../schema.js";
@@ -54,6 +55,8 @@ export function registerAuthRoutes(app: FastifyInstance, deps: Deps) {
               id: newId(),
               userId,
               name,
+              // 直接落新 hash 色，不留 NULL（task 09-09）
+              color: categoryIndex(name) + 1,
               createdAt: nowIso,
             })),
           )

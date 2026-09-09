@@ -1116,6 +1116,15 @@ Timer 页时间线偏好持久化：view（day/week）与 scale（60/30/15/5）�
 [OK] **Completed**
 
 
+## Session 54: FNV-1a color hash + NULL color backfill migration
+
+**Date**: 2026-09-09
+**Task**: FNV-1a color hash + NULL color backfill migration
+**Branch**: `feat/color-hash-fnv-migration`
+
+### Summary
+
+Replace the 31-based polynomial category hash (degenerate alternating sum mod 8, biased for Chinese names) with FNV-1a 32-bit in web/src/format.ts and a verbatim-matched server copy server/src/color-hash.ts, anchored by shared known-vector tests on both sides. Add idempotent startup migration in db.ts migrate() backfilling color IS NULL rows in categories/tags (new hash, single transaction) and give registered default categories explicit colors. Lift the old 'hash logic must not change' constraint and update design-tokens.md spec; server 147 / web 182 tests green.
 ## Session 53: fix: timer 时间戳整秒化，修复幽灵占位毫秒重叠
 
 **Date**: 2026-09-09
@@ -1130,6 +1139,7 @@ Timer 页时间线偏好持久化：view（day/week）与 scale（60/30/15/5）�
 
 | Hash | Message |
 |------|---------|
+| `dbab37e` | (see git log) |
 | `c189ffc` | (see git log) |
 
 ### Status
