@@ -1,0 +1,2 @@
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "验收对照：桌面 popover 契约不变、移动端 sheet 层级/safe-area、focus 守卫 300ms grace、EntryListView-in-Popover-Root 约定"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "检查测试覆盖与运行约定"}
