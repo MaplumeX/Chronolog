@@ -1197,3 +1197,24 @@ Restyled the day timeline entries (axis) subview per user decision: dropped the 
 ### Status
 
 [OK] **Completed**
+
+
+## Session 57: 移动端编辑底部弹层范式
+
+**Date**: 2026-09-09
+**Task**: 移动端编辑底部弹层范式
+**Branch**: `fix/mobile-adaptation-entry-editing`
+
+### Summary
+
+移动端编辑体验适配（09-09-mobile-editing-sheet）：新增 ResponsiveEditPopover 纯容器（桌面 Popover 透传 / 移动 Sheet side=bottom 全宽 85dvh 内滚 safe-area drag handle sr-only title）；Timeline 三入口（编辑/拖拽草稿/gap 回填）与 HierarchicalListCard 编辑/添加子项接入，桌面路径等价（side 默认值对齐 Radix native bottom 修复 check 抓出的桌面位置回归 blocker）；EntryEditor 移动端按钮分层式（标题行删除链接 + 合并次操作行 + 取消/保存 50% 主操作行，48px 命中区）；MergeDialog 加 90dvh 限高内滚。发现并固化关键 gotcha：Radix PopoverAnchor 无 Root 会抛错（移动分支用 open=false 空 Root 提供 context）。测试 260→276 全绿，tsc/build 通过，spec 已同步（component-guidelines 移动编辑 sheet 契约 + quality-guidelines 手测清单）。遗留：真机手测 sheet 内 CategoryPicker/TagPicker 嵌套 modal。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `2acb715` | (see git log) |
+
+### Status
+
+[OK] **Completed**

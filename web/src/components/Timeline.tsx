@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { BoundaryEntries, Category, Tag, TimeEntry, TodayEntries, WeekEntries } from "../api";
+import type {
+  BoundaryEntries,
+  Category,
+  Tag,
+  TimeEntry,
+  TodayEntries,
+  WeekEntries,
+} from "../api";
 import {
   clipRangeMs,
   formatClock,
@@ -15,8 +22,9 @@ import {
 import { DateNav } from "./DateNav";
 import { useIsMobile } from "../hooks/use-mobile";
 import { EntryEditor } from "./EntryEditor";
+import { ResponsiveEditPopover } from "./ResponsiveEditPopover";
+import { PopoverAnchor } from "./ui/popover";
 import { Button } from "./ui/button";
-import { Popover, PopoverAnchor, PopoverContent } from "./ui/popover";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 import { Minus, Plus, RectangleVertical, Rows3 } from "lucide-react";
 import { computeGaps, type Gap } from "../timeline-gaps";
@@ -151,7 +159,10 @@ function DayColumn(props: {
   /** pointer 事件坐标 → snap 后的 day 绝对时间 ms，clamp 到当天窗口 */
   const pointerToMs = (e: React.PointerEvent): number => {
     const rect = trackRef.current!.getBoundingClientRect();
-    const ratio = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+    const ratio = Math.max(
+      0,
+      Math.min(1, (e.clientY - rect.top) / rect.height),
+    );
     return snapMs(dayStartMs + ratio * dayMs);
   };
 
@@ -206,11 +217,18 @@ function DayColumn(props: {
   const nowTop = posPercent(nowMs);
 
   return (
-    <div className="timeline-inner" style={{ height: `${innerHeightFor(scale)}px` }}>
+    <div
+      className="timeline-inner"
+      style={{ height: `${innerHeightFor(scale)}px` }}
+    >
       {showRuler ? (
         <div className="timeline-ruler">
           {Array.from({ length: tickCount + 1 }, (_, i) => (
-            <div key={i} className="hour" style={{ top: `${(i / tickCount) * 100}%` }}>
+            <div
+              key={i}
+              className="hour"
+              style={{ top: `${(i / tickCount) * 100}%` }}
+            >
               {tickLabel(i, scale)}
             </div>
           ))}
@@ -230,7 +248,11 @@ function DayColumn(props: {
         }}
       >
         {Array.from({ length: tickCount + 1 }, (_, i) => (
-          <div key={i} className="timeline-grid" style={{ top: `${(i / tickCount) * 100}%` }} />
+          <div
+            key={i}
+            className="timeline-grid"
+            style={{ top: `${(i / tickCount) * 100}%` }}
+          />
         ))}
 
         {dragPreview ? (
@@ -283,11 +305,20 @@ function DayColumn(props: {
               const isRunning = !e.stoppedAt;
               // 块上/tooltip 时长用整条总时长（后端已算，running 随 now 增长），列头合计仍按切片
               const secs = e.durationSeconds;
-              const timeRange = formatEntryTimeRange(e.startedAt, e.stoppedAt, tz, nowMs);
+              const timeRange = formatEntryTimeRange(
+                e.startedAt,
+                e.stoppedAt,
+                tz,
+                nowMs,
+              );
               // 颜色：分类显式色优先，未设定回退名称 hash 色（防御性回退）
-              const categoryColor = categories.find((c) => c.id === e.categoryId)?.color ?? null;
+              const categoryColor =
+                categories.find((c) => c.id === e.categoryId)?.color ?? null;
               const color = paletteColor(categoryColor, e.categoryName);
-              const textColor = paletteForegroundColor(categoryColor, e.categoryName);
+              const textColor = paletteForegroundColor(
+                categoryColor,
+                e.categoryName,
+              );
               const desc = e.description || t("timeline.noDescription");
 
               // tier 阈值按像素校准（60 档下 2.5% ≈ 24px、1% ≈ 10px），细档位下不因高度放大而失真
@@ -298,7 +329,9 @@ function DayColumn(props: {
               else tier = "mini";
 
               const title = `${desc} · ${e.categoryName} · ${timeRange} · ${formatDuration(secs)}${
-                e.tags.length > 0 ? ` · ${e.tags.map((x) => x.name).join(t("timer.tagSeparator"))}` : ""
+                e.tags.length > 0
+                  ? ` · ${e.tags.map((x) => x.name).join(t("timer.tagSeparator"))}`
+                  : ""
               }`;
 
               const blockContent = (
@@ -310,12 +343,18 @@ function DayColumn(props: {
                       {e.tags.length > 0 ? (
                         <div className="block-tags">
                           {e.tags.map((tag) => {
-                            const tagColor = tags.find((x) => x.id === tag.id)?.color ?? null;
+                            const tagColor =
+                              tags.find((x) => x.id === tag.id)?.color ?? null;
                             return (
                               <span key={tag.id} className="block-tag">
                                 <span
                                   className="size-1.5 shrink-0 rounded-full"
-                                  style={{ background: paletteColor(tagColor, tag.name) }}
+                                  style={{
+                                    background: paletteColor(
+                                      tagColor,
+                                      tag.name,
+                                    ),
+                                  }}
                                 />
                                 {tag.name}
                               </span>
@@ -380,7 +419,8 @@ function DayColumn(props: {
               // 可见段：gap 与本列窗口求交；像素高度低于阈值不渲染（R5/AC5）
               const visStart = Math.max(gap.startMs, dayStartMs);
               const visEnd = Math.min(gap.endMs, dayEndMs);
-              const visPx = ((visEnd - visStart) / dayMs) * innerHeightFor(scale);
+              const visPx =
+                ((visEnd - visStart) / dayMs) * innerHeightFor(scale);
               if (visPx < MIN_SLOT_PX) return null;
               const top = posPercent(visStart);
               const heightPct = ((visEnd - visStart) / dayMs) * 100;
@@ -398,7 +438,9 @@ function DayColumn(props: {
                   className="timeline-slot"
                   style={{ top: `${top}%`, height: `${heightPct}%` }}
                   title={title}
-                  onClick={() => onGapClick(gap, { startMs: visStart, endMs: visEnd })}
+                  onClick={() =>
+                    onGapClick(gap, { startMs: visStart, endMs: visEnd })
+                  }
                 />
               );
             })
@@ -420,7 +462,9 @@ function DayColumn(props: {
 
         {isToday ? (
           <div className="now-line" style={{ top: `${nowTop}%` }}>
-            <span className="now-label">{formatClock(new Date(nowMs).toISOString(), tz)}</span>
+            <span className="now-label">
+              {formatClock(new Date(nowMs).toISOString(), tz)}
+            </span>
           </div>
         ) : null}
       </div>
@@ -473,7 +517,11 @@ export function Timeline(props: {
     stoppedAt: string;
   } | null>(null);
   // 拖拽结束后的固化预览块（仅渲染在发起拖拽的那一列），同时作为 draft popover 的 anchor
-  const [draftAnchor, setDraftAnchor] = useState<{ dayStart: string; startMs: number; endMs: number } | null>(null);
+  const [draftAnchor, setDraftAnchor] = useState<{
+    dayStart: string;
+    startMs: number;
+    endMs: number;
+  } | null>(null);
   const [scale, setScale] = useState<Scale>(loadScale);
   /** 切换档位：更新状态并持久化（隐私模式下保存失败静默降级） */
   const changeScale = (next: Scale) => {
@@ -496,10 +544,10 @@ export function Timeline(props: {
 
   // 选中条目：从当前视图数据中查找；编辑后条目移出视图（或刷新后消失）时自动关闭 popover
   const selectedEntry: TimeEntry | null = selectedId
-    ? (isDay
+    ? ((isDay
         ? (today?.entries ?? [])
         : (week?.days.flatMap((d) => d.entries) ?? [])
-      ).find((e) => e.id === selectedId) ?? null
+      ).find((e) => e.id === selectedId) ?? null)
     : null;
 
   // 合并功能的相邻候选：视图内条目 + boundary 外邻合并去重排序后取前驱/后继。
@@ -523,14 +571,17 @@ export function Timeline(props: {
     const idx = sorted.findIndex((e) => e.id === selectedEntry.id);
     return {
       prevCandidate: idx > 0 ? sorted[idx - 1]! : null,
-      nextCandidate: idx >= 0 && idx < sorted.length - 1 ? sorted[idx + 1]! : null,
+      nextCandidate:
+        idx >= 0 && idx < sorted.length - 1 ? sorted[idx + 1]! : null,
     };
   }, [selectedEntry, today, week, boundary, isDay]);
 
   // 滚动锚点：day 模式为当天（查看过去日期时锚定所查看的日期）；week 模式为 nowMs 所在的那一列
   const anchorDay = isDay
     ? today
-    : (week?.days.find((d) => isDayAt(d, nowMs) || d.dayStart === today?.dayStart) ?? null);
+    : (week?.days.find(
+        (d) => isDayAt(d, nowMs) || d.dayStart === today?.dayStart,
+      ) ?? null);
 
   const dayStartMs = anchorDay ? Date.parse(anchorDay.dayStart) : 0;
   const dayEndMs = anchorDay ? Date.parse(anchorDay.dayEnd) : 0;
@@ -542,7 +593,10 @@ export function Timeline(props: {
     const inner = el.scrollHeight;
     // 查看过去/未来日期时锚定所查看日的正午，否则锚定 now（nowMs 落在窗口内）
     const anchorMs = Math.min(Math.max(nowMs, dayStartMs), dayEndMs - 1);
-    const anchorTop = Math.max(0, Math.min(100, ((anchorMs - dayStartMs) / dayMs) * 100));
+    const anchorTop = Math.max(
+      0,
+      Math.min(100, ((anchorMs - dayStartMs) / dayMs) * 100),
+    );
     const target = (anchorTop / 100) * inner - el.clientHeight / 2;
     el.scrollTop = Math.max(0, target);
     // 仅在视图数据首次加载、切换视图、切换日期或切换刻度档位后滚动
@@ -550,8 +604,7 @@ export function Timeline(props: {
   }, [anchorDay != null, mode, anchorDay?.dayStart, scale]);
 
   const handleDragCreate =
-    (dayStart: string) =>
-    (d: { startedAt: string; stoppedAt: string }) => {
+    (dayStart: string) => (d: { startedAt: string; stoppedAt: string }) => {
       const startMs = Date.parse(d.startedAt);
       const endMs = Date.parse(d.stoppedAt);
       setDraft({ dayStart, startedAt: d.startedAt, stoppedAt: d.stoppedAt });
@@ -572,11 +625,19 @@ export function Timeline(props: {
       ? (today?.entries ?? [])
       : (week?.days.flatMap((d) => d.entries) ?? []);
     const viewStart = isDay
-      ? (today ? Date.parse(today.dayStart) : 0)
-      : (week ? Date.parse(week.weekStart) : 0);
+      ? today
+        ? Date.parse(today.dayStart)
+        : 0
+      : week
+        ? Date.parse(week.weekStart)
+        : 0;
     const viewEnd = isDay
-      ? (today ? Date.parse(today.dayEnd) : 0)
-      : (week ? Date.parse(week.weekEnd) : 0);
+      ? today
+        ? Date.parse(today.dayEnd)
+        : 0
+      : week
+        ? Date.parse(week.weekEnd)
+        : 0;
     if (!viewEnd) return [];
     return computeGaps(
       { startMs: viewStart, endMs: viewEnd },
@@ -620,7 +681,7 @@ export function Timeline(props: {
   const total = isDay ? dayTotal : weekTotal;
 
   return (
-    <Popover
+    <ResponsiveEditPopover
       open={selectedEntry != null || draft != null || gapDraft != null}
       onOpenChange={(open) => {
         if (!open) {
@@ -628,246 +689,301 @@ export function Timeline(props: {
           clearDraft();
         }
       }}
-    >
-      <section className="flex min-h-0 flex-1 flex-col">
-      <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b px-2 py-3 md:gap-x-3 md:px-4">
-        <div className="flex min-w-0 flex-wrap items-center gap-2 md:gap-3">
-          <Tabs
-            value={mode}
-            onValueChange={(v) => onModeChange(v === "week" ? "week" : "day")}
-            aria-label={t("timeline.viewToggle")}
-          >
-            <TabsList>
-              <TabsTrigger value="day">{t("timeline.viewDay")}</TabsTrigger>
-              <TabsTrigger value="week">{t("timeline.viewWeek")}</TabsTrigger>
-            </TabsList>
-          </Tabs>
-          {isDay ? (
-            <div className="flex items-center gap-1">
-              <Button
-                type="button"
-                variant={subview === "entries" ? "default" : "outline"}
-                size="icon-xs"
-                className="relative cursor-pointer touch-hit--x"
-                onClick={() => {
-                  if (subview !== "entries") {
-                    // 切换子视图时关闭打开的编辑/创建 popover（anchor 随视图切换失效）
-                    setSelectedId(null);
-                    clearDraft();
-                  }
-                  setSubview("entries");
-                  saveSubview("entries");
-                }}
-                aria-label={t("timeline.viewEntries")}
-                title={t("timeline.viewEntries")}
+      side="right"
+      align="center"
+      sideOffset={0}
+      contentClassName="w-80"
+      srTitle={selectedEntry != null ? t("entry.edit") : t("entry.create")}
+      rootChildren={
+        <section className="flex min-h-0 flex-1 flex-col">
+          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-b px-2 py-3 md:gap-x-3 md:px-4">
+            <div className="flex min-w-0 flex-wrap items-center gap-2 md:gap-3">
+              <Tabs
+                value={mode}
+                onValueChange={(v) =>
+                  onModeChange(v === "week" ? "week" : "day")
+                }
+                aria-label={t("timeline.viewToggle")}
               >
-                <Rows3 />
-              </Button>
-              <Button
-                type="button"
-                variant={subview === "block" ? "default" : "outline"}
-                size="icon-xs"
-                className="relative cursor-pointer touch-hit--x"
-                onClick={() => {
-                  if (subview !== "block") {
-                    setSelectedId(null);
-                    clearDraft();
-                  }
-                  setSubview("block");
-                  saveSubview("block");
-                }}
-                aria-label={t("timeline.viewBlock")}
-                title={t("timeline.viewBlock")}
-              >
-                <RectangleVertical />
-              </Button>
-            </div>
-          ) : null}
-          {/* 缩放按钮：仅条目子视图隐藏（无比例概念）；week 模式与 day 块视图均显示 */}
-          {!(isDay && subview === "entries") ? (
-            <div className="flex items-center gap-1">
-              <Button
-                type="button"
-                variant="outline"
-                size="icon-xs"
-                className="relative touch-hit--x"
-                disabled={scaleIndex <= 0}
-                onClick={() => changeScale(SCALES[scaleIndex - 1])}
-                aria-label={t("timeline.zoomOut")}
-              >
-                <Minus />
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="icon-xs"
-                className="relative touch-hit--x"
-                disabled={scaleIndex >= SCALES.length - 1}
-                onClick={() => changeScale(SCALES[scaleIndex + 1])}
-                aria-label={t("timeline.zoomIn")}
-              >
-                <Plus />
-              </Button>
-            </div>
-          ) : null}          {onDateChange ? (
-            <DateNav view={mode} date={date ?? null} tz={tz} onChange={onDateChange} />
-          ) : (
-            <span className="truncate text-sm font-semibold tracking-tight">
-              {isDay
-                ? formatDayLabel(tz)
-                : week
-                  ? formatWeekLabel(week.weekStart, week.weekEnd, tz)
-                  : ""}
-            </span>
-          )}
-        </div>
-        <span className="font-mono text-sm font-semibold tabular-nums">{formatDuration(total)}</span>
-      </div>
-      <div className="min-h-0 flex-1 overflow-auto overscroll-x-contain" ref={scrollRef}>
-        {isDay ? (
-          subview === "entries" ? (
-            <EntryListView
-              day={today}
-              nowMs={nowMs}
-              tz={tz}
-              categories={categories}
-              tags={tags}
-              gaps={todayGaps}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-              onGapClick={
-                today
-                  ? (gap) =>
-                      handleGapClick(today.dayStart)(gap, {
-                        startMs: Math.max(gap.startMs, Date.parse(today.dayStart)),
-                        endMs: Math.min(gap.endMs, Date.parse(today.dayEnd)),
-                      })
-                  : undefined
-              }
-            />
-          ) : (
-            <DayColumn
-              day={today}
-              nowMs={nowMs}
-              tz={tz}
-              isToday={date == null || (today ? isDayAt(today, nowMs) : true)}
-              scale={scale}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
-              onDragCreate={today && !isMobile ? handleDragCreate(today.dayStart) : undefined}
-              draftAnchor={draftAnchor?.dayStart === today?.dayStart ? draftAnchor : null}
-              gaps={todayGaps}
-              onGapClick={today ? handleGapClick(today.dayStart) : undefined}
-              gapAnchor={
-                gapDraft && gapDraft.anchor.dayStart === today?.dayStart ? gapDraft.anchor : null
-              }
-              categories={categories}
-              tags={tags}
-            />
-          )
-        ) : week ? (
-          <div className="flex w-max min-w-full flex-col">
-            <div className="flex w-full">
-              <div className="w-11 flex-shrink-0 md:w-14" />
-              {week.days.map((d, i) => {
-                const isToday = isDayAt(d, nowMs);
-                const header = formatWeekdayHeader(d.dayStart, tz);
-                return (
-                  <div
-                    key={d.dayStart}
-                    className={`flex min-w-[180px] flex-1 flex-col${i === 0 ? "" : " border-l"}`}
+                <TabsList>
+                  <TabsTrigger value="day">{t("timeline.viewDay")}</TabsTrigger>
+                  <TabsTrigger value="week">
+                    {t("timeline.viewWeek")}
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+              {isDay ? (
+                <div className="flex items-center gap-1">
+                  <Button
+                    type="button"
+                    variant={subview === "entries" ? "default" : "outline"}
+                    size="icon-xs"
+                    className="relative cursor-pointer touch-hit--x"
+                    onClick={() => {
+                      if (subview !== "entries") {
+                        // 切换子视图时关闭打开的编辑/创建 popover（anchor 随视图切换失效）
+                        setSelectedId(null);
+                        clearDraft();
+                      }
+                      setSubview("entries");
+                      saveSubview("entries");
+                    }}
+                    aria-label={t("timeline.viewEntries")}
+                    title={t("timeline.viewEntries")}
                   >
-                    <div
-                      className={`border-b px-2 py-2 text-center${isToday ? " bg-primary/10" : ""}`}
-                    >
-                      <div
-                        className={`text-2xl font-bold leading-tight${isToday ? " text-primary" : ""}`}
-                      >
-                        {header.day}
-                      </div>
-                      <div className="text-xs text-muted-foreground">{header.weekday}</div>
-                      <div className="font-mono text-xs tabular-nums text-muted-foreground">
-                        {formatDuration(d.totalClippedSeconds)}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="flex w-full">
-              <div className="timeline-ruler timeline-ruler--static">
-                {Array.from({ length: tickCount + 1 }, (_, i) => (
-                  <div key={i} className="hour" style={{ top: `${(i / tickCount) * 100}%` }}>
-                    {tickLabel(i, scale)}
-                  </div>
-                ))}
-              </div>
-              {week.days.map((d, i) => (
-                <div
-                  key={d.dayStart}
-                  className="flex min-w-[180px] flex-1 flex-col border-l"
-                >
-                  <DayColumn
-                    day={d}
-                    nowMs={nowMs}
-                    tz={tz}
-                    isToday={isDayAt(d, nowMs)}
-                    showRuler={false}
-                    scale={scale}
-                    selectedId={selectedId}
-                    onSelect={setSelectedId}
-                    onDragCreate={isMobile ? undefined : handleDragCreate(d.dayStart)}
-                    draftAnchor={draftAnchor?.dayStart === d.dayStart ? draftAnchor : null}
-                    gaps={weekGaps[i]}
-                    onGapClick={handleGapClick(d.dayStart)}
-                    gapAnchor={gapDraft?.anchor.dayStart === d.dayStart ? gapDraft.anchor : null}
-                    categories={categories}
-                    tags={tags}
-                  />
+                    <Rows3 />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={subview === "block" ? "default" : "outline"}
+                    size="icon-xs"
+                    className="relative cursor-pointer touch-hit--x"
+                    onClick={() => {
+                      if (subview !== "block") {
+                        setSelectedId(null);
+                        clearDraft();
+                      }
+                      setSubview("block");
+                      saveSubview("block");
+                    }}
+                    aria-label={t("timeline.viewBlock")}
+                    title={t("timeline.viewBlock")}
+                  >
+                    <RectangleVertical />
+                  </Button>
                 </div>
-              ))}
+              ) : null}
+              {/* 缩放按钮：仅条目子视图隐藏（无比例概念）；week 模式与 day 块视图均显示 */}
+              {!(isDay && subview === "entries") ? (
+                <div className="flex items-center gap-1">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon-xs"
+                    className="relative touch-hit--x"
+                    disabled={scaleIndex <= 0}
+                    onClick={() => changeScale(SCALES[scaleIndex - 1])}
+                    aria-label={t("timeline.zoomOut")}
+                  >
+                    <Minus />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon-xs"
+                    className="relative touch-hit--x"
+                    disabled={scaleIndex >= SCALES.length - 1}
+                    onClick={() => changeScale(SCALES[scaleIndex + 1])}
+                    aria-label={t("timeline.zoomIn")}
+                  >
+                    <Plus />
+                  </Button>
+                </div>
+              ) : null}{" "}
+              {onDateChange ? (
+                <DateNav
+                  view={mode}
+                  date={date ?? null}
+                  tz={tz}
+                  onChange={onDateChange}
+                />
+              ) : (
+                <span className="truncate text-sm font-semibold tracking-tight">
+                  {isDay
+                    ? formatDayLabel(tz)
+                    : week
+                      ? formatWeekLabel(week.weekStart, week.weekEnd, tz)
+                      : ""}
+                </span>
+              )}
             </div>
+            <span className="font-mono text-sm font-semibold tabular-nums">
+              {formatDuration(total)}
+            </span>
           </div>
-        ) : null}
-      </div>
-      {selectedEntry ? (
-        <PopoverContent side="right" align="center" sideOffset={0} className="w-80">
-          <EntryEditor
-            key={selectedEntry.id}
-            entry={selectedEntry}
-            categories={categories}
-            tags={tags}
-            prevEntry={prevCandidate}
-            nextEntry={nextCandidate}
-            tz={tz}
-            onSaved={() => {
-              // 保存成功：关闭 popover 并刷新时间线数据（R5）
-              setSelectedId(null);
-              onEntryUpdated();
-            }}
-            onClose={() => setSelectedId(null)}
-          />
-        </PopoverContent>
-      ) : draft || gapDraft ? (
-        <PopoverContent side="right" align="center" sideOffset={0} className="w-80">
-          <EntryEditor
-            key={(gapDraft ?? draft)!.startedAt}
-            draft={{
-              startedAt: (gapDraft ?? draft)!.startedAt,
-              stoppedAt: (gapDraft ?? draft)!.stoppedAt,
-            }}
-            categories={categories}
-            tags={tags}
-            onSaved={() => {
-              // 保存成功：关闭并刷新时间线数据
-              clearDraft();
-              onEntryUpdated();
-            }}
-            onClose={clearDraft}
-          />
-        </PopoverContent>
+          <div
+            className="min-h-0 flex-1 overflow-auto overscroll-x-contain"
+            ref={scrollRef}
+          >
+            {isDay ? (
+              subview === "entries" ? (
+                <EntryListView
+                  day={today}
+                  nowMs={nowMs}
+                  tz={tz}
+                  categories={categories}
+                  tags={tags}
+                  gaps={todayGaps}
+                  selectedId={selectedId}
+                  onSelect={setSelectedId}
+                  onGapClick={
+                    today
+                      ? (gap) =>
+                          handleGapClick(today.dayStart)(gap, {
+                            startMs: Math.max(
+                              gap.startMs,
+                              Date.parse(today.dayStart),
+                            ),
+                            endMs: Math.min(
+                              gap.endMs,
+                              Date.parse(today.dayEnd),
+                            ),
+                          })
+                      : undefined
+                  }
+                />
+              ) : (
+                <DayColumn
+                  day={today}
+                  nowMs={nowMs}
+                  tz={tz}
+                  isToday={
+                    date == null || (today ? isDayAt(today, nowMs) : true)
+                  }
+                  scale={scale}
+                  selectedId={selectedId}
+                  onSelect={setSelectedId}
+                  onDragCreate={
+                    today && !isMobile
+                      ? handleDragCreate(today.dayStart)
+                      : undefined
+                  }
+                  draftAnchor={
+                    draftAnchor?.dayStart === today?.dayStart
+                      ? draftAnchor
+                      : null
+                  }
+                  gaps={todayGaps}
+                  onGapClick={
+                    today ? handleGapClick(today.dayStart) : undefined
+                  }
+                  gapAnchor={
+                    gapDraft && gapDraft.anchor.dayStart === today?.dayStart
+                      ? gapDraft.anchor
+                      : null
+                  }
+                  categories={categories}
+                  tags={tags}
+                />
+              )
+            ) : week ? (
+              <div className="flex w-max min-w-full flex-col">
+                <div className="flex w-full">
+                  <div className="w-11 flex-shrink-0 md:w-14" />
+                  {week.days.map((d, i) => {
+                    const isToday = isDayAt(d, nowMs);
+                    const header = formatWeekdayHeader(d.dayStart, tz);
+                    return (
+                      <div
+                        key={d.dayStart}
+                        className={`flex min-w-[180px] flex-1 flex-col${i === 0 ? "" : " border-l"}`}
+                      >
+                        <div
+                          className={`border-b px-2 py-2 text-center${isToday ? " bg-primary/10" : ""}`}
+                        >
+                          <div
+                            className={`text-2xl font-bold leading-tight${isToday ? " text-primary" : ""}`}
+                          >
+                            {header.day}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {header.weekday}
+                          </div>
+                          <div className="font-mono text-xs tabular-nums text-muted-foreground">
+                            {formatDuration(d.totalClippedSeconds)}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="flex w-full">
+                  <div className="timeline-ruler timeline-ruler--static">
+                    {Array.from({ length: tickCount + 1 }, (_, i) => (
+                      <div
+                        key={i}
+                        className="hour"
+                        style={{ top: `${(i / tickCount) * 100}%` }}
+                      >
+                        {tickLabel(i, scale)}
+                      </div>
+                    ))}
+                  </div>
+                  {week.days.map((d, i) => (
+                    <div
+                      key={d.dayStart}
+                      className="flex min-w-[180px] flex-1 flex-col border-l"
+                    >
+                      <DayColumn
+                        day={d}
+                        nowMs={nowMs}
+                        tz={tz}
+                        isToday={isDayAt(d, nowMs)}
+                        showRuler={false}
+                        scale={scale}
+                        selectedId={selectedId}
+                        onSelect={setSelectedId}
+                        onDragCreate={
+                          isMobile ? undefined : handleDragCreate(d.dayStart)
+                        }
+                        draftAnchor={
+                          draftAnchor?.dayStart === d.dayStart
+                            ? draftAnchor
+                            : null
+                        }
+                        gaps={weekGaps[i]}
+                        onGapClick={handleGapClick(d.dayStart)}
+                        gapAnchor={
+                          gapDraft?.anchor.dayStart === d.dayStart
+                            ? gapDraft.anchor
+                            : null
+                        }
+                        categories={categories}
+                        tags={tags}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </section>
+      }
+    >
+      {(selectedEntry ?? draft ?? gapDraft) != null ? (
+        <EntryEditor
+          key={
+            selectedEntry != null
+              ? selectedEntry.id
+              : (gapDraft ?? draft)!.startedAt
+          }
+          {...(selectedEntry != null
+            ? {
+                entry: selectedEntry,
+                prevEntry: prevCandidate,
+                nextEntry: nextCandidate,
+                tz,
+              }
+            : {
+                draft: {
+                  startedAt: (gapDraft ?? draft)!.startedAt,
+                  stoppedAt: (gapDraft ?? draft)!.stoppedAt,
+                },
+              })}
+          categories={categories}
+          tags={tags}
+          onSaved={() => {
+            // 保存成功：关闭弹层并刷新时间线数据（R5）；两种模式共用同一段关闭逻辑
+            setSelectedId(null);
+            clearDraft();
+            onEntryUpdated();
+          }}
+          onClose={() => {
+            setSelectedId(null);
+            clearDraft();
+          }}
+        />
       ) : null}
-    </section>
-    </Popover>
+    </ResponsiveEditPopover>
   );
 }

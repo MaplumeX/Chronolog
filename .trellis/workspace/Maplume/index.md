@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 56
+- **Total Sessions**: 57
 - **Last Active**: 2026-09-09
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1189 | Active |
+| `journal-1.md` | ~1220 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 57 | 2026-09-09 | 移动端编辑底部弹层范式 | `2acb715` | `fix/mobile-adaptation-entry-editing` |
 | 57 | 2026-09-09 | 统计页四视图重构（柳比歇夫完整记录前提） | `9f87062` | `feat/redesign-stats-view` |
 | 56 | 2026-09-09 | 重设计条目起止时间编辑组件（方向 C：紧凑行内 + 时长可编辑） | `3f94f08` | `feat/redesign-entry-time-editing-component` |
 | 55 | 2026-09-09 | Entries axis view tinted cards and width cap | `250fada` | `feat/axis-view-entry-styling-width` |

@@ -1,11 +1,18 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
 import { PointerEventsCheckLevel } from "@testing-library/user-event";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { paletteColor } from "../format";
+import { useIsMobile } from "../hooks/use-mobile";
 import { HierarchicalListCard } from "./HierarchicalListCard";
 
 // i18n 由 setup.ts 全局初始化并 pin 到 en；断言用英文文案。
+
+vi.mock("../hooks/use-mobile", () => ({
+  useIsMobile: vi.fn(),
+}));
+
+const useIsMobileMock = vi.mocked(useIsMobile);
 
 interface Item {
   id: string;
@@ -27,6 +34,11 @@ afterEach(() => {
   cleanup();
   document.body.innerHTML = "";
   document.body.style.pointerEvents = "";
+});
+
+beforeEach(() => {
+  // 默认桌面（≥768px）：现有用例全部走 popover 路径，断言零改动
+  useIsMobileMock.mockReturnValue(false);
 });
 
 const ITEMS: Item[] = [
@@ -294,6 +306,67 @@ describe("HierarchicalListCard 行操作 ⋯ 菜单", () => {
       expect.objectContaining({ id: "life" }),
       expect.objectContaining({ name: "Lifestyle" }),
     );
+  });
+});
+
+describe("HierarchicalListCard 移动端编辑底部弹层（<768px）", () => {
+  beforeEach(() => {
+    useIsMobileMock.mockReturnValue(true);
+  });
+
+  /** Sheet/Popover portal 内容需等一个 macrotask settle（DismissableLayer 延迟挂监听） */
+  async function settle() {
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 0));
+    });
+  }
+
+  it("⋯ 菜单 → 编辑 → SheetContent 打开，字段可见，取消后关闭", async () => {
+    const user = setupUser();
+    renderCard();
+    const menu = await openRowMenu(user, "Life");
+    await user.click(within(menu).getByText("Edit"));
+
+    // 底部 sheet 打开（sr-only 标题即菜单项文案 Edit），表单字段可见
+    await settle();
+    const sheet = screen.getByRole("dialog", { name: "Edit" });
+    expect(
+      within(sheet).getByLabelText("Name"),
+    ).toBeInTheDocument();
+    // 不走桌面 popover 分支
+    expect(document.querySelector('[data-slot="popover-content"]')).toBeNull();
+
+    await user.click(within(sheet).getByRole("button", { name: "Cancel" }));
+    await settle();
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("⋯ 菜单 → 添加子项（顶层父行）→ SheetContent 打开并可创建", async () => {
+    const user = setupUser();
+    const props = renderCard();
+    const menu = await openRowMenu(user, "Work");
+    await user.click(within(menu).getByText("Add sub-item"));
+
+    await settle();
+    const sheet = screen.getByRole("dialog", { name: "Add sub-item" });
+    expect(
+      within(sheet).getByLabelText("Sub-item name"),
+    ).toBeInTheDocument();
+    expect(within(sheet).getByText("Parent：Work")).toBeInTheDocument();
+
+    // 创建链路：填名 → Add → onCreateChild 调用 → sheet 关闭
+    await user.type(
+      within(sheet).getByLabelText("Sub-item name"),
+      "New child",
+    );
+    await user.click(within(sheet).getByRole("button", { name: "Add" }));
+    expect(props.onCreateChild).toHaveBeenCalledTimes(1);
+    expect(props.onCreateChild).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "work" }),
+      "New child",
+    );
+    await settle();
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 });
 
