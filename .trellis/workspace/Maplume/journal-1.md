@@ -1156,12 +1156,22 @@ Replace the 31-based polynomial category hash (degenerate alternating sum mod 8,
 ### Summary
 
 规划阶段构建四方向可交互 demo（A 联动单面板 / B 时间优先 / C 紧凑行内 / D 步进器）供用户体验，选定方向 C。实现 EntryTimeRangeEditor：单行三槽位（开始→结束·时长）单面板展开，start/end 面板保留 time input + Calendar 日期调整，duration 面板 parseDurationInput（冒号式/单位式/纯数字分钟）+ 快捷 chips + 到现在，以开始为锚反推结束并带溢出守卫；onSave 硬校验 end≤start（entry.invalidRange）。删除 DateTimePicker、entry.now/entry.duration 死 key 及 demo 文件。18 个新测试（fake timers 固定到现在断言），全量 200 测试 + typecheck + build 绿。spec component-guidelines.md 已同步替换组件契约段落。人工项待用户浏览器验证：拖拽草稿初值、zh/en 切换、w-80 布局、日历改跨天。
+## Session 55: Entries axis view tinted cards and width cap
+
+**Date**: 2026-09-09
+**Task**: Entries axis view tinted cards and width cap
+**Branch**: `feat/axis-view-entry-styling-width`
+
+### Summary
+
+Restyled the day timeline entries (axis) subview per user decision: dropped the 3px left category-color bar and card border, the 10% category-color tint is now the card container itself (hover 18%, radius --radius-md); running entries breathe via background tint 10%-22% keyframes instead of the ::before bar overlay; list body capped at 520px centered on >=768px. Explored card-form options via an HTML mockup (user rejected all left vertical bar designs, picked option H). Also npm-installed the web worktree (vitest+typecheck green, 182 tests). Spec component-guidelines EntryListView paragraph updated.
 
 ### Git Commits
 
 | Hash | Message |
 |------|---------|
 | `3f94f08` | (see git log) |
+| `250fada` | (see git log) |
 
 ### Status
 
