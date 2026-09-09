@@ -7,6 +7,7 @@ import { EntryTimeRangeEditor } from "./EntryTimeRangeEditor";
 import { MergeDialog } from "./MergeDialog";
 import { TagPicker } from "./TagPicker";
 import { filterActive } from "../hierarchy";
+import { useIsMobile } from "../hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,6 +55,7 @@ export function EntryEditor(props: {
   const [mergeError, setMergeError] = useState("");
 
   const isDraft = props.draft != null;
+  const isMobile = useIsMobile();
   const startMs = Date.parse(startedAt);
   const stopMs = Date.parse(stoppedAt);
   const selectedCategory = filterActive(props.categories).find(
@@ -148,7 +150,24 @@ export function EntryEditor(props: {
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold">{isDraft ? t("entry.create") : t("entry.edit")}</h3>
+      {isMobile ? (
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold">{isDraft ? t("entry.create") : t("entry.edit")}</h3>
+          {!isDraft ? (
+            <Button
+              type="button"
+              variant="ghost"
+              className="min-h-12 px-2 text-destructive hover:text-destructive"
+              onClick={() => setDeleteDialogOpen(true)}
+              disabled={saving || deleting || merging}
+            >
+              {t("entry.delete")}
+            </Button>
+          ) : null}
+        </div>
+      ) : (
+        <h3 className="text-sm font-semibold">{isDraft ? t("entry.create") : t("entry.edit")}</h3>
+      )}
       <div className="space-y-1.5">
         <Label htmlFor="entry-description">{t("entry.description")}</Label>
         <Input
@@ -217,7 +236,62 @@ export function EntryEditor(props: {
           onConfirm={(keep) => void onMerge(keep)}
         />
       ) : null}
-      <div className="flex flex-wrap justify-end gap-2">
+      {isMobile ? (
+        <div className="space-y-2">
+          {!isDraft ? (
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                className="min-h-12 flex-1"
+                disabled={saving || deleting || merging || props.prevEntry == null}
+                title={props.prevEntry ? t("entry.mergePrev") : t("entry.mergeNoPrev")}
+                onClick={() => {
+                  setMergeError("");
+                  setMergeDialog("prev");
+                }}
+              >
+                <ArrowUpToLine />
+                {t("entry.mergePrev")}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="min-h-12 flex-1"
+                disabled={saving || deleting || merging || props.nextEntry == null}
+                title={props.nextEntry ? t("entry.mergeNext") : t("entry.mergeNoNext")}
+                onClick={() => {
+                  setMergeError("");
+                  setMergeDialog("next");
+                }}
+              >
+                <ArrowDownToLine />
+                {t("entry.mergeNext")}
+              </Button>
+            </div>
+          ) : null}
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-12 flex-1"
+              onClick={props.onClose}
+              disabled={saving || deleting || merging}
+            >
+              {t("entry.cancel")}
+            </Button>
+            <Button
+              type="button"
+              className="h-12 flex-1"
+              onClick={() => void onSave()}
+              disabled={saving || deleting || merging || categoryId === ""}
+            >
+              {t("entry.save")}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex flex-wrap justify-end gap-2">
         {!isDraft ? (
           <Button
             type="button"
@@ -276,7 +350,8 @@ export function EntryEditor(props: {
         >
           {t("entry.save")}
         </Button>
-      </div>
+        </div>
+      )}
     </div>
   );
 }

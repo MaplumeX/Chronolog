@@ -1,6 +1,5 @@
 import { Fragment, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import type { Measurable } from "@radix-ui/rect";
 import {
   Archive,
   ChevronDown,
@@ -12,13 +11,9 @@ import { sortHierarchical } from "../hierarchy";
 import { AddChildPopoverForm } from "@/components/AddChildPopover";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { NameColorEditPopoverForm } from "@/components/NameColorEditPopover";
+import { ResponsiveEditPopover } from "@/components/ResponsiveEditPopover";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Popover,
-  PopoverAnchor,
-  PopoverContent,
-} from "@/components/ui/popover";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -99,14 +94,15 @@ export function HierarchicalListCard<T extends HierarchyItem>(
   const [popoverTarget, setPopoverTarget] = useState<{
     kind: "addChild" | "edit";
     item: T;
-    anchor: Measurable | null;
+    anchor: HTMLElement | null;
   } | null>(null);
-  /** PopoverAnchor virtualRef 需要 RefObject 形态 */
-  const anchorRef = useRef<Measurable | null>(null);
+  /** 弹层锚点 RefObject 形态：HTMLElement 满足 Radix popper 的 Measurable 约束，
+   * 同时与 ResponsiveEditPopover 的 anchor 契约对齐（移动端忽略锚点） */
+  const anchorRef = useRef<HTMLElement | null>(null);
   /** 归档区折叠状态（默认折叠） */
   const [archivedCollapsed, setArchivedCollapsed] = useState(true);
 
-  /** PopoverAnchor virtualRef 需要 RefObject 形态；跟随 popoverTarget 更新 */
+  /** 弹层锚点 RefObject 形态；跟随 popoverTarget 更新（⋯ 按钮是 HTMLElement） */
   anchorRef.current = popoverTarget?.anchor ?? null;
   /** 各行 ⋯ 菜单触发按钮（菜单项 onSelect 时 React 合成事件的 currentTarget 已置空，
    * 改由 ref 记录触发按钮，作为弹层锚点） */
@@ -406,54 +402,51 @@ export function HierarchicalListCard<T extends HierarchyItem>(
         >
           {popoverTarget?.item.id === item.id &&
           popoverTarget.anchor != null ? (
+            /* 移动端/桌面端自适应编辑容器（task 09-09-mobile-editing-sheet）
+             * 桌面：Popover + PopoverAnchor(virtualRef) 锚定 ⋯ 按钮 + 300ms focus 守卫
+             * （onFocusOutside 透传）；移动端：底部 Sheet，modal 自管 focus，守卫被忽略 */
             popoverTarget.kind === "addChild" ? (
-              <Popover
+              <ResponsiveEditPopover
                 open
                 onOpenChange={(open) => {
                   if (!open) setPopoverTarget(null);
                 }}
+                anchor={anchorRef}
+                align="end"
+                contentClassName="w-72"
+                onFocusOutside={guardPopoverFocusOutside}
+                srTitle={t(`${ns}.addChild`)}
               >
-                <PopoverAnchor virtualRef={anchorRef} />
-                <PopoverContent
-                  align="end"
-                  className="w-72"
-                  onFocusOutside={guardPopoverFocusOutside}
-                >
-                  <AddChildPopoverForm
-                    namespace={ns}
-                    parentName={item.name}
-                    onClose={() => setPopoverTarget(null)}
-                    onCreate={(childName) =>
-                      props.onCreateChild(item, childName)
-                    }
-                  />
-                </PopoverContent>
-              </Popover>
+                <AddChildPopoverForm
+                  namespace={ns}
+                  parentName={item.name}
+                  onClose={() => setPopoverTarget(null)}
+                  onCreate={(childName) => props.onCreateChild(item, childName)}
+                />
+              </ResponsiveEditPopover>
             ) : (
-              <Popover
+              <ResponsiveEditPopover
                 open
                 onOpenChange={(open) => {
                   if (!open) setPopoverTarget(null);
                 }}
+                anchor={anchorRef}
+                align="end"
+                contentClassName="w-72"
+                onFocusOutside={guardPopoverFocusOutside}
+                srTitle={t(`${ns}.edit`)}
               >
-                <PopoverAnchor virtualRef={anchorRef} />
-                <PopoverContent
-                  align="end"
-                  className="w-72"
-                  onFocusOutside={guardPopoverFocusOutside}
-                >
-                  <NameColorEditPopoverForm
-                    namespace={ns}
-                    name={item.name}
-                    color={item.color}
-                    parentOptions={props.topOptions}
-                    parentId={item.parentId}
-                    excludeId={item.id}
-                    onClose={() => setPopoverTarget(null)}
-                    onSave={(next) => props.onUpdate(item, next)}
-                  />
-                </PopoverContent>
-              </Popover>
+                <NameColorEditPopoverForm
+                  namespace={ns}
+                  name={item.name}
+                  color={item.color}
+                  parentOptions={props.topOptions}
+                  parentId={item.parentId}
+                  excludeId={item.id}
+                  onClose={() => setPopoverTarget(null)}
+                  onSave={(next) => props.onUpdate(item, next)}
+                />
+              </ResponsiveEditPopover>
             )
           ) : null}
           {rowMenu(item, { isParent, childCount, archived })}

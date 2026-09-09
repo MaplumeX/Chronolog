@@ -98,7 +98,7 @@ export function MergeDialog(props: {
 
   return (
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="max-h-[90dvh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{t("entry.mergeTitle")}</DialogTitle>
           <DialogDescription>{t("entry.mergeKeepLabel")}</DialogDescription>

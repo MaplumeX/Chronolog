@@ -314,7 +314,134 @@ describe("Timeline 拖拽创建（day 视图）", () => {
         new MouseEvent("click", { bubbles: true, cancelable: true }),
       );
     });
-    expect(screen.getByText("New entry")).toBeInTheDocument();
+    // 移动端：底部 sheet 弹层打开，编辑器内容在其内（sr-only SheetTitle 与可见 h3 均为
+    // "New entry"，用 getAllByText 避免歧义）
+    expect(document.querySelector('[data-slot="sheet-content"]')).not.toBeNull();
+    expect(screen.getAllByText("New entry").length).toBeGreaterThan(0);
+  });
+});
+
+describe("Timeline 移动端编辑底部弹层", () => {
+  beforeEach(() => {
+    stubMatchMedia();
+    stubPointerCapture();
+    useIsMobileMock.mockReturnValue(true);
+  });
+
+  it("day/block 子视图：点击已停止条目块 → 底部 sheet 打开 → 保存调用 updateEntry → onSaved 后关闭", async () => {
+    const fetchFn = vi.fn(
+      (_path: string, _init: RequestInit) => jsonResponse({ entry: { id: "e1" } }),
+    );
+    vi.stubGlobal("fetch", fetchFn);
+    const onEntryUpdated = renderTimeline({
+      today: makeToday([
+        makeEntry({
+          id: "e1",
+          description: "Entry-e1",
+          startedAt: "2025-01-06T02:00:00.000Z",
+          stoppedAt: "2025-01-06T03:00:00.000Z",
+        }),
+      ]),
+    });
+    await openEditor("e1");
+    // 底部 sheet 打开（而非 popover），编辑器内容在 sheet 内
+    const sheet = document.querySelector('[data-slot="sheet-content"]');
+    expect(sheet).not.toBeNull();
+    expect(sheet?.textContent).toContain("Edit entry");
+    expect(
+      document.querySelector('[data-slot="popover-content"]'),
+    ).toBeNull();
+
+    // 保存：分类已预填（编辑模式），直接点 Save
+    const user = setupUser();
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(onEntryUpdated).toHaveBeenCalledTimes(1));
+    const [url, init] = fetchFn.mock.calls[0]! as [string, RequestInit];
+    expect(url).toBe("/api/entries/e1");
+    expect(init.method).toBe("PATCH");
+    // onSaved 后 sheet 关闭
+    await waitFor(() =>
+      expect(document.querySelector('[data-slot="sheet-content"]')).toBeNull(),
+    );
+  });
+
+  it("移动端 sheet 点取消 → onClose 关闭弹层、不调 api", async () => {
+    const fetchFn = vi.fn();
+    vi.stubGlobal("fetch", fetchFn);
+    renderTimeline({
+      today: makeToday([
+        makeEntry({
+          id: "e1",
+          description: "Entry-e1",
+          startedAt: "2025-01-06T02:00:00.000Z",
+          stoppedAt: "2025-01-06T03:00:00.000Z",
+        }),
+      ]),
+    });
+    await openEditor("e1");
+    const user = setupUser();
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    await waitFor(() =>
+      expect(document.querySelector('[data-slot="sheet-content"]')).toBeNull(),
+    );
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it("entries 子视图：点击条目卡打开 sheet；渲染本身不因无 Popover Root 的锚点报错（风险 1）", async () => {
+    renderTimeline({
+      today: makeToday([
+        makeEntry({
+          id: "e1",
+          description: "Entry-e1",
+          startedAt: "2025-01-06T02:00:00.000Z",
+          stoppedAt: "2025-01-06T03:00:00.000Z",
+        }),
+      ]),
+    });
+    // 切到 entries 子视图（风险 1：EntryListView 内的 PopoverAnchor 无桌面 Root）
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Entries" }));
+    expect(document.querySelector(".entry-view-list")).not.toBeNull();
+    // 点击已停止条目卡打开 sheet
+    const card = document.querySelector<HTMLElement>(".entry-view-card");
+    expect(card).not.toBeNull();
+    await act(async () => {
+      card!.dispatchEvent(
+        new MouseEvent("click", { bubbles: true, cancelable: true }),
+      );
+    });
+    const sheet = document.querySelector('[data-slot="sheet-content"]');
+    expect(sheet).not.toBeNull();
+    expect(sheet?.textContent).toContain("Edit entry");
+  });
+
+  it("entries 子视图：点击 gap 幽灵卡打开新建 sheet（virtualRef 锚点不抛错）", async () => {
+    renderTimeline({
+      today: makeToday([
+        makeEntry({
+          id: "e1",
+          startedAt: "2025-01-06T02:00:00.000Z",
+          stoppedAt: "2025-01-06T03:00:00.000Z",
+        }),
+        makeEntry({
+          id: "e2",
+          startedAt: "2025-01-06T04:00:00.000Z",
+          stoppedAt: "2025-01-06T05:00:00.000Z",
+        }),
+      ]),
+    });
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: "Entries" }));
+    const ghost = document.querySelector<HTMLElement>(".entry-view-ghost");
+    expect(ghost).not.toBeNull();
+    await act(async () => {
+      ghost!.dispatchEvent(
+        new MouseEvent("click", { bubbles: true, cancelable: true }),
+      );
+    });
+    const sheet = document.querySelector('[data-slot="sheet-content"]');
+    expect(sheet).not.toBeNull();
+    expect(screen.getAllByText("New entry").length).toBeGreaterThan(0);
   });
 });
 
