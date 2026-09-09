@@ -105,51 +105,55 @@ export function EntryListView(props: {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div ref={listRef} className="entry-view-list min-h-0 flex-1 overflow-y-auto">
-        {rows.length === 0 ? (
-          <div className="flex h-full min-h-40 items-center justify-center text-sm text-muted-foreground">
-            {t("timeline.weekEmpty")}
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2 p-2 pb-6 md:p-4">
-            {rows.map((row) =>
-              row.kind === "entry" ? (
-                <EntryRow
-                  key={row.key}
-                  entry={row.entry}
-                  nowMs={nowMs}
-                  tz={tz}
-                  categories={categories}
-                  tags={tags}
-                  selected={selectedId === row.entry.id}
-                  onSelect={onSelect}
-                />
-              ) : (
-                <GapRow
-                  key={row.key}
-                  gap={row.gap}
-                  vis={row.vis}
-                  tz={tz}
-                  onClick={handleGhostClick}
-                />
-              ),
-            )}
-            {/* gap 草稿锚点：virtualRef 指向点击时固化的快照（行重排不移位） */}
-            {gapAnchorActive && gapAnchorRef.current ? (
-              <PopoverAnchor virtualRef={gapAnchorRef} />
-            ) : null}
-            {/* 结账线（R7）：日期 · 合计 */}
-            <div className="entry-view-footer">
-              <Separator className="entry-view-footer-line" />
-              <div className="pt-2 text-center text-xs text-muted-foreground">
-                {t("timeline.entryViewFooter", {
-                  date: footerDate,
-                  total: formatDuration(day ? day.totalClippedSeconds : 0),
-                })}
+      {/* 列表限宽容器（方案 H）：宽屏下内容列限宽 520px 居中，空态也在其内居中；
+          本身需撑满高度并允许子层滚动 */}
+      <div className="entry-view-body flex min-h-0 flex-1 flex-col">
+        <div ref={listRef} className="entry-view-list min-h-0 flex-1 overflow-y-auto">
+          {rows.length === 0 ? (
+            <div className="flex h-full min-h-40 items-center justify-center text-sm text-muted-foreground">
+              {t("timeline.weekEmpty")}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2 p-2 pb-6 md:p-4">
+              {rows.map((row) =>
+                row.kind === "entry" ? (
+                  <EntryRow
+                    key={row.key}
+                    entry={row.entry}
+                    nowMs={nowMs}
+                    tz={tz}
+                    categories={categories}
+                    tags={tags}
+                    selected={selectedId === row.entry.id}
+                    onSelect={onSelect}
+                  />
+                ) : (
+                  <GapRow
+                    key={row.key}
+                    gap={row.gap}
+                    vis={row.vis}
+                    tz={tz}
+                    onClick={handleGhostClick}
+                  />
+                ),
+              )}
+              {/* gap 草稿锚点：virtualRef 指向点击时固化的快照（行重排不移位） */}
+              {gapAnchorActive && gapAnchorRef.current ? (
+                <PopoverAnchor virtualRef={gapAnchorRef} />
+              ) : null}
+              {/* 结账线（R7）：日期 · 合计 */}
+              <div className="entry-view-footer">
+                <Separator className="entry-view-footer-line" />
+                <div className="pt-2 text-center text-xs text-muted-foreground">
+                  {t("timeline.entryViewFooter", {
+                    date: footerDate,
+                    total: formatDuration(day ? day.totalClippedSeconds : 0),
+                  })}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );
@@ -183,10 +187,9 @@ function EntryRow(props: {
   const color = paletteColor(categoryColor, e.categoryName);
 
   const cardStyle: React.CSSProperties & Record<"--entry-card-color", string> = {
-    /* 左缘 3px 分类色竖条（色弱友好双编码，与 timeline-block 色条语言同源）；
-       运行中改为透明，由 CSS ::before 呼吸色条接管（避免双条叠加）。
-       底色 8% 染色在 CSS 里经 var(--entry-card-color) 消费（内联会压过 :hover 15% 提亮） */
-    borderLeft: isRunning ? "3px solid transparent" : `3px solid ${color}`,
+    /* 方案 H「染色卡」：无线条无描边，分类色 ~10% 底色染色即容器本身；
+       底色必须留在 CSS 里经 var(--entry-card-color) 消费
+       （内联会压过 :hover 18% 提亮，spec 已记录的坑） */
     "--entry-card-color": color,
   };
 
