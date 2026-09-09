@@ -112,6 +112,8 @@ export type RangeStats = {
   categories: { categoryId: string | null; categoryName: string; seconds: number }[];
   tags: { tagId: string | null; tagName: string | null; seconds: number }[];
   totalSeconds: number;
+  /** 与区间窗口重叠的条目（含 tags；供逐日×分类聚合与未记录桶计算） */
+  entries: TimeEntry[];
 };
 
 export class ApiError extends Error {
@@ -266,9 +268,9 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify(body),
     }),
-  todayEntries: (tz: string, date?: string) =>
+  todayEntries: (tz: string, date?: string, tagId?: string) =>
     request<TodayEntries>(
-      `/api/entries/today?tz=${encodeURIComponent(tz)}${date ? `&date=${encodeURIComponent(date)}` : ""}`,
+      `/api/entries/today?tz=${encodeURIComponent(tz)}${date ? `&date=${encodeURIComponent(date)}` : ""}${tagId ? `&tagId=${encodeURIComponent(tagId)}` : ""}`,
     ),
   weekEntries: (tz: string, date?: string) =>
     request<WeekEntries>(

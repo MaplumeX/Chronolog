@@ -374,6 +374,7 @@ export type RangeStats = {
   categories: { categoryId: string | null; categoryName: string; seconds: number }[];
   tags: { tagId: string | null; tagName: string | null; seconds: number }[];
   totalSeconds: number;
+  entries: EntryDto[];
 };
 
 /** rollup=true 时将子分类秒数并入父分类桶（桶名用父分类名），子分类条目消失；未分类（null）自成一组。 */
@@ -427,6 +428,7 @@ function lookupCategoryName(db: Db, userId: string, categoryId: string): string 
  * - categories：range 级 clip（首日 dayStart 到末日 dayEnd）按分类聚合，降序
  * - tags：attachTags 后多标签条目在每个标签下计入全额 clipped 秒（tags 总和可能 > totalSeconds，UI 不应展示 tags 总和）；
  *   无任何标签的秒数进 tagId:null 桶，降序
+ * - entries：与区间窗口重叠的条目原样返回（含 tags；供前端逐日×分类聚合与未记录桶计算）
  * - 运行中条目按 now 裁剪（clipSeconds 语义自然继承） */
 export function statsRange(
   db: Db,
@@ -534,5 +536,5 @@ export function statsRange(
   }
   const tagsGrouped = [...tagById.values()].sort((a, b) => b.seconds - a.seconds);
 
-  return { tz, rangeStart, rangeEnd, days: dayRows, categories: categoriesOut, tags: tagsGrouped, totalSeconds };
+  return { tz, rangeStart, rangeEnd, days: dayRows, categories: categoriesOut, tags: tagsGrouped, totalSeconds, entries };
 }
