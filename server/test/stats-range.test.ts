@@ -64,6 +64,16 @@ type RangeBody = {
   categories: { categoryId: string; categoryName: string; seconds: number }[];
   tags: { tagId: string | null; tagName: string | null; seconds: number }[];
   totalSeconds: number;
+  entries: {
+    id: string;
+    categoryId: string | null;
+    categoryName: string;
+    description: string;
+    startedAt: string;
+    stoppedAt: string | null;
+    durationSeconds: number;
+    tags: { id: string; name: string }[];
+  }[];
 };
 
 async function getRange(t: TestApp, sid: string, query: string) {
@@ -152,6 +162,11 @@ describe("stats range aggregation", () => {
     assert.equal(body.tags.length, 1);
     assert.equal(body.tags[0].tagId, null);
     assert.equal(body.tags[0].seconds, 7200);
+    // entries：与窗口重叠的条目原样返回（含 tags），供前端逐日聚合
+    assert.equal(body.entries.length, 1);
+    assert.equal(body.entries[0].description, "overnight");
+    assert.equal(body.entries[0].categoryName, "工作");
+    assert.equal(body.entries[0].tags.length, 0);
   });
 
   it("clips a running entry by now across two days", async () => {
@@ -270,6 +285,7 @@ describe("stats range aggregation", () => {
     assert.ok(body.days.every((d) => d.seconds === 0));
     assert.deepEqual(body.categories, []);
     assert.deepEqual(body.tags, []);
+    assert.deepEqual(body.entries, []);
     assert.equal(body.totalSeconds, 0);
   });
 

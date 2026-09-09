@@ -11,7 +11,7 @@ import { AuthPage } from "./pages/AuthPage";
 import { CategoriesPage } from "./pages/CategoriesPage";
 import { GoalsPage } from "./pages/GoalsPage";
 import { SettingsPage } from "./pages/SettingsPage";
-import { StatsPage } from "./pages/StatsPage";
+import { StatsPage } from "./pages/stats/StatsPage";
 import { TagsPage } from "./pages/TagsPage";
 
 const HEADER_TITLE_KEYS = {
