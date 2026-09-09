@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import Database from "better-sqlite3";
 import { drizzle, type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
+import { categoryIndex } from "./color-hash.js";
 import * as schema from "./schema.js";
 
 export type Db = BetterSQLite3Database<typeof schema>;
@@ -202,4 +203,19 @@ function migrate(sqlite: InstanceType<typeof Database>) {
   }
   sqlite.exec("CREATE INDEX IF NOT EXISTS tags_user_parent ON tags(user_id, parent_id)");
   sqlite.exec("DROP INDEX IF EXISTS tags_user_id_name");
+
+  // 一次性固化（task 09-09）：color 为 NULL 的分类/标签按 FNV-1a hash 回填 1–8。
+  // 幂等：只 SELECT color IS NULL 行，固化后条件不再命中，重复 openDb 无副作用。
+  // 固化值用新 hash 计算——NULL 行本就没有用户确认的颜色，避免把旧 hash 的偏差锁进数据。
+  for (const table of ["categories", "tags"] as const) {
+    const rows = sqlite
+      .prepare(`SELECT id, name FROM ${table} WHERE color IS NULL`)
+      .all() as { id: string; name: string }[];
+    if (rows.length === 0) continue;
+    const update = sqlite.prepare(`UPDATE ${table} SET color = ? WHERE id = ?`);
+    const fix = sqlite.transaction(() => {
+      for (const row of rows) update.run(categoryIndex(row.name) + 1, row.id);
+    });
+    fix();
+  }
 }

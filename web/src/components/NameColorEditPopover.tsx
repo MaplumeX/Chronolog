@@ -167,7 +167,10 @@ export function NameColorEditPopoverForm(props: {
   );
 }
 
-/** 落库颜色优先；存量 NULL（自动）回退名称 hash 色（categoryIndex + 1，1–8）。 */
+/**
+ * 落库颜色优先；存量 NULL 回退名称 hash 色（categoryIndex + 1，1–8）。颜色已由服务端
+ * 迁移固化落库（task 09-09），NULL 分支仅剩防御意义，保存时仍会固化。
+ */
 function initialColor(color: number | null, name: string): number {
   return color != null && color >= 1 && color <= 8
     ? color
