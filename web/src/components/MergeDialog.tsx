@@ -83,7 +83,7 @@ export function MergeDialog(props: {
           </span>
           {entry.tags.length > 0 ? (
             <span className="block text-xs text-muted-foreground">
-              {entry.tags.map((x) => x.name).join(t("timer.tagSeparator"))}
+              {entry.tags.map((x) => x.name).join(t("tags.separator"))}
             </span>
           ) : null}
           {entry.description ? (

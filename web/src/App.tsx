@@ -123,7 +123,7 @@ export function App() {
         page === "timer" ? (
           <TimerBar {...timerBarProps} />
         ) : (
-          <h1 className="px-2 text-xl font-semibold tracking-tight">
+          <h1 className="flex min-h-12 items-center px-2 text-xl font-semibold tracking-tight">
             {t(HEADER_TITLE_KEYS[page])}
           </h1>
         )

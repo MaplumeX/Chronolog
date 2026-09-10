@@ -33,6 +33,14 @@ function stubMatchMedia() {
 
 const CATEGORIES: Category[] = [
   { id: "c1", name: "Work", color: 1, parentId: null, archivedAt: null, entryCount: 0 },
+  {
+    id: "c-old",
+    name: "Archived",
+    color: 4,
+    parentId: null,
+    archivedAt: "2024-12-01T00:00:00.000Z",
+    entryCount: 0,
+  },
 ];
 const TAGS: Tag[] = [];
 
@@ -62,6 +70,7 @@ function renderEditor(props?: {
   draft?: { startedAt: string; stoppedAt: string };
   prevEntry?: TimeEntry | null;
   nextEntry?: TimeEntry | null;
+  categories?: Category[];
 }) {
   const onSaved = vi.fn();
   const onClose = vi.fn();
@@ -69,7 +78,7 @@ function renderEditor(props?: {
     <EntryEditor
       entry={props?.entry}
       draft={props?.draft}
-      categories={CATEGORIES}
+      categories={props?.categories ?? CATEGORIES}
       tags={TAGS}
       prevEntry={props?.prevEntry}
       nextEntry={props?.nextEntry}
@@ -128,10 +137,12 @@ describe("EntryEditor 按钮区（桌面）", () => {
       draft: { startedAt: "2025-01-06T02:00:00", stoppedAt: "2025-01-06T03:00:00" },
     });
 
-    // draft categoryId 初始为 ""，保存 disabled；分类选择器已预选 c1 的入口在 entry 模式，
-    // 这里改用编辑模式断言 enabled 路径
+    // draft categoryId 初始为 ""，保存 disabled；点分类胶囊选中后解禁
     const saveDraft = screen.getByRole("button", { name: "Save" });
     expect(saveDraft).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "Work" }));
+    expect(screen.getByRole("button", { name: "Save" })).not.toBeDisabled();
 
     cleanup();
     document.body.innerHTML = "";
@@ -140,6 +151,49 @@ describe("EntryEditor 按钮区（桌面）", () => {
     expect(saveEdit).not.toBeDisabled();
     await user.click(saveEdit);
     // API 调用本身不在本测试范围；不抛错即通过
+  });
+});
+
+describe("EntryEditor 分类胶囊（D7 归档只读胶囊）", () => {
+  it("编辑模式：categoryId 不命中活动分类 → 末尾追加只读胶囊（文案 = 后端 categoryName）", () => {
+    stubMatchMedia();
+    useIsMobileMock.mockReturnValue(false);
+    renderEditor({
+      entry: makeEntry({ categoryId: "c-old", categoryName: "Archived" }),
+    });
+
+    const readonlyChip = screen.getByRole("button", { name: "Archived" });
+    expect(readonlyChip).toBeDisabled();
+    expect(readonlyChip).toHaveAttribute("aria-pressed", "true");
+    expect(readonlyChip.className).toContain("chip--readonly");
+    // 活动分类胶囊仍可选
+    expect(screen.getByRole("button", { name: "Work" })).toBeEnabled();
+  });
+
+  it("改选活动分类后只读胶囊从 DOM 移除，保存仍可用", async () => {
+    stubMatchMedia();
+    useIsMobileMock.mockReturnValue(false);
+    const user = userEvent.setup({ pointerEventsCheck: PointerEventsCheckLevel.Never });
+    renderEditor({
+      entry: makeEntry({ categoryId: "c-old", categoryName: "Archived" }),
+    });
+
+    await user.click(screen.getByRole("button", { name: "Work" }));
+    expect(screen.queryByRole("button", { name: "Archived" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Work" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(screen.getByRole("button", { name: "Save" })).not.toBeDisabled();
+  });
+
+  it("draft 模式不渲染只读胶囊（新建场景不适用 D7）", () => {
+    stubMatchMedia();
+    useIsMobileMock.mockReturnValue(false);
+    renderEditor({
+      draft: { startedAt: "2025-01-06T02:00:00", stoppedAt: "2025-01-06T03:00:00" },
+    });
+    expect(screen.queryByRole("button", { name: "Archived" })).not.toBeInTheDocument();
   });
 });
 

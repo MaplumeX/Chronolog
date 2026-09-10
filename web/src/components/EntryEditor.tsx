@@ -61,17 +61,11 @@ export function EntryEditor(props: {
   const selectedCategory = filterActive(props.categories).find(
     (c) => c.id === categoryId,
   );
-  // 未选中活动分类时的显示兜底：未分类条目用后端 coalesce 的“未分类”；
-  // 指向归档分类的既有条目用后端返回的 categoryName（PRD：编辑时选择器显示当前值），
-  // 保存仍要求切换到活动分类（后端换绑归档分类会 409）；未分类条目同样显示“未分类”
-  const categoryLabel = selectedCategory?.name ?? (!isDraft ? props.entry!.categoryName : "");
-  const tagPickerLabel =
-    tagIds.length > 0
-      ? tagIds
-          .map((id) => props.tags.find((x) => x.id === id)?.name)
-          .filter(Boolean)
-          .join(t("timer.tagSeparator"))
-      : t("timer.selectTags");
+  // 当前值不命中活动分类时的只读尾随胶囊（D7）：未分类条目用后端 coalesce 的“未分类”，
+  // 指向归档分类的既有条目用后端返回的 categoryName（选择器必须显示当前值）。
+  // 该胶囊不可点，也不算有效选择：保存仍要求改选活动分类（后端换绑归档分类会 409）
+  const readonlyCategoryName =
+    selectedCategory == null && !isDraft ? props.entry!.categoryName : null;
 
   async function onSave() {
     if (Number.isNaN(startMs) || Number.isNaN(stopMs)) {
@@ -182,19 +176,13 @@ export function EntryEditor(props: {
         <CategoryPicker
           categories={filterActive(props.categories)}
           value={categoryId}
-          label={categoryLabel || t("timer.selectCategory")}
-          colorName={selectedCategory?.name ?? categoryLabel}
+          readonlyName={readonlyCategoryName}
           onChange={setCategoryId}
         />
       </div>
       <div className="space-y-1.5">
         <Label>{t("entry.tags")}</Label>
-        <TagPicker
-          tags={props.tags}
-          value={tagIds}
-          label={tagPickerLabel}
-          onChange={setTagIds}
-        />
+        <TagPicker tags={props.tags} value={tagIds} onChange={setTagIds} />
       </div>
       <div className="space-y-1.5">
         <Label>{t("entry.timeRange.label")}</Label>

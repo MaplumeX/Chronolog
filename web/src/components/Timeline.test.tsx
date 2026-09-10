@@ -692,3 +692,55 @@ describe("Timeline day 子视图（块/条目切换）", () => {
     expect(document.querySelector(".timeline-track")).toBeNull();
   });
 });
+
+/**
+ * popover 锚点必须是固化快照，不能是行内真实节点（fix）。
+ *
+ * 旧实现把零尺寸 `PopoverAnchor` 嵌在选中色块 / 卡片内，它随 `selectedId`
+ * 置空在同一帧卸载；而 `PopoverContent` 带退出动画（`data-[state=closed]:animate-out`）
+ * 会多存活几百毫秒 → Radix 失去定位依据，保存时 popover 会在视口左上角
+ * 闪现一帧。现在锚点由 `Timeline` 持有（`RectSnapshot`），与行内 DOM 解耦。
+ */
+describe("Timeline 编辑弹层锚点（保存时不闪现在左上角）", () => {
+  beforeEach(() => {
+    stubMatchMedia();
+    stubPointerCapture();
+    useIsMobileMock.mockReturnValue(false);
+  });
+
+  it("块视图：选中条目后色块内不再嵌入 PopoverAnchor 节点", async () => {
+    const user = userEvent.setup({
+      pointerEventsCheck: PointerEventsCheckLevel.Never,
+    });
+    renderTimeline({
+      today: makeToday([makeEntry({ id: "e1", stoppedAt: "2025-01-06T01:00:00.000Z" })]),
+    });
+    const block = document.querySelector<HTMLElement>(".timeline-block")!;
+    await user.click(block);
+    // 编辑弹层已打开
+    await waitFor(() =>
+      expect(document.querySelector('[data-slot="popover-content"]')).not.toBeNull(),
+    );
+    // 关键：定位锚点不在色块内（不会随选中态卸载）
+    expect(block.querySelector('[data-slot="popover-anchor"]')).toBeNull();
+    expect(
+      document.querySelector('.timeline-track [data-slot="popover-anchor"]'),
+    ).toBeNull();
+  });
+
+  it("条目视图：选中卡片后卡片内不再嵌入 PopoverAnchor 节点", async () => {
+    window.localStorage.setItem("chronolog-day-subview", "entries");
+    const user = userEvent.setup({
+      pointerEventsCheck: PointerEventsCheckLevel.Never,
+    });
+    renderTimeline({
+      today: makeToday([makeEntry({ id: "e1", stoppedAt: "2025-01-06T01:00:00.000Z" })]),
+    });
+    const card = document.querySelector<HTMLElement>(".entry-view-card")!;
+    await user.click(card);
+    await waitFor(() =>
+      expect(document.querySelector('[data-slot="popover-content"]')).not.toBeNull(),
+    );
+    expect(card.querySelector('[data-slot="popover-anchor"]')).toBeNull();
+  });
+});

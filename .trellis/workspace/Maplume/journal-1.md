@@ -1260,3 +1260,45 @@ Restyled the day timeline entries (axis) subview per user decision: dropped the 
 ### Status
 
 [OK] **Completed**
+
+
+## Session 60: 分类/标签选择器改为内联胶囊
+
+**Date**: 2026-09-10
+**Task**: 分类/标签选择器改为内联胶囊
+**Branch**: `design/category-tag-picker-redesign`
+
+### Summary
+
+把分类/标签选择从 DropdownMenu 改为彩色胶囊平铺（一次点击完成选择）。新建 ChipGroup 纯展示基元，CategoryPicker/TagPicker 重写为两段式胶囊组（父级行常驻，点父级=选中+展开子级行）；桌面 TimerBar 改双行承载胶囊带，Shell header 改 items-start 适配折行。删除运行中只读标签徽章行——计时中改标签从不可能变为一次点击（走既有 PATCH /api/timer/current）。换段引导由受控下拉自动弹出改为有限次 CSS 脉冲；归档分类以 disabled 尾随胶囊显示当前值。保持创建顺序不做频次排序（全量可见后排序只剩位置稳定性价值）。无后端改动。两个关键技术决策已写入 spec：(1) 胶囊禁用 .touch-hit——gap 6px < 该机制要求的 16px，伪元素会互相覆盖反而缩小命中区，改为增大胶囊自身 padding；(2) 运行时着色必须走 inline CSS 变量 + CSS 侧 background，且高特异性 variant 规则须排除未注入该变量的状态（只读胶囊曾因此底色静默失效）。check 阶段另发现并修复一个 P1：点击无子级的顶层项时未收起其它父级的子级行，违反手风琴语义。321 测试全绿。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d8840d9` | (see git log) |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 61: 修复保存条目时编辑弹层在左上角闪现
+
+**Date**: 2026-09-10
+**Task**: 修复保存条目时编辑弹层在左上角闪现
+**Branch**: `design/category-tag-picker-redesign`
+
+### Summary
+
+用户反馈编辑条目保存时左上角会闪现东西。根因：PopoverContent 有退出动画（data-[state=closed]:animate-out），会比状态翻转多存活几百毫秒；而定位锚点是嵌在选中色块/卡片内的零尺寸 PopoverAnchor 节点，它随 selectedId 置空在同一帧卸载 → Radix 失去定位依据，退出动画期间渲染一帧未定位内容回落到视口 (0,0)。注意：初期假设是「onSaved 里刷新在前、清 selectedId 在后」，读代码后证伪——顺序本来就是先清后刷，真正的矛盾在锚点生命周期而非调用顺序。修法：锚点快照化。DayColumn / EntryListView 在点击时把 ev.currentTarget 经 onSelect 上传，Timeline 用 RectSnapshot(centerRectOf(el)) 存进 ref 作为 anchor，快照在整个退出动画期间保持有效；附带收益是数据刷新重排行时 popover 也不再漂移（gap 行早就用这套机制，本次统一）。顺带把 RectSnapshot 从 EntryListView 私有提取到 web/src/rect-snapshot.ts 并新增 centerRectOf；ResponsiveEditPopover 的 anchor 类型放宽为 Measurable（Radix 只要 getBoundingClientRect）；DayColumn 的 selectedId prop 移除（它只为渲染那个锚点存在，块视图无选中态样式）。新增 2 个回归用例断言选中块/卡片内不存在 popover-anchor 节点。已把「带退出动画的 popover，其锚点必须比 open 状态活得久」这条通用规则写入 spec。323 测试全绿。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `03f0521` | (see git log) |
+
+### Status
+
+[OK] **Completed**

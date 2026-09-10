@@ -27,7 +27,9 @@ import { PopoverAnchor } from "./ui/popover";
 import { Button } from "./ui/button";
 import { Tabs, TabsList, TabsTrigger } from "./ui/tabs";
 import { Minus, Plus, RectangleVertical, Rows3 } from "lucide-react";
+import type { Measurable } from "@radix-ui/rect";
 import { computeGaps, type Gap } from "../timeline-gaps";
+import { RectSnapshot, centerRectOf } from "../rect-snapshot";
 import { EntryListView } from "./EntryListView";
 
 const SCALES = [60, 30, 15, 5] as const;
@@ -107,8 +109,8 @@ function DayColumn(props: {
   isToday: boolean;
   showRuler?: boolean;
   scale: Scale;
-  selectedId: string | null;
-  onSelect: (id: string) => void;
+  /** 选中条目；传入被点色块元素供上层固化 popover 锚点快照 */
+  onSelect: (id: string, el: Element) => void;
   onDragCreate?: (draft: { startedAt: string; stoppedAt: string }) => void;
   /** 草稿锚点：拖拽结束后固化的预览块，同时作为 popover 的定位 anchor（仅归属列传入） */
   draftAnchor?: { startMs: number; endMs: number } | null;
@@ -129,7 +131,6 @@ function DayColumn(props: {
     isToday,
     showRuler = true,
     scale,
-    selectedId,
     onSelect,
     onDragCreate,
     draftAnchor,
@@ -330,7 +331,7 @@ function DayColumn(props: {
 
               const title = `${desc} · ${e.categoryName} · ${timeRange} · ${formatDuration(secs)}${
                 e.tags.length > 0
-                  ? ` · ${e.tags.map((x) => x.name).join(t("timer.tagSeparator"))}`
+                  ? ` · ${e.tags.map((x) => x.name).join(t("tags.separator"))}`
                   : ""
               }`;
 
@@ -384,29 +385,17 @@ function DayColumn(props: {
                 color: textColor,
               };
 
-              // 选中的已停止条目：色块内嵌一个钉在色块中心的零尺寸 Anchor 作为 popover 定位锚点，
-              // 使编辑面板从条目中部向右弹出（空间不足时由 Radix 自动翻转，仍遮住当前条目）
-              if (selectedId === e.id) {
-                return (
-                  <div
-                    key={e.id}
-                    className={`timeline-block ${tier} cursor-pointer`}
-                    style={blockStyle}
-                    title={title}
-                    onClick={() => onSelect(e.id)}
-                  >
-                    {blockContent}
-                    <PopoverAnchor className="absolute top-1/2 left-1/2 h-0 w-0" />
-                  </div>
-                );
-              }
               return (
                 <div
                   key={e.id}
                   className={`timeline-block ${tier}${isRunning ? " running" : " cursor-pointer"}`}
                   style={blockStyle}
                   title={title}
-                  onClick={isRunning ? undefined : () => onSelect(e.id)}
+                  onClick={
+                    isRunning
+                      ? undefined
+                      : (ev) => onSelect(e.id, ev.currentTarget)
+                  }
                 >
                   {blockContent}
                 </div>
@@ -511,6 +500,17 @@ export function Timeline(props: {
   const scrollRef = useRef<HTMLDivElement>(null);
   const isDay = mode === "day";
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // 选中条目的 popover 锚点：点击瞬间固化色块/卡片中心点的快照。
+  // 不能用行内真实节点做锚点：PopoverContent 有退出动画，而锚点会随
+  // selectedId 置空在同一帧卸载 → Radix 失去定位依据，退出动画期间回落到
+  // 视口左上角闪现一帧（快照在整个退出动画期间保持有效）。
+  const entryAnchorRef = useRef<Measurable | null>(null);
+
+  /** 选中条目：先固化锚点快照，再置 selectedId（两者同一事件内完成） */
+  const selectEntry = (id: string, el: Element) => {
+    entryAnchorRef.current = new RectSnapshot(centerRectOf(el));
+    setSelectedId(id);
+  };
   const [draft, setDraft] = useState<{
     dayStart: string;
     startedAt: string;
@@ -683,6 +683,7 @@ export function Timeline(props: {
   return (
     <ResponsiveEditPopover
       open={selectedEntry != null || draft != null || gapDraft != null}
+      anchor={selectedEntry != null ? entryAnchorRef : undefined}
       onOpenChange={(open) => {
         if (!open) {
           setSelectedId(null);
@@ -815,7 +816,7 @@ export function Timeline(props: {
                   tags={tags}
                   gaps={todayGaps}
                   selectedId={selectedId}
-                  onSelect={setSelectedId}
+                  onSelect={selectEntry}
                   onGapClick={
                     today
                       ? (gap) =>
@@ -841,8 +842,7 @@ export function Timeline(props: {
                     date == null || (today ? isDayAt(today, nowMs) : true)
                   }
                   scale={scale}
-                  selectedId={selectedId}
-                  onSelect={setSelectedId}
+                  onSelect={selectEntry}
                   onDragCreate={
                     today && !isMobile
                       ? handleDragCreate(today.dayStart)
@@ -921,8 +921,7 @@ export function Timeline(props: {
                         isToday={isDayAt(d, nowMs)}
                         showRuler={false}
                         scale={scale}
-                        selectedId={selectedId}
-                        onSelect={setSelectedId}
+                        onSelect={selectEntry}
                         onDragCreate={
                           isMobile ? undefined : handleDragCreate(d.dayStart)
                         }

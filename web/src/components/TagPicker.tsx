@@ -1,24 +1,36 @@
-import { Check } from "lucide-react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { Tag } from "../api";
-import { paletteColor } from "../format";
 import { sortHierarchical } from "../hierarchy";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { ChipGroup } from "./ChipGroup";
 
+/**
+ * 标签选择器（多选，任务 09-10-chip-pickers 由下拉菜单改为彩色胶囊平铺）。
+ * 与 CategoryPicker 同为两段式层级，区别是点击 = toggle，且取消父级不连带取消子级
+ * （标签无级联语义）。
+ */
 export function TagPicker(props: {
   tags: Tag[];
   value: string[];
-  label: string;
   disabled?: boolean;
   onChange: (ids: string[]) => void;
 }) {
   const { t } = useTranslation();
+  const groups = sortHierarchical(props.tags);
+  // 已选子级所属的父级默认展开，避免已选项被藏在收起的子级行里（R3.4）
+  const parentOfSelected =
+    groups.find((g) => g.children.some((c) => props.value.includes(c.id)))?.parent.id ?? null;
+  const [expandedParentId, setExpandedParentId] = useState<string | null>(parentOfSelected);
+  // 外部 value 整体切换（如异步载入运行中条目的标签）时同步展开对应父级；
+  // 用户自己的展开操作不受影响（仅在 value 变化的那一次渲染判定）
+  const valueKey = props.value.join(",");
+  const [lastValueKey, setLastValueKey] = useState(valueKey);
+  if (lastValueKey !== valueKey) {
+    setLastValueKey(valueKey);
+    if (parentOfSelected !== null && expandedParentId === null) {
+      setExpandedParentId(parentOfSelected);
+    }
+  }
 
   function toggle(id: string) {
     if (props.value.includes(id)) {
@@ -29,56 +41,15 @@ export function TagPicker(props: {
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={props.disabled}
-          className="w-full shrink-0 justify-start gap-2 rounded-lg md:ml-auto md:w-auto"
-        >
-          {props.label}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {props.tags.length === 0 ? (
-          <DropdownMenuItem disabled>{t("tags.empty")}</DropdownMenuItem>
-        ) : (
-          sortHierarchical(props.tags).map(({ parent, children }) => (
-            <div key={parent.id}>
-              <DropdownMenuItem
-                onClick={() => toggle(parent.id)}
-                className={props.value.includes(parent.id) ? "bg-accent" : undefined}
-              >
-                <span
-                  className="size-2 shrink-0 rounded-full"
-                  style={{ background: paletteColor(parent.color, parent.name) }}
-                />
-                <span className="font-medium">{parent.name}</span>
-                {props.value.includes(parent.id) ? <Check className="ml-auto size-4" /> : null}
-              </DropdownMenuItem>
-              {children.map((tag) => {
-                const selected = props.value.includes(tag.id);
-                return (
-                  <DropdownMenuItem
-                    key={tag.id}
-                    onClick={() => toggle(tag.id)}
-                    className={`${selected ? "bg-accent" : ""} pl-7 text-muted-foreground`}
-                  >
-                    <span className="ml-2 h-3 w-px shrink-0 bg-border" aria-hidden="true" />
-                    <span
-                      className="size-2 shrink-0 rounded-full"
-                      style={{ background: paletteColor(tag.color, tag.name) }}
-                    />
-                    {tag.name}
-                    {selected ? <Check className="ml-auto size-4" /> : null}
-                  </DropdownMenuItem>
-                );
-              })}
-            </div>
-          ))
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <ChipGroup
+      groups={groups}
+      selectedIds={props.value}
+      variant="outline"
+      expandedParentId={expandedParentId}
+      onExpandChange={setExpandedParentId}
+      onSelect={toggle}
+      disabled={props.disabled}
+      emptyText={t("tags.empty")}
+    />
   );
 }

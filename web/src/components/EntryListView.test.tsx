@@ -60,7 +60,7 @@ function renderList(props?: {
   nowMs?: number;
   gaps?: Gap[];
   selectedId?: string | null;
-  onSelect?: (id: string) => void;
+  onSelect?: (id: string, el: Element) => void;
   onGapClick?: (gap: Gap) => void;
 }) {
   const onSelect = props?.onSelect ?? vi.fn();
@@ -178,7 +178,8 @@ describe("EntryListView", () => {
     });
     const cards = document.querySelectorAll<HTMLElement>(".entry-view-card");
     await user.click(cards[0]);
-    expect(onSelect).toHaveBeenCalledWith("e1");
+    // 第二参是被点卡片元素（上层据此固化 popover 锚点快照）
+    expect(onSelect).toHaveBeenCalledWith("e1", cards[0]);
 
     // 运行中卡片：onClick 为 undefined（纯展示）
     await user.click(cards[1]);

@@ -1,83 +1,50 @@
+import { useState } from "react";
 import type { Category } from "../api";
-import { paletteColor } from "../format";
 import { sortHierarchical } from "../hierarchy";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { ChipGroup } from "./ChipGroup";
 
+/**
+ * 分类选择器（单选，任务 09-10-chip-pickers 由下拉菜单改为彩色胶囊平铺）。
+ * 两段式层级：父级行常驻，点父级 = 选中 + 展开其子级行（同时最多一个父级展开）。
+ */
 export function CategoryPicker(props: {
   categories: Category[];
   value: string;
-  label: string;
-  /** 选中分类的名称（无选中时传空串），未显式设色时按名称 hash 回退 */
-  colorName: string;
   disabled?: boolean;
   onChange: (id: string) => void;
-  /** 受控打开状态（透传 DropdownMenu Root）；未传时非受控，行为不变 */
-  open?: boolean;
-  onOpenChange?: (open: boolean) => void;
+  /**
+   * 只读尾随胶囊名（D7）：当前值不命中候选集（归档 / 未分类）时由调用方传入；
+   * 空 / 未传 = 不渲染。用户只能改选活动分类把它换掉。
+   */
+  readonlyName?: string | null;
+  /** 无间隙换段的引导脉冲信号（D8）：true 时胶囊行短暂脉冲高亮 */
+  hinted?: boolean;
 }) {
-  const selected = props.categories.find((c) => c.id === props.value);
-  const color = selected
-    ? paletteColor(selected.color, selected.name)
-    : paletteColor(null, props.colorName);
+  const groups = sortHierarchical(props.categories);
+  // 展开态为组件内部 state（不受控、不持久化）；value 指向某子级时其父级默认展开
+  const parentOfValue =
+    groups.find((g) => g.children.some((c) => c.id === props.value))?.parent.id ?? null;
+  const [expandedParentId, setExpandedParentId] = useState<string | null>(parentOfValue);
+  // 派生初值只在挂载时生效，外部 value 后续切到别的子级时同步跟进
+  const [lastValue, setLastValue] = useState(props.value);
+  if (lastValue !== props.value) {
+    setLastValue(props.value);
+    if (parentOfValue !== null && parentOfValue !== expandedParentId) {
+      setExpandedParentId(parentOfValue);
+    }
+  }
 
   return (
-    <DropdownMenu open={props.open} onOpenChange={props.onOpenChange}>
-      <DropdownMenuTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={props.disabled}
-          className="w-full shrink-0 justify-start gap-2 rounded-lg md:w-auto"
-        >
-          <span
-            className="size-2 shrink-0 rounded-full"
-            style={{ background: color }}
-            aria-hidden="true"
-          />
-          {props.label}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {sortHierarchical(props.categories).map(({ parent, children }) => (
-          <div key={parent.id}>
-            <DropdownMenuItem
-              onClick={() => props.onChange(parent.id)}
-              className={parent.id === props.value ? "bg-accent" : undefined}
-            >
-              <span
-                className="size-2 shrink-0 rounded-full"
-                style={{ background: paletteColor(parent.color, parent.name) }}
-                aria-hidden="true"
-              />
-              <span className="font-medium">{parent.name}</span>
-            </DropdownMenuItem>
-            {children.map((c) => (
-              <DropdownMenuItem
-                key={c.id}
-                onClick={() => props.onChange(c.id)}
-                className={`${c.id === props.value ? "bg-accent" : ""} pl-7 text-muted-foreground`}
-              >
-                <span
-                  className="ml-2 h-3 w-px shrink-0 bg-border"
-                  aria-hidden="true"
-                />
-                <span
-                  className="size-2 shrink-0 rounded-full"
-                  style={{ background: paletteColor(c.color, c.name) }}
-                  aria-hidden="true"
-                />
-                {c.name}
-              </DropdownMenuItem>
-            ))}
-          </div>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <ChipGroup
+      groups={groups}
+      selectedIds={props.value ? [props.value] : []}
+      variant="solid"
+      expandedParentId={expandedParentId}
+      onExpandChange={setExpandedParentId}
+      onSelect={props.onChange}
+      disabled={props.disabled}
+      readonlyChip={props.readonlyName ? { name: props.readonlyName } : null}
+      hinted={props.hinted}
+    />
   );
 }

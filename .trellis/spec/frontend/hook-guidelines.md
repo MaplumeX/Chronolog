@@ -12,7 +12,9 @@ Infrastructure hooks are allowed: `use-theme.ts` (theme mode state + `matchMedia
 
 **Page fetch on mount**: `useTimerController` (Timer data, guarded by `enabled`) / `CategoriesPage` load in `useEffect` and write into `useState`. `StatsPage` also polls every 5 seconds and uses a `cancelled` flag.
 
-**Category menu**: `CategoryPicker` uses shadcn `DropdownMenu`, not a document `mousedown` listener.
+**Category selection**: `CategoryPicker` is a chip group (task 09-10-chip-pickers) — plain buttons, no dropdown and no document `mousedown` listener. Its expand state is derived from `value` during render (React derived-state-from-props), not synced through a `useEffect`.
+
+**Segment-switch hint** (`useTimerController`): after a gapless stop-and-switch the hook sets `categoryHintActive` (renamed from `categoryPickerAutoOpen` in task 09-10-chip-pickers — the old name described a dropdown that no longer exists). One signal, two consumers: `CategoryPicker.hinted` drives a finite CSS pulse on the chip band (both breakpoints), and `barProps.autoOpenEditor` still drives `MobileTimerDock`'s derived sheet open. It resets on category pick, on user-dismissed sheet (`onAutoOpenConsumed`), and whenever `running` disappears.
 
 ## When to extract a hook
 

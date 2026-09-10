@@ -652,3 +652,120 @@
     right: -8px;
   }
 }
+
+/* ── 分类 / 标签胶囊（ChipGroup，任务 09-10-chip-pickers）─────────────────
+   胶囊底色必须写在 CSS 侧、消费组件内联注入的 --chip-color / --chip-foreground，
+   内联 background 会压过 :hover 与 [aria-pressed] 覆盖（同 --entry-card-color 的坑）。 */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  border-radius: 9999px;
+  border: 1px solid var(--input);
+  background: transparent;
+  color: var(--foreground);
+  padding: 3px 10px;
+  font-size: 12px;
+  line-height: 1.25rem;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+}
+
+.chip:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--chip-color, var(--muted)) 14%, transparent);
+  border-color: color-mix(in srgb, var(--chip-color, var(--border)) 55%, transparent);
+}
+
+.chip:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--ring) 60%, transparent);
+  outline-offset: 2px;
+}
+
+/* 分类选中（solid）：分类色实心填充 + 配套前景色。
+   :not(.chip--readonly) 必须保留——只读胶囊同样带 variant 类与 aria-pressed="true"，
+   而它不注入 --chip-color，被本规则命中会让 background 失效（且选择器特异性更高，
+   .chip--readonly 的 muted 底色压不过来）。 */
+.chip--solid[aria-pressed="true"]:not(.chip--readonly) {
+  background: var(--chip-color);
+  color: var(--chip-foreground);
+  border-color: transparent;
+}
+
+.chip--solid[aria-pressed="true"]:not(.chip--readonly):hover:not(:disabled) {
+  background: var(--chip-color);
+  border-color: transparent;
+}
+
+/* 标签选中（outline）：彩色描边 + 淡色底（color-mix 派生，不硬编码白色） */
+.chip--outline[aria-pressed="true"]:not(.chip--readonly) {
+  border-color: var(--chip-color);
+  background: color-mix(in srgb, var(--chip-color) 12%, transparent);
+}
+
+.chip--outline[aria-pressed="true"]:not(.chip--readonly):hover:not(:disabled) {
+  background: color-mix(in srgb, var(--chip-color) 20%, transparent);
+}
+
+/* 归档只读胶囊（D7）：不带分类色，muted 前景 + 虚线描边，不可点 */
+.chip--readonly {
+  border-style: dashed;
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--muted) 50%, transparent);
+  color: var(--muted-foreground);
+  cursor: default;
+}
+
+.chip:disabled {
+  cursor: default;
+}
+
+.chip:disabled:not(.chip--readonly) {
+  opacity: 0.5;
+}
+
+/* 子级胶囊行的归属引导线（缩进 + 竖线，R2.4） */
+.chip-children {
+  position: relative;
+  padding-left: 14px;
+}
+
+.chip-children::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 4px;
+  bottom: 4px;
+  width: 1px;
+  background: var(--border);
+}
+
+/* 换段引导脉冲（D8）：有限次数，禁止 infinite——信号被消费时 class 移除即停 */
+@keyframes chip-hint-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--ring) 40%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--ring) 15%, transparent);
+  }
+}
+
+.chip-group--hinted {
+  border-radius: var(--radius-md);
+  animation: chip-hint-pulse 0.8s ease-in-out 2;
+}
+
+/* 触屏适配（hover: none）：胶囊是主操作目标，直接增大自身垂直 padding 至命中区 ≥40px。
+   刻意不用 .touch-hit —— 胶囊间距仅 6px，远小于该机制要求的 16px，
+   伪元素会互相覆盖导致前一个胶囊命中区反而变小（spec 已记录的坑）。 */
+@media (hover: none) {
+  .chip {
+    padding-top: 9px;
+    padding-bottom: 9px;
+  }
+}
