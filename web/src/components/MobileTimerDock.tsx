@@ -62,7 +62,7 @@ export function MobileTimerDock(props: {
             type="button"
             aria-label={t("timer.dockAria")}
             aria-haspopup="dialog"
-            className="flex min-w-0 flex-1 items-center gap-3 text-left"
+            className="flex min-w-0 flex-1 cursor-pointer items-center gap-3 text-left"
           >
             {props.categoryColor ? (
               <span

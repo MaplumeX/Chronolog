@@ -145,7 +145,7 @@ export function GoalEditorDialog(props: {
                   type="button"
                   aria-pressed={icon === e}
                   className={
-                    "flex h-9 items-center justify-center rounded-md text-lg transition-colors hover:bg-accent " +
+                    "flex h-9 cursor-pointer items-center justify-center rounded-md text-lg transition-colors hover:bg-accent " +
                     (icon === e ? "bg-accent ring-2 ring-primary" : "")
                   }
                   onClick={() => setIcon(e)}

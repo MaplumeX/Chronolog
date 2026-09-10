@@ -58,7 +58,7 @@ export function MergeDialog(props: {
         aria-pressed={selected}
         onClick={() => setKeep(which)}
         disabled={props.pending}
-        className={`flex w-full items-start gap-2 rounded-lg border p-3 text-left transition-colors ${
+        className={`flex w-full cursor-pointer items-start gap-2 rounded-lg border p-3 text-left transition-colors ${
           selected
             ? "border-primary bg-primary/5 ring-1 ring-primary"
             : "border-border hover:bg-accent"

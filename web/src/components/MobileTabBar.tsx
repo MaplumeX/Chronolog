@@ -26,7 +26,7 @@ export function MobileTabBar(props: {
             type="button"
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex min-h-[48px] flex-1 flex-col items-center justify-center gap-0.5 py-1.5 text-muted-foreground transition-colors hover:text-foreground active:text-foreground",
+              "flex min-h-[48px] flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 py-1.5 text-muted-foreground transition-colors hover:text-foreground active:text-foreground",
               active && "text-primary",
             )}
             onClick={() => props.onPage(item.id)}

@@ -25,7 +25,7 @@ export function ColorPalettePicker(props: {
           title={`${t("common.color")} ${n}`}
           onClick={() => props.onChange(n)}
           className={cn(
-            "size-6 rounded-full outline-offset-2 transition-shadow",
+            "size-6 cursor-pointer rounded-full outline-offset-2 transition-shadow",
             props.value === n
               ? "outline-2 outline-ring"
               : "hover:outline-1 hover:outline-muted-foreground",

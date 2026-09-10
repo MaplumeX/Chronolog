@@ -100,7 +100,7 @@ function SlotButton(props: {
       aria-label={props.ariaLabel}
       aria-expanded={props.active}
       onClick={props.onOpen}
-      className={`flex-1 min-w-0 rounded-md px-2 py-1 text-left transition-colors ${
+      className={`flex-1 min-w-0 cursor-pointer rounded-md px-2 py-1 text-left transition-colors ${
         props.active ? "bg-accent" : "hover:bg-accent/50"
       }`}
     >
