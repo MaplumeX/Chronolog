@@ -1239,3 +1239,24 @@ Restyled the day timeline entries (axis) subview per user decision: dropped the 
 ### Status
 
 [OK] **Completed**
+
+
+## Session 59: 无间隙计时适配移动端停靠胶囊
+
+**Date**: 2026-09-10
+**Task**: 无间隙计时适配移动端停靠胶囊
+**Branch**: `feat/redesign-mobile-timer-header`
+
+### Summary
+
+修复 09-10-mobile-timer-dock 缺陷：无间隙模式停止换段后 categoryPickerAutoOpen 信号在移动端停靠胶囊上被吞掉（CategoryPicker 只存在于关闭的 sheet 内）。barProps 新增 autoOpenEditor 透传 + onAutoOpenConsumed 复位回调；MobileTimerDock 的 Sheet 改受控（manualOpen || autoOpenEditor 纯派生，无 useEffect 同步）——换段后 sheet 自动展开、内部下拉沿用受控 open 链弹出；选分类后 hook 状态复位驱动派生关闭（Radix onOpenChange 仅用户交互触发，无双重复位）；用户手动关闭时经 onAutoOpenConsumed 复位。桌面端 TimerBar 零消费零回归。291 测试/typecheck/build 全绿，spec 已补 autoOpenEditor 契约与已知边缘行为。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `ec6ed7f` | (see git log) |
+
+### Status
+
+[OK] **Completed**
