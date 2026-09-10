@@ -29,8 +29,6 @@ function renderDock(overrides?: Partial<DockProps>) {
     onDescriptionChange: vi.fn(),
     categoryPicker: <button type="button">CategoryPicker</button>,
     tagPicker: <button type="button">TagPicker</button>,
-    runningTags: [],
-    runningTagColors: () => null,
     categoryColor: "var(--category-3)",
     elapsed: 2537, // 0:42:17
     running: false,
@@ -120,15 +118,12 @@ describe("MobileTimerDock 交互", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("running 且有标签时 sheet 内展示标签 chips 而非 TagPicker", async () => {
-    renderDock({
-      running: true,
-      runningTags: [{ id: "t1", name: "focus" }],
-    });
+  it("计时中 sheet 内仍渲染两个胶囊组插槽（无只读徽章行分支，D6）", async () => {
+    renderDock({ running: true });
     const user = setupUser();
     await user.click(screen.getByRole("button", { name: "Expand timer editor" }));
-    expect(screen.getByText("focus")).toBeInTheDocument();
-    expect(screen.queryByText("TagPicker")).not.toBeInTheDocument();
+    expect(screen.getByText("CategoryPicker")).toBeInTheDocument();
+    expect(screen.getByText("TagPicker")).toBeInTheDocument();
   });
 
   it("error 文案在 sheet 内展示", async () => {
@@ -141,7 +136,7 @@ describe("MobileTimerDock 交互", () => {
 
 describe("MobileTimerDock 无间隙换段引导（autoOpenEditor）", () => {
   it("autoOpenEditor=true 初始渲染 → sheet 已打开且内容可见", () => {
-    // 无间隙换段后：信号直接展开编辑 sheet（sheet 内 CategoryPicker 受控 open 接着弹下拉）
+    // 无间隙换段后：信号直接展开编辑 sheet（sheet 内分类胶囊行同时脉冲引导）
     renderDock({ autoOpenEditor: true });
     expect(
       screen.getByRole("dialog", { name: "Edit timer" }),
@@ -172,7 +167,7 @@ describe("MobileTimerDock 无间隙换段引导（autoOpenEditor）", () => {
   });
 
   it("选完分类：信号复位（autoOpenEditor 变 false）后 sheet 派生关闭", () => {
-    // 实际关闭由 hook 状态驱动（onChange → setCategoryPickerAutoOpen(false)）；
+    // 实际关闭由 hook 状态驱动（onChange → setCategoryHintActive(false)）；
     // 组件侧验证信号翻 false 后受控 open 派生关闭、不再回调 onAutoOpenConsumed
     const { dock, props } = renderDock({ autoOpenEditor: true });
     expect(

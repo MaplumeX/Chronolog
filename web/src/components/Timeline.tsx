@@ -330,7 +330,7 @@ function DayColumn(props: {
 
               const title = `${desc} · ${e.categoryName} · ${timeRange} · ${formatDuration(secs)}${
                 e.tags.length > 0
-                  ? ` · ${e.tags.map((x) => x.name).join(t("timer.tagSeparator"))}`
+                  ? ` · ${e.tags.map((x) => x.name).join(t("tags.separator"))}`
                   : ""
               }`;
 

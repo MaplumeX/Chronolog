@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Play, Square } from "lucide-react";
-import { formatDuration, paletteColor } from "../format";
+import { formatDuration } from "../format";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -24,12 +24,9 @@ export function MobileTimerDock(props: {
   onDescriptionChange: (value: string) => void;
   categoryPicker: ReactNode;
   tagPicker: ReactNode;
-  runningTags: { id: string; name: string }[];
-  /** 运行中标签的显式色（按 tagId 查自标签列表），未设定回退 hash 色 */
-  runningTagColors: (id: string) => number | null;
   /** 胶囊摘要行的分类色（running ?? selected），null = 未选分类 */
   categoryColor: string | null;
-  /** 无间隙换段后的引导信号（useTimerController 的 categoryPickerAutoOpen）：true 时自动展开编辑 sheet */
+  /** 无间隙换段后的引导信号（useTimerController 的 categoryHintActive）：true 时自动展开编辑 sheet */
   autoOpenEditor?: boolean;
   /** sheet 被用户关闭（未选分类）时复位 autoOpenEditor 信号 */
   onAutoOpenConsumed?: () => void;
@@ -42,7 +39,7 @@ export function MobileTimerDock(props: {
   const { t } = useTranslation();
   // 手动打开状态（点胶囊摘要区）；sheet 的 open 是派生值：
   // manualOpen || autoOpenEditor —— 无间隙换段后 autoOpenEditor=true 直接展开 sheet
-  // （内部 CategoryPicker 受控 open 接着自动弹下拉），选完分类信号复位 → sheet 派生关闭
+  // （内部分类胶囊行同时脉冲高亮引导），选完分类信号复位 → sheet 派生关闭
   const [manualOpen, setManualOpen] = useState(false);
   const sheetOpen = manualOpen || props.autoOpenEditor === true;
 
@@ -122,32 +119,9 @@ export function MobileTimerDock(props: {
               value={props.description}
               onChange={(e) => props.onDescriptionChange(e.target.value)}
             />
+            {/* 胶囊带常驻可编辑（D6）：计时中也不切只读徽章行 */}
             {props.categoryPicker}
-            {props.running && props.runningTags.length > 0 ? (
-              <div className="flex flex-wrap items-center gap-1.5">
-                {props.runningTags.map((tag) => (
-                  <span
-                    key={tag.id}
-                    className="inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-xs"
-                    title={tag.name}
-                  >
-                    <span
-                      className="size-1.5 shrink-0 rounded-full"
-                      style={{
-                        background: paletteColor(
-                          props.runningTagColors(tag.id),
-                          tag.name,
-                        ),
-                      }}
-                      aria-hidden="true"
-                    />
-                    {tag.name}
-                  </span>
-                ))}
-              </div>
-            ) : (
-              props.tagPicker
-            )}
+            {props.tagPicker}
             {props.error ? (
               <p className="text-sm text-destructive">{props.error}</p>
             ) : null}

@@ -1,0 +1,5 @@
+{"file": ".trellis/spec/frontend/index.md", "reason": "前端层总览与约定入口"}
+{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Shell/TimerBar/MobileTimerDock/EntryEditor/Picker 的现有契约与已记载踩坑（inline style 覆盖、touch-hit 重叠）"}
+{"file": ".trellis/spec/frontend/design-tokens.md", "reason": "分类色板 paletteColor/paletteForegroundColor 契约、color-mix 派生规则、禁止硬编码色值"}
+{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "useTimerController 的信号/装配边界，改 categoryHintActive 时需遵循"}
+{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "i18n key 双语同步要求、测试栈约定、CSS 层级规则"}

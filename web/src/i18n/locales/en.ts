@@ -13,8 +13,6 @@ export const en: Record<keyof typeof zh, string> = {
   "timer.start": "Start",
   "timer.stop": "Stop",
   "timer.selectCategory": "Select category",
-  "timer.selectTags": "Select tags",
-  "timer.tagSeparator": ", ",
   "timer.dockAria": "Expand timer editor",
   "timer.dockSheetTitle": "Edit timer",
   "timeline.weekEmpty": "No entries",
@@ -172,6 +170,7 @@ export const en: Record<keyof typeof zh, string> = {
   "tags.deleteCascadeDescription":
     "This cannot be undone. Deleting it will also delete {{count}} sub-item(s).",
   "tags.empty": "No tags yet",
+  "tags.separator": ", ",
   "tags.createFailed": "Failed to create",
   "tags.editFailed": "Failed to save",
   "tags.deleteFailed": "Failed to delete",

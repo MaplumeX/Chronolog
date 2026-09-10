@@ -333,14 +333,14 @@ describe("onToggle 停止分支（无间隙计时，task 09-08）", () => {
       await result.current.barProps.onToggle();
     });
     expect(onCurrent).toHaveBeenCalledWith(null);
-    // 完全停止：分类选择器不自动打开（open 为 undefined = 非受控），引导信号亦为 false
+    // 完全停止：分类胶囊行无引导脉冲（hinted=false），引导信号亦为 false
     expect(result.current.barProps.categoryPicker).toBeDefined();
-    expect(result.current.barProps.categoryPicker.props.open).toBeUndefined();
+    expect(result.current.barProps.categoryPicker.props.hinted).toBe(false);
     expect(result.current.barProps.autoOpenEditor).toBe(false);
     unmount();
   });
 
-  it("无间隙模式：stop 返回新段（stoppedAt null）→ onCurrent(新段) 且选择器标记自动打开", async () => {
+  it("无间隙模式：stop 返回新段（stoppedAt null）→ onCurrent(新段) 且置位分类引导信号", async () => {
     const fetchSpy = stubToggleFetch({ stopEntry: NEXT_ENTRY });
     vi.stubGlobal("fetch", fetchSpy);
     const onCurrent = vi.fn();
@@ -353,10 +353,11 @@ describe("onToggle 停止分支（无间隙计时，task 09-08）", () => {
     await act(async () => {
       await result.current.barProps.onToggle();
     });
-    // 换段成功：全局 current 替换为新段，且分类选择器受控自动打开（AC5）
+    // 换段成功：全局 current 替换为新段，且置位分类引导信号
     expect(onCurrent).toHaveBeenCalledTimes(1);
     expect(onCurrent).toHaveBeenCalledWith(NEXT_ENTRY);
-    expect(result.current.barProps.categoryPicker.props.open).toBe(true);
+    // 桌面：分类胶囊行置脉冲引导（D8，取代旧的受控下拉自动弹出）
+    expect(result.current.barProps.categoryPicker.props.hinted).toBe(true);
     // barProps 暴露引导信号：移动端停靠胶囊据此自动展开编辑 sheet
     expect(result.current.barProps.autoOpenEditor).toBe(true);
     // 选完分类：onChange 内复位信号 → autoOpenEditor 变 false（sheet 派生关闭）
@@ -413,7 +414,7 @@ describe("onToggle 停止分支（无间隙计时，task 09-08）", () => {
     });
     expect(onCurrent).not.toHaveBeenCalled();
     expect(result.current.barProps.error).not.toBe("");
-    expect(result.current.barProps.categoryPicker.props.open).toBeUndefined();
+    expect(result.current.barProps.categoryPicker.props.hinted).toBe(false);
     expect(result.current.barProps.autoOpenEditor).toBe(false);
     unmount();
   });

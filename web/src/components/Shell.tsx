@@ -223,8 +223,12 @@ export function Shell(props: {
         <SidebarRail />
       </Sidebar>
       <SidebarInset className="min-h-0 overflow-hidden">
-        <header className="flex min-h-12 shrink-0 items-center border-b px-2">
-          <SidebarTrigger />
+        {/* items-start：header 高度由内容撑开（timer 页双行胶囊带可折行增长）；
+            SidebarTrigger 包一层 min-h-12 容器保证它在第一行垂直居中且不被拉伸变形 */}
+        <header className="flex min-h-12 shrink-0 items-start border-b px-2">
+          <div className="flex min-h-12 shrink-0 items-center">
+            <SidebarTrigger />
+          </div>
           {props.header}
         </header>
         <div className="flex min-h-0 flex-1 flex-col overflow-auto">

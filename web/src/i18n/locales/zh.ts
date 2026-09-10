@@ -11,8 +11,6 @@ export const zh = {
   "timer.start": "开始",
   "timer.stop": "停止",
   "timer.selectCategory": "选择分类",
-  "timer.selectTags": "选择标签",
-  "timer.tagSeparator": "、",
   "timer.dockAria": "展开计时器编辑",
   "timer.dockSheetTitle": "编辑计时器",
   "timeline.weekEmpty": "无记录",
@@ -165,6 +163,8 @@ export const zh = {
   "tags.deleteConfirmDescription": "删除后无法恢复，确认删除选中的标签吗？",
   "tags.deleteCascadeDescription": "删除后将同时删除 {{count}} 个子级，且无法恢复。",
   "tags.empty": "暂无标签",
+  /** 只读展示处的标签名连接符（Timeline tooltip / MergeDialog 预览） */
+  "tags.separator": "、",
   "tags.createFailed": "创建失败",
   "tags.editFailed": "保存失败",
   "tags.deleteFailed": "删除失败",

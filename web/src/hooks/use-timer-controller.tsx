@@ -88,8 +88,9 @@ export function useTimerController(props: {
   const [runningDraft, setRunningDraft] = useState<string | null>(null);
   // 说明防抖：待发送的 setTimeout id
   const descriptionDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // 无间隙换段成功后自动打开分类选择器（受控）；用户选中/关闭后复位
-  const [categoryPickerAutoOpen, setCategoryPickerAutoOpen] = useState(false);
+  // 无间隙换段成功后的「请选分类」引导信号；用户选中分类 / 关闭 sheet 后复位。
+  // 两个消费端：桌面 = 分类胶囊行有限时长脉冲高亮；移动 = 停靠胶囊自动展开编辑 sheet。
+  const [categoryHintActive, setCategoryHintActive] = useState(false);
 
   /** 拉取窗口紧邻外侧条目（gap 插槽边界）；失败静默降级为 null，不阻塞主数据 */
   function loadBoundary(start: string, end: string) {
@@ -163,10 +164,10 @@ export function useTimerController(props: {
 
   // running 切换（开始新计时/停止）时重置说明草稿并取消 pending 防抖，
   // 避免停止后把草稿误发到 timer 接口（409）或残留到新计时表单；
-  // 换段自动打开标记同理：running 消失时复位，避免残留 true 强制打开开始表单的选择器
+  // 换段引导信号同理：running 消失时复位，避免残留 true 在开始表单上持续引导
   useEffect(() => {
     setRunningDraft(running ? running.description : null);
-    if (!running) setCategoryPickerAutoOpen(false);
+    if (!running) setCategoryHintActive(false);
     if (descriptionDebounceRef.current) {
       clearTimeout(descriptionDebounceRef.current);
       descriptionDebounceRef.current = null;
@@ -240,11 +241,11 @@ export function useTimerController(props: {
     try {
       if (running) {
         const { entry } = await api.stop();
-        // 无间隙模式：响应是新段（stoppedAt === null，仍在计时），换段成功后自动打开
-        // 分类选择器引导选分类；普通模式：完全停止，entry.stoppedAt 非 null
+        // 无间隙模式：响应是新段（stoppedAt === null，仍在计时），换段成功后置位引导信号
+        // 提示用户选分类；普通模式：完全停止，entry.stoppedAt 非 null
         if (entry.stoppedAt === null) {
           props.onCurrent(entry);
-          setCategoryPickerAutoOpen(true);
+          setCategoryHintActive(true);
         } else {
           props.onCurrent(null);
         }
@@ -309,16 +310,7 @@ export function useTimerController(props: {
     }
   }
 
-  const pickerLabel = running?.categoryName ?? selected?.name ?? t("timer.selectCategory");
-  const pickerColor = running?.categoryName ?? selected?.name ?? "";
   const runningTagIds = running?.tags.map((tag) => tag.id) ?? [];
-  const tagPickerLabel =
-    (running ? runningTagIds : tagIds).length > 0
-      ? (running ? runningTagIds : tagIds)
-          .map((id) => tags.find((x) => x.id === id)?.name)
-          .filter(Boolean)
-          .join(t("timer.tagSeparator"))
-      : t("timer.selectTags");
 
   const barProps = {
     description: running ? (runningDraft ?? running.description) : description,
@@ -327,14 +319,9 @@ export function useTimerController(props: {
       <CategoryPicker
         categories={activeCategories}
         value={running ? (running.categoryId ?? "") : categoryId}
-        label={pickerLabel}
-        colorName={pickerColor}
-        open={categoryPickerAutoOpen ? true : undefined}
-        onOpenChange={(open: boolean) => {
-          if (!open) setCategoryPickerAutoOpen(false);
-        }}
+        hinted={categoryHintActive}
         onChange={running ? (id: string) => {
-          setCategoryPickerAutoOpen(false);
+          setCategoryHintActive(false);
           void onRunningCategoryChange(id);
         } : setCategoryId}
       />
@@ -343,14 +330,11 @@ export function useTimerController(props: {
       <TagPicker
         tags={tags}
         value={running ? runningTagIds : tagIds}
-        label={tagPickerLabel}
         onChange={running ? (ids: string[]) => {
           void onRunningTagsChange(ids);
         } : setTagIds}
       />
     ),
-    runningTags: running?.tags ?? [],
-    runningTagColors: (id: string) => tags.find((x) => x.id === id)?.color ?? null,
     /** 摘要色点用分类色（running ?? selected）；null = 未选分类（未运行且未选时无色点） */
     categoryColor: running
       ? running.categoryId
@@ -359,10 +343,11 @@ export function useTimerController(props: {
       : selected
         ? paletteColor(selected.color, selected.name)
         : null,
-    /** 无间隙换段后的引导信号：移动端停靠胶囊据此自动展开编辑 sheet；桌面端忽略 */
-    autoOpenEditor: categoryPickerAutoOpen,
-    /** sheet 被用户关闭（未选分类）时复位信号，避免残留 true */
-    onAutoOpenConsumed: () => setCategoryPickerAutoOpen(false),
+    /** 无间隙换段的引导信号（categoryHintActive）：移动端停靠胶囊据此自动展开编辑 sheet；
+        桌面端不消费本字段——桌面的引导由 CategoryPicker 的 hinted 脉冲承接 */
+    autoOpenEditor: categoryHintActive,
+    /** sheet 被用户关闭（未选分类）时复位引导信号，避免残留 true */
+    onAutoOpenConsumed: () => setCategoryHintActive(false),
     elapsed,
     running: Boolean(running),
     canStart: Boolean(categoryId),
