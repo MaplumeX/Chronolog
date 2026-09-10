@@ -254,6 +254,36 @@ describe("view 模式切换持久化", () => {
     unmount();
   });
 
+  it("localStorage 预设 week + enabled → 首次 refresh 即拉取周数据（不再白屏）", async () => {
+    const fetchSpy = stubModeChangeFetch();
+    vi.stubGlobal("fetch", fetchSpy);
+    window.localStorage.setItem(VIEW_MODE_KEY, "week");
+    const { result, unmount } = renderController({ enabled: true });
+    expect(result.current.timelineProps.mode).toBe("week");
+    await waitFor(() => {
+      expect(result.current.timelineProps.week).not.toBeNull();
+    });
+    const paths = fetchSpy.mock.calls.map((c) => String(c[0]));
+    expect(paths.some((p) => p.startsWith("/api/entries/week"))).toBe(true);
+    // boundary 按周窗口拉取
+    const boundaryPath = paths.find((p) => p.startsWith("/api/entries/boundary"));
+    expect(boundaryPath).toContain(encodeURIComponent(WEEK_FIXTURE.weekStart));
+    unmount();
+  });
+
+  it("localStorage 预设 day + enabled → 首次 refresh 不拉周数据", async () => {
+    const fetchSpy = stubModeChangeFetch();
+    vi.stubGlobal("fetch", fetchSpy);
+    const { result, unmount } = renderController({ enabled: true });
+    await waitFor(() => {
+      expect(result.current.timelineProps.today).not.toBeNull();
+    });
+    const paths = fetchSpy.mock.calls.map((c) => String(c[0]));
+    expect(paths.some((p) => p.startsWith("/api/entries/week"))).toBe(false);
+    expect(result.current.timelineProps.week).toBeNull();
+    unmount();
+  });
+
   it("localStorage.setItem 抛异常（隐私模式）→ 仅内存态生效，不报错", async () => {
     const fetchSpy = stubModeChangeFetch();
     vi.stubGlobal("fetch", fetchSpy);
