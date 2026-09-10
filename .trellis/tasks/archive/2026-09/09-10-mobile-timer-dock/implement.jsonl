@@ -1,4 +1,0 @@
-{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Shell/TimerBar/MobileTabBar 契约、移动端双断点体系（<768px 结构 vs hover:none 交互）、#51 bottom sheet 规格、i18n 与按钮规范、反模式清单"}
-{"file": ".trellis/spec/frontend/design-tokens.md", "reason": "颜色 token 体系（paletteColor、语义 token，禁止硬编码色值）"}
-{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "useTimerController 契约：barProps 输出、running/stopped 双态草稿、600ms debounce、immediate PATCH"}
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "前端测试与质量门槛"}

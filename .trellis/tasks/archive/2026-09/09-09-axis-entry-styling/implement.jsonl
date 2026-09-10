@@ -1,2 +1,0 @@
-{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Timeline/EntryListView 组件契约：卡片染色必须留在 CSS 不能内联（hover 覆盖问题）、EntryListView 纯 UI 无 api 依赖、PopoverAnchor 锚点机制"}
-{"file": ".trellis/spec/frontend/design-tokens.md", "reason": "圆角/颜色 token 用法（--radius-md、color-mix 模式），卡片改造需沿用 token-only 颜色"}

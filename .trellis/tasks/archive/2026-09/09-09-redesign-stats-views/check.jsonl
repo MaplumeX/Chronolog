@@ -1,4 +1,0 @@
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "验收命令与测试规范"}
-{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "检查布局与 IA 是否符合三层结构约束"}
-{"file": ".trellis/spec/frontend/design-tokens.md", "reason": "检查颜色是否全部走 token、无硬编码"}
-{"file": ".trellis/tasks/09-09-redesign-stats-views/prd.md", "reason": "验收标准 AC1-AC8 逐条核对"}

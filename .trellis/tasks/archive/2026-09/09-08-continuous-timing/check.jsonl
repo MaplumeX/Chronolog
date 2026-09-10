@@ -1,6 +1,0 @@
-{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "server 测试覆盖与质量门槛（stop 两模式、409、时间戳相接断言）"}
-{"file": ".trellis/spec/backend/http-routes.md", "reason": "验证 stop/profile 契约与 EntryDto 语义未被破坏（categoryId null coalesce 未分类）"}
-{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "检查迁移幂等性与老库兼容（continuous_timing DEFAULT 0）"}
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "web 测试与质量门槛、手动验收清单"}
-{"file": ".trellis/spec/frontend/type-safety.md", "reason": "User 类型同步（continuousTiming: boolean）检查"}
-{"file": ".trellis/spec/frontend/state-management.md", "reason": "onCurrent 语义（新段 vs null）与 running 草稿重置行为检查"}

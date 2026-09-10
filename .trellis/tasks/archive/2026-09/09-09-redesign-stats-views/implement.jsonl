@@ -1,6 +1,0 @@
-{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "页面三层结构（Shell 标题 → 工具栏 → 内容 Card）、stats 页 IA 定位、no-card/light-card 布局约束"}
-{"file": ".trellis/spec/frontend/design-tokens.md", "reason": "热力图色阶用 --primary 透明度阶梯、禁止硬编码颜色"}
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "验证命令（typecheck/test/build）与 Vitest 测试规范"}
-{"file": ".trellis/spec/frontend/state-management.md", "reason": "页面局部 state 与请求缓存（Map<cacheKey, RangeStats>）的范式"}
-{"file": ".trellis/spec/frontend/api-client.md", "reason": "api.statsRange 调用约定、ApiError 处理"}
-{"file": ".trellis/tasks/09-09-redesign-stats-views/design.md", "reason": "本次重构的技术设计：目录结构、数据流、各视图组件契约"}

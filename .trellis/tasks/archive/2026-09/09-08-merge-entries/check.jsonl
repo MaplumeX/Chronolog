@@ -1,6 +1,0 @@
-{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "检查 server 改动是否满足 typecheck + node:test 验证要求"}
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "检查 web 改动是否满足 typecheck + vitest 验证要求"}
-{"file": ".trellis/spec/backend/error-handling.md", "reason": "核对合并端点错误码：跨用户 404、运行中/不相邻 409 的 code 与 message"}
-{"file": ".trellis/spec/frontend/type-safety.md", "reason": "核对 i18n 新 key 与 i18next.d.ts 同步、merge payload 类型安全"}
-{"file": ".trellis/tasks/09-08-merge-entries/prd.md", "reason": "对照 AC1-AC7 验收标准逐条核对"}
-{"file": ".trellis/tasks/09-08-merge-entries/design.md", "reason": "对照设计约束核对：服务端相邻重判、事务顺序（先删/排除再 checkOverlap）"}

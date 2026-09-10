@@ -1,5 +1,0 @@
-{"file": ".trellis/spec/backend/time-and-timezone.md", "reason": "验证 tz 校验与日界行为未被破坏；未设置时区时行为与现状一致"}
-{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "检查迁移幂等性与老库兼容"}
-{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "server 测试覆盖与质量门槛"}
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "web 测试与质量门槛"}
-{"file": ".trellis/spec/frontend/type-safety.md", "reason": "User 类型、Intl.supportedValuesOf 类型处理检查"}

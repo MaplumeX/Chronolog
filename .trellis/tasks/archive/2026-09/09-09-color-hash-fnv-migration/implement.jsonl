@@ -1,8 +1,0 @@
-{"file": ".trellis/spec/frontend/design-tokens.md", "reason": "颜色契约核心 spec：hash 回退、色板索引、创建即固定契约，本次任务正是修改该契约"}
-{"file": ".trellis/spec/frontend/index.md", "reason": "前端规范入口，实现前必读"}
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "测试与质量基线"}
-{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "确认 format.ts / 测试文件落位约定"}
-{"file": ".trellis/spec/backend/index.md", "reason": "后端规范入口"}
-{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "migrate() 幂等迁移与 SQLite 事务规范，本任务新增回填迁移"}
-{"file": ".trellis/spec/backend/directory-structure.md", "reason": "新文件 server/src/color-hash.ts 与 server/test/color-hash.test.ts 落位"}
-{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "后端测试基线"}

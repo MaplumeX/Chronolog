@@ -1,3 +1,0 @@
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "检查测试确定性、i18n zh/en key 同步、手动验证清单"}
-{"file": ".trellis/spec/frontend/type-safety.md", "reason": "检查无 any、props 契约类型化"}
-{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "检查样式走语义 token、复用 ui 原语、无硬编码颜色"}

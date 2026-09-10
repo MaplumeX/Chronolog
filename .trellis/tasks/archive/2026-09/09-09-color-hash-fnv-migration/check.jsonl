@@ -1,4 +1,0 @@
-{"file": ".trellis/spec/frontend/design-tokens.md", "reason": "核对颜色契约变更：hash 不可改动表述移除、FNV-1a 与固化迁移已记录"}
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "前端测试质量基线核对"}
-{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "核对迁移幂等性与事务规范"}
-{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "后端测试质量基线核对"}

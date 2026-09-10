@@ -1,6 +1,0 @@
-{"file": ".trellis/spec/backend/time-and-timezone.md", "reason": "tz 语义、requireTz、日界计算的权威规范；本任务 tz 仍是请求参数，仅来源变为用户设置"}
-{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "users 表加列迁移需遵循幂等 ALTER 与 SCHEMA_SQL 同步规范"}
-{"file": ".trellis/spec/backend/http-routes.md", "reason": "PATCH /api/profile 请求校验、错误码（400 VALIDATION）规范"}
-{"file": ".trellis/spec/frontend/api-client.md", "reason": "User 类型与 updateProfile 客户端契约更新规范"}
-{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "SettingsPage 新增时区下拉（dropdown-menu）组件规范"}
-{"file": ".trellis/spec/frontend/state-management.md", "reason": "App 顶层派生 tz 下发各页面的状态流规范"}

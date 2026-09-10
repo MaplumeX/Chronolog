@@ -1,4 +1,0 @@
-{"_example": "Fill with {\"file\": \"<path>\", \"reason\": \"<why>\"}. Put spec/research files only — no code paths. Run `python3 .trellis/scripts/get_context.py --mode packages` to list available specs. Delete this line once real entries are added."}
-{"file": ".trellis/spec/backend/time-and-timezone.md", "reason": "时间规范化与 tz 处理约定；本任务改 timer 时间戳精度"}
-{"file": ".trellis/spec/backend/http-routes.md", "reason": "路由层写法约定（timer.ts 在 routes 层）"}
-{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "测试与质量基线"}

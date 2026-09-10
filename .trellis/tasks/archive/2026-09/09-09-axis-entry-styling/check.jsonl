@@ -1,2 +1,0 @@
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "测试与验收质量标准"}
-{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "核验改动未违反 EntryListView 组件契约（染色在 CSS、锚点机制、纯 UI）"}

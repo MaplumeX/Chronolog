@@ -1,2 +1,0 @@
-{"file": ".trellis/spec/frontend/design-tokens.md", "reason": "色板 token 约定与 paletteColor 回退逻辑"}
-{"file": ".trellis/spec/frontend/api-client.md", "reason": "Category/Tag DTO 与 color 字段契约"}

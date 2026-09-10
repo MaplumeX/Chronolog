@@ -1,8 +1,0 @@
-{"file": ".trellis/spec/backend/database-guidelines.md", "reason": "users 表加列迁移需遵循幂等 ALTER 与 SCHEMA_SQL 同步规范；time_entries.category_id nullable 语义（NULL=未分类）"}
-{"file": ".trellis/spec/backend/http-routes.md", "reason": "stop/profile 路由契约、EntryDto（categoryId null → coalesce 未分类）、错误码规范"}
-{"file": ".trellis/spec/backend/error-handling.md", "reason": "AppError 409/404 用法与 parseBody 模式"}
-{"file": ".trellis/spec/backend/time-and-timezone.md", "reason": "deps.now() 时间源语义，stop 换段同一 nowIso 不变量"}
-{"file": ".trellis/spec/frontend/api-client.md", "reason": "User 类型与 updateProfile 客户端契约更新规范"}
-{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "SettingsPage 资料卡结构、TimerBar/CategoryPicker 组件规范"}
-{"file": ".trellis/spec/frontend/state-management.md", "reason": "useTimerController / onCurrent 状态流规范"}
-{"file": ".trellis/spec/frontend/hook-guidelines.md", "reason": "hook 改动（onToggle 停止分支、分类选择器自动打开状态）规范"}

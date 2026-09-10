@@ -1,3 +1,0 @@
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "验收门禁：typecheck/test 命令、i18n 双语 key 同步、测试栈与深度 A 范围、手工验收清单"}
-{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "核对改动是否符合 Shell/TimerBar/Picker 既有契约，以及是否需要同步更新本 spec"}
-{"file": ".trellis/spec/frontend/design-tokens.md", "reason": "核对配色是否全部经 paletteColor/color-mix 派生，无硬编码色值（AC10）"}

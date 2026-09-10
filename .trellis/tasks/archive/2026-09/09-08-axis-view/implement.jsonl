@@ -1,7 +1,0 @@
-{"file": ".trellis/spec/frontend/index.md", "reason": "前端规范入口，实现前必读"}
-{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "新组件 EntryListView 需遵循纯 UI + props 注入的组件规范"}
-{"file": ".trellis/spec/frontend/design-tokens.md", "reason": "卡片/时间列样式需走 CSS 变量与 token，禁硬编码色值"}
-{"file": ".trellis/spec/frontend/state-management.md", "reason": "view 三态扩展与 localStorage 记忆需遵循状态管理规范"}
-{"file": ".trellis/spec/frontend/type-safety.md", "reason": "mode 类型扩展与 props 契约的类型安全要求"}
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "测试与质量基线"}
-{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "新文件 timeline-gaps.ts / EntryListView.tsx 的落位"}

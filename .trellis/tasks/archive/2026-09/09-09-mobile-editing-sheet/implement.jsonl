@@ -1,3 +1,0 @@
-{"file": ".trellis/spec/frontend/component-guidelines.md", "reason": "Timeline/EntryEditor/HierarchicalListCard/Popover/Sheet/移动端适配契约（09-08-mobile-responsive 断点策略、touch-hit gotcha、PopoverContent clamp 规则）——本任务直接改这些组件的容器层"}
-{"file": ".trellis/spec/frontend/quality-guidelines.md", "reason": "测试规范（Vitest+jsdom+Testing Library，matchMedia stub 约定）——需新增移动端分支测试"}
-{"file": ".trellis/spec/frontend/directory-structure.md", "reason": "新组件 ResponsiveEditPopover 的文件位置约定"}
