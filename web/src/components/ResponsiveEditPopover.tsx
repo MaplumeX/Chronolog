@@ -93,6 +93,9 @@ export function ResponsiveEditPopover(props: {
             side="bottom"
             showCloseButton={false}
             aria-describedby={undefined}
+            // 不自动聚焦第一个可聚焦元素（如条目编辑器的描述输入框）：
+            // 避免弹层一打开就抢焦点/拉起软键盘，焦点留在原处由用户自主点击
+            onOpenAutoFocus={(e) => e.preventDefault()}
             className="max-h-[85dvh] gap-0 pb-[env(safe-area-inset-bottom)]"
           >
             <SheetHeader className="sr-only">
@@ -119,6 +122,8 @@ export function ResponsiveEditPopover(props: {
         sideOffset={sideOffset}
         className={contentClassName}
         onFocusOutside={onFocusOutside}
+        // 同 Sheet：阻止打开时自动聚焦，输入框不抢焦点
+        onOpenAutoFocus={(e) => e.preventDefault()}
       >
         {children}
       </PopoverContent>
