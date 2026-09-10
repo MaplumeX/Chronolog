@@ -6,6 +6,7 @@ import type { Category, Tag, TimeEntry, TodayEntries } from "../api";
 import { formatClock, formatDuration, paletteColor } from "../format";
 import { localeFor } from "../i18n";
 import type { Gap } from "../timeline-gaps";
+import { RectSnapshot } from "../rect-snapshot";
 import { PopoverAnchor } from "./ui/popover";
 import { Separator } from "./ui/separator";
 
@@ -13,15 +14,6 @@ import { Separator } from "./ui/separator";
 type Row =
   | { kind: "entry"; key: string; entry: TimeEntry }
   | { kind: "gap"; key: string; gap: Gap; vis: { startMs: number; endMs: number } };
-
-/** 固化锚点快照：点击 gap 时记录该行卡片元素的位置矩形，popover 打开期间
- *  数据刷新重排行也不移位（与块视图 gapAnchor 快照同思路，经由 Measurable 消费）。 */
-class RectSnapshot implements Measurable {
-  constructor(private readonly rect: DOMRect) {}
-  getBoundingClientRect(): DOMRect {
-    return this.rect;
-  }
-}
 
 export function EntryListView(props: {
   day: TodayEntries | null;
@@ -32,7 +24,8 @@ export function EntryListView(props: {
   /** 当日 gap（全局绝对时刻，已由 Timeline 按视图窗口算好） */
   gaps: Gap[];
   selectedId: string | null;
-  onSelect: (id: string) => void;
+  /** 选中条目；传入被点卡片元素供上层固化 popover 锚点快照 */
+  onSelect: (id: string, el: Element) => void;
   onGapClick?: (gap: Gap) => void;
 }) {
   const { t, i18n } = useTranslation();
@@ -167,7 +160,7 @@ function EntryRow(props: {
   categories: Category[];
   tags: Tag[];
   selected: boolean;
-  onSelect: (id: string) => void;
+  onSelect: (id: string, el: Element) => void;
 }) {
   const { entry: e, nowMs, tz, categories, tags, selected, onSelect } = props;
   const isRunning = !e.stoppedAt;
@@ -202,21 +195,24 @@ function EntryRow(props: {
       </div>
       {/* 刻度短线：轻量「轴节点」串联感 */}
       <div className="entry-view-tick" aria-hidden />
-      {/* 卡片：可变高度，不含时间范围（时间归左列、内容归右卡）；
-          选中卡内嵌零尺寸锚点钉卡片中心（同 timeline-block 手法） */}
+      {/* 卡片：可变高度，不含时间范围（时间归左列、内容归右卡）。
+          popover 锚点不在这里：点击时把卡片中心点快照上传给 Timeline
+          （行内真实节点会随选中态卸载，导致退出动画期间 popover 回落左上角） */}
       <div
         role="button"
         tabIndex={0}
         className={`entry-view-card${single ? " entry-view-card--single" : ""}${isRunning ? " entry-view-card--running" : ""}${selected ? " entry-view-card--selected" : ""}`}
         style={cardStyle}
-        onClick={isRunning ? undefined : () => onSelect(e.id)}
+        onClick={
+          isRunning ? undefined : (ev) => onSelect(e.id, ev.currentTarget)
+        }
         onKeyDown={
           isRunning
             ? undefined
             : (ev) => {
                 if (ev.key === "Enter" || ev.key === " ") {
                   ev.preventDefault();
-                  onSelect(e.id);
+                  onSelect(e.id, ev.currentTarget);
                 }
               }
         }
@@ -266,7 +262,7 @@ function EntryRow(props: {
           </>
         )}
         {/* 选中卡：零尺寸锚点钉卡片中心，popover 从卡片右侧弹出（同 timeline-block） */}
-        {selected ? <PopoverAnchor className="absolute top-1/2 left-1/2 h-0 w-0" /> : null}
+
       </div>
     </div>
   );

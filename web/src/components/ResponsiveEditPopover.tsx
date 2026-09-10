@@ -1,4 +1,5 @@
 import * as React from "react";
+import type { Measurable } from "@radix-ui/rect";
 
 import { useIsMobile } from "../hooks/use-mobile";
 import {
@@ -35,8 +36,10 @@ import {
 export function ResponsiveEditPopover(props: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  /** 桌面端锚定（virtualRef 形态 RefObject）— 移动端忽略 */
-  anchor?: React.RefObject<HTMLElement | null>;
+  /** 桌面端锚定（virtualRef 形态 RefObject）— 移动端忽略。
+   *  `Measurable` 而非 `HTMLElement`：Radix 只要求 `getBoundingClientRect()`，
+   *  真实节点与 `RectSnapshot`（`rect-snapshot.ts`）均可传入。 */
+  anchor?: React.RefObject<Measurable | null>;
   /** 桌面端 popover 定位参数，移动端忽略 */
   side?: "right" | "top" | "bottom" | "left";
   align?: "center" | "start" | "end";
