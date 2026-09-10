@@ -2,6 +2,19 @@
 @import "tw-animate-css";
 @import "react-day-picker/style.css";
 
+/* 可交互元素兜底：非 disabled 的按钮类控件统一手型光标。
+   覆盖原生 button、[role=button/switch/tab/option/menuitem]、summary 等场景；
+   显式设了 cursor-default / cursor-not-allowed 的元素不受影响。 */
+button:not(:disabled):not([aria-disabled="true"]),
+[role="button"]:not([aria-disabled="true"]),
+[role="switch"]:not([aria-disabled="true"]),
+[role="tab"]:not([aria-disabled="true"]),
+[role="menuitem"]:not([aria-disabled="true"]),
+[role="option"]:not([aria-disabled="true"]),
+summary {
+  cursor: pointer;
+}
+
 @custom-variant dark (&:is(.dark *));
 
 :root {
