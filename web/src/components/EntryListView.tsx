@@ -98,9 +98,9 @@ export function EntryListView(props: {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {/* 列表限宽容器（方案 H）：宽屏下内容列限宽 520px 居中，空态也在其内居中；
+      {/* 桌面端采用宽版内容列居中，移动端使用可用宽度；
           本身需撑满高度并允许子层滚动 */}
-      <div className="entry-view-body flex min-h-0 flex-1 flex-col">
+      <div className="entry-view-body flex min-h-0 w-full flex-1 flex-col">
         <div ref={listRef} className="entry-view-list min-h-0 flex-1 overflow-y-auto">
           {rows.length === 0 ? (
             <div className="flex h-full min-h-40 items-center justify-center text-sm text-muted-foreground">

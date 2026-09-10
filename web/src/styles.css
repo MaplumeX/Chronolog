@@ -527,11 +527,10 @@
   }
 }
 
-/* 列表限宽居中：宽屏（≥768px）下内容列（行 + footer + 空态）限宽 520px 水平居中，
-   窄屏保持全宽（无限宽意义） */
+/* 桌面端使用与宽版页面一致的 64rem 内容宽度：比原 520px 舒展，但不铺满主区域。 */
 @media (min-width: 768px) {
   .entry-view-body {
-    max-width: 520px;
+    max-width: 64rem;
     margin-inline: auto;
   }
 }
