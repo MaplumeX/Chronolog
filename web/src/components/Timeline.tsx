@@ -320,7 +320,8 @@ function DayColumn(props: {
                 categoryColor,
                 e.categoryName,
               );
-              const desc = e.description || t("timeline.noDescription");
+              // 块视图以分类名为主、描述为辅；无描述时省略次要行（分类名始终可见）
+              const desc = e.description || "";
 
               // tier 阈值按像素校准（60 档下 2.5% ≈ 24px、1% ≈ 10px），细档位下不因高度放大而失真
               const heightPx = (heightPct / 100) * innerHeightFor(scale);
@@ -329,7 +330,7 @@ function DayColumn(props: {
               else if (heightPx >= 10) tier = "compact";
               else tier = "mini";
 
-              const title = `${desc} · ${e.categoryName} · ${timeRange} · ${formatDuration(secs)}${
+              const title = `${e.categoryName}${desc ? ` · ${desc}` : ""} · ${timeRange} · ${formatDuration(secs)}${
                 e.tags.length > 0
                   ? ` · ${e.tags.map((x) => x.name).join(t("tags.separator"))}`
                   : ""
@@ -339,8 +340,8 @@ function DayColumn(props: {
                 <>
                   {tier === "full" ? (
                     <>
-                      <div className="block-desc">{desc}</div>
-                      <div className="block-meta">{e.categoryName}</div>
+                      <div className="block-desc">{e.categoryName}</div>
+                      {desc ? <div className="block-meta">{desc}</div> : null}
                       {e.tags.length > 0 ? (
                         <div className="block-tags">
                           {e.tags.map((tag) => {
@@ -368,11 +369,11 @@ function DayColumn(props: {
                     </>
                   ) : tier === "compact" ? (
                     <>
-                      <span className="block-desc">{desc}</span>
+                      <span className="block-desc">{e.categoryName}</span>
                       <span className="block-dur">{formatDuration(secs)}</span>
                     </>
                   ) : (
-                    <span className="block-desc">{desc}</span>
+                    <span className="block-desc">{e.categoryName}</span>
                   )}
                 </>
               );
