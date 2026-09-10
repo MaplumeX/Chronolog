@@ -359,6 +359,10 @@ export function useTimerController(props: {
       : selected
         ? paletteColor(selected.color, selected.name)
         : null,
+    /** 无间隙换段后的引导信号：移动端停靠胶囊据此自动展开编辑 sheet；桌面端忽略 */
+    autoOpenEditor: categoryPickerAutoOpen,
+    /** sheet 被用户关闭（未选分类）时复位信号，避免残留 true */
+    onAutoOpenConsumed: () => setCategoryPickerAutoOpen(false),
     elapsed,
     running: Boolean(running),
     canStart: Boolean(categoryId),

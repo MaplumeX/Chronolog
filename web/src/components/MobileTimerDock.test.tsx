@@ -37,6 +37,8 @@ function renderDock(overrides?: Partial<DockProps>) {
     canStart: true,
     onToggle: vi.fn(),
     error: "",
+    autoOpenEditor: false,
+    onAutoOpenConsumed: vi.fn(),
     ...overrides,
   };
   const dock = render(<MobileTimerDock {...props} />);
@@ -134,5 +136,75 @@ describe("MobileTimerDock 交互", () => {
     const user = setupUser();
     await user.click(screen.getByRole("button", { name: "Expand timer editor" }));
     expect(screen.getByText("boom")).toBeInTheDocument();
+  });
+});
+
+describe("MobileTimerDock 无间隙换段引导（autoOpenEditor）", () => {
+  it("autoOpenEditor=true 初始渲染 → sheet 已打开且内容可见", () => {
+    // 无间隙换段后：信号直接展开编辑 sheet（sheet 内 CategoryPicker 受控 open 接着弹下拉）
+    renderDock({ autoOpenEditor: true });
+    expect(
+      screen.getByRole("dialog", { name: "Edit timer" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("CategoryPicker")).toBeInTheDocument();
+  });
+
+  it("autoOpenEditor=true 时用户关闭 sheet → onAutoOpenConsumed 被调用，hook 复位后 sheet 关闭", async () => {
+    const { dock, props } = renderDock({ autoOpenEditor: true });
+    expect(
+      screen.getByRole("dialog", { name: "Edit timer" }),
+    ).toBeInTheDocument();
+    const user = setupUser();
+    await user.keyboard("{Escape}");
+    // 用户未选分类直接关 sheet：组件通知 hook 复位信号（真实场景由 hook 状态驱动 rerender）
+    expect(props.onAutoOpenConsumed).toHaveBeenCalledTimes(1);
+    // 模拟 hook 复位后的 rerender：派生 open 变 false → sheet 关闭
+    dock.rerender(
+      <MobileTimerDock
+        {...props}
+        autoOpenEditor={false}
+        onAutoOpenConsumed={props.onAutoOpenConsumed}
+      />,
+    );
+    expect(
+      screen.queryByRole("dialog", { name: "Edit timer" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("选完分类：信号复位（autoOpenEditor 变 false）后 sheet 派生关闭", () => {
+    // 实际关闭由 hook 状态驱动（onChange → setCategoryPickerAutoOpen(false)）；
+    // 组件侧验证信号翻 false 后受控 open 派生关闭、不再回调 onAutoOpenConsumed
+    const { dock, props } = renderDock({ autoOpenEditor: true });
+    expect(
+      screen.getByRole("dialog", { name: "Edit timer" }),
+    ).toBeInTheDocument();
+    dock.rerender(
+      <MobileTimerDock
+        {...props}
+        autoOpenEditor={false}
+        onAutoOpenConsumed={props.onAutoOpenConsumed}
+      />,
+    );
+    expect(
+      screen.queryByRole("dialog", { name: "Edit timer" }),
+    ).not.toBeInTheDocument();
+    expect(props.onAutoOpenConsumed).not.toHaveBeenCalled();
+  });
+
+  it("autoOpenEditor=false → sheet 初始关闭；手动打开/关闭不调 onAutoOpenConsumed", async () => {
+    const { props } = renderDock();
+    expect(
+      screen.queryByRole("dialog", { name: "Edit timer" }),
+    ).not.toBeInTheDocument();
+    const user = setupUser();
+    await user.click(screen.getByRole("button", { name: "Expand timer editor" }));
+    expect(
+      screen.getByRole("dialog", { name: "Edit timer" }),
+    ).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    expect(
+      screen.queryByRole("dialog", { name: "Edit timer" }),
+    ).not.toBeInTheDocument();
+    expect(props.onAutoOpenConsumed).not.toHaveBeenCalled();
   });
 });

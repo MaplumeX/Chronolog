@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Play, Square } from "lucide-react";
@@ -28,6 +29,10 @@ export function MobileTimerDock(props: {
   runningTagColors: (id: string) => number | null;
   /** 胶囊摘要行的分类色（running ?? selected），null = 未选分类 */
   categoryColor: string | null;
+  /** 无间隙换段后的引导信号（useTimerController 的 categoryPickerAutoOpen）：true 时自动展开编辑 sheet */
+  autoOpenEditor?: boolean;
+  /** sheet 被用户关闭（未选分类）时复位 autoOpenEditor 信号 */
+  onAutoOpenConsumed?: () => void;
   elapsed: number;
   running: boolean;
   canStart: boolean;
@@ -35,9 +40,23 @@ export function MobileTimerDock(props: {
   error: string;
 }) {
   const { t } = useTranslation();
+  // 手动打开状态（点胶囊摘要区）；sheet 的 open 是派生值：
+  // manualOpen || autoOpenEditor —— 无间隙换段后 autoOpenEditor=true 直接展开 sheet
+  // （内部 CategoryPicker 受控 open 接着自动弹下拉），选完分类信号复位 → sheet 派生关闭
+  const [manualOpen, setManualOpen] = useState(false);
+  const sheetOpen = manualOpen || props.autoOpenEditor === true;
 
   return (
-    <Sheet>
+    <Sheet
+      open={sheetOpen}
+      onOpenChange={(open) => {
+        setManualOpen(open);
+        // 用户未选分类直接关 sheet（Esc/遮罩/drag-handle）：复位引导信号，不残留
+        if (!open && props.autoOpenEditor === true) {
+          props.onAutoOpenConsumed?.();
+        }
+      }}
+    >
       {/* 停靠胶囊：Tab 栏正上方的常驻条；摘要区域为 SheetTrigger（打开编辑 sheet），
           开始/停止按钮是兄弟节点而非嵌套（button 不能嵌套 button） */}
       <div className="fixed inset-x-0 bottom-[calc(var(--mobile-tabbar-h)+env(safe-area-inset-bottom))] z-40 flex min-h-14 items-center gap-3 border-t bg-card px-4 text-card-foreground md:hidden">
