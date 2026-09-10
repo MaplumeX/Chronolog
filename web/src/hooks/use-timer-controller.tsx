@@ -101,22 +101,34 @@ export function useTimerController(props: {
   }
 
   async function refresh() {
-    // 先拿 day 视图窗口，与主数据并行拉取 boundary
+    // day 数据始终拉取（dayTotal / 周视图滚动锚点依赖它）；
+    // 从 localStorage 恢复的 view 为 week 时同时拉周数据，否则周视图挂载即白屏。
     const dayWindowP = api.todayEntries(tz, date ?? undefined);
-    const boundaryP = dayWindowP.then(
-      (d) => api.boundaryEntries(tz, d.dayStart, d.dayEnd).catch(() => null),
+    const weekWindowP: Promise<WeekEntries | null> =
+      view === "week"
+        ? api.weekEntries(tz, date ?? undefined)
+        : Promise.resolve(null);
+    // boundary 按「当前视图」的窗口拉取
+    const windowP: Promise<{ start: string; end: string }> =
+      view === "week"
+        ? weekWindowP.then((w) => ({ start: w!.weekStart, end: w!.weekEnd }))
+        : dayWindowP.then((d) => ({ start: d.dayStart, end: d.dayEnd }));
+    const boundaryP = windowP.then(
+      (win) => api.boundaryEntries(tz, win.start, win.end).catch(() => null),
       () => undefined as BoundaryEntries | null | undefined,
     );
-    const [cats, tagRes, cur, dayWindow, b] = await Promise.all([
+    const [cats, tagRes, cur, dayWindow, weekWindow, b] = await Promise.all([
       api.categories(),
       api.tags(),
       api.current(),
       dayWindowP,
+      weekWindowP,
       boundaryP,
     ]);
     setCategories(cats.categories);
     setTags(tagRes.tags);
     setToday(dayWindow);
+    if (weekWindow) setWeek(weekWindow);
     setBoundary(b ?? null);
     props.onCurrent(cur.entry);
     if (!categoryId && cur.entry) setCategoryId(cur.entry.categoryId ?? "");
