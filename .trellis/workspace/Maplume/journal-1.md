@@ -1218,3 +1218,24 @@ Restyled the day timeline entries (axis) subview per user decision: dropped the 
 ### Status
 
 [OK] **Completed**
+
+
+## Session 58: 移动端计时器改为底部停靠胶囊
+
+**Date**: 2026-09-10
+**Task**: 移动端计时器改为底部停靠胶囊
+**Branch**: `feat/redesign-mobile-timer-header`
+
+### Summary
+
+移动端(<768px) timer 页弃用 header 内嵌 TimerBar（原 180px+ 表单块），改为固定在底部 Tab 栏上方的停靠胶囊：分类色点+描述摘要+时长+开始/停止圆按钮常驻；点摘要区开 #51 规格 bottom sheet 编辑描述/分类/标签。新增纯展示组件 MobileTimerDock（消费 barProps，仅新增派生字段 categoryColor），Shell 增加 mobileTimerDock ReactNode 插槽并在移动端 timer 页以标题替换 header；桌面端零变化。use-timer-controller 业务逻辑零改动。287 测试/typecheck/build 全绿，spec component-guidelines.md 已更新 Shell/TimerBar 段落。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `a0b9b7a` | (see git log) |
+
+### Status
+
+[OK] **Completed**
