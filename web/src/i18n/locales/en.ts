@@ -207,6 +207,7 @@ export const en: Record<keyof typeof zh, string> = {
   "settings.tabTokens": "API Tokens",
   "settings.language": "Language",
   "settings.theme": "Theme",
+  "settings.durationFormat": "Duration format",
   "settings.timezone": "Timezone",
   "settings.continuousTiming": "Continuous timing",
   "settings.continuousTimingHint":
@@ -293,4 +294,6 @@ export const en: Record<keyof typeof zh, string> = {
   "theme.light": "Light",
   "theme.dark": "Dark",
   "theme.system": "System",
+  "durationFormat.letters": "Letters (1h 30m 5s)",
+  "durationFormat.chinese": "Chinese (1小时30分5秒)",
 };

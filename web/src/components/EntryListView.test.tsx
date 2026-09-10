@@ -157,7 +157,7 @@ describe("EntryListView", () => {
 
     // 单行卡：分类名 + 右对齐时长，无描述主行
     expect(cards[0].textContent).toContain("Work");
-    expect(screen.getAllByText("1:00:00").length).toBe(3);
+    expect(screen.getAllByText("1h").length).toBe(3);
 
     // 两行卡（有描述）：描述主行 + 分类名
     expect(screen.getByText("Deep work")).toBeInTheDocument();
@@ -234,6 +234,6 @@ describe("EntryListView", () => {
     const footer = document.querySelector(".entry-view-footer");
     expect(footer).not.toBeNull();
     expect(footer!.textContent).toContain("January 6");
-    expect(footer!.textContent).toContain("2:00:00");
+    expect(footer!.textContent).toContain("2h");
   });
 });

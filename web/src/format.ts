@@ -1,4 +1,5 @@
 import i18n, { localeFor } from "./i18n";
+import { getDurationFormat, type DurationFormat } from "./duration-format";
 
 export function browserTz(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -31,12 +32,32 @@ export function tzUtcOffsetLabel(tz: string, nowMs = Date.now()): string {
   return `(UTC${m[1]}${m[2]}:${m[3]})`;
 }
 
-export function formatDuration(totalSeconds: number): string {
+/**
+ * 时长文案（格式由设置页偏好决定，见 duration-format.ts）：
+ * - letters：`1h 30m 5s` —— 非零单位拼接，空格分隔；全零 → `0s`
+ * - chinese：`1小时30分5秒` —— 规则同上；全零 → `0秒`
+ * 负数钳制为 0，小数秒向下取整（沿用旧冒号式语义）。
+ */
+export function formatDuration(
+  totalSeconds: number,
+  format: DurationFormat = getDurationFormat(),
+): string {
   const s = Math.max(0, Math.floor(totalSeconds));
   const h = Math.floor(s / 3600);
   const m = Math.floor((s % 3600) / 60);
   const sec = s % 60;
-  return `${h}:${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`;
+  if (format === "chinese") {
+    const parts: string[] = [];
+    if (h > 0) parts.push(`${h}小时`);
+    if (m > 0) parts.push(`${m}分`);
+    if (sec > 0) parts.push(`${sec}秒`);
+    return parts.length > 0 ? parts.join("") : "0秒";
+  }
+  const parts: string[] = [];
+  if (h > 0) parts.push(`${h}h`);
+  if (m > 0) parts.push(`${m}m`);
+  if (sec > 0) parts.push(`${sec}s`);
+  return parts.length > 0 ? parts.join(" ") : "0s";
 }
 
 export function formatClock(iso: string, tz: string): string {

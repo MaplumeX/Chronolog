@@ -201,6 +201,7 @@ export const zh = {
   "settings.tabTokens": "API Tokens",
   "settings.language": "语言",
   "settings.theme": "主题",
+  "settings.durationFormat": "时长显示格式",
   "settings.timezone": "时区",
   "settings.continuousTiming": "无间隙计时",
   "settings.continuousTimingHint":
@@ -286,4 +287,6 @@ export const zh = {
   "theme.light": "明亮",
   "theme.dark": "暗色",
   "theme.system": "跟随系统",
+  "durationFormat.letters": "字母式（1h 30m 5s）",
+  "durationFormat.chinese": "中文式（1小时30分5秒）",
 } as const;

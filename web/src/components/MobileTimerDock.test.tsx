@@ -30,7 +30,7 @@ function renderDock(overrides?: Partial<DockProps>) {
     categoryPicker: <button type="button">CategoryPicker</button>,
     tagPicker: <button type="button">TagPicker</button>,
     categoryColor: "var(--category-3)",
-    elapsed: 2537, // 0:42:17
+    elapsed: 2537, // 42m 17s
     running: false,
     canStart: true,
     onToggle: vi.fn(),
@@ -47,7 +47,7 @@ describe("MobileTimerDock 胶囊渲染", () => {
   it("显示描述摘要、时长与开始按钮", () => {
     renderDock();
     expect(screen.getByText("Write weekly report")).toBeInTheDocument();
-    expect(screen.getByText("0:42:17")).toBeInTheDocument();
+    expect(screen.getByText("42m 17s")).toBeInTheDocument();
     const start = screen.getByRole("button", { name: "Start" });
     expect(start).toBeEnabled();
   });

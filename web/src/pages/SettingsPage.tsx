@@ -19,6 +19,7 @@ import { Switch } from "@/components/ui/switch";
 import type { ThemeMode } from "../hooks/use-theme";
 import { LanguageSwitcher } from "../i18n/LanguageSwitcher";
 import { ThemeSwitcher } from "../components/ThemeSwitcher";
+import { DurationFormatSwitcher } from "../components/DurationFormatSwitcher";
 import { TokensPage } from "./TokensPage";
 import {
   Dialog,
@@ -149,6 +150,10 @@ export function SettingsPage(props: {
               <div className="max-w-md space-y-2">
                 <Label>{t("settings.theme")}</Label>
                 <ThemeSwitcher mode={props.themeMode} onMode={props.onThemeMode} />
+              </div>
+              <div className="max-w-md space-y-2">
+                <Label>{t("settings.durationFormat")}</Label>
+                <DurationFormatSwitcher />
               </div>
             </CardContent>
           </Card>

@@ -148,7 +148,7 @@ describe("CustomView 渲染冒烟", () => {
     });
     // 未记录图例 + 未记录行（区间 7×24h 全未记录）
     expect(screen.getAllByText("Unlogged").length).toBeGreaterThan(0);
-    expect(screen.getByText("168:00:00")).toBeTruthy();
+    expect(screen.getByText("168h")).toBeTruthy();
   });
 
   it("未选区间时显示选择提示占位卡", () => {

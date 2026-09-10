@@ -78,7 +78,7 @@ describe("EntryTimeRangeEditor 渲染与槽位展开", () => {
     renderEditor();
     expect(screen.getByRole("button", { name: "Edit start time" })).toHaveTextContent("09:00:00");
     expect(screen.getByRole("button", { name: "Edit end time" })).toHaveTextContent("11:30:00");
-    expect(screen.getByRole("button", { name: "Edit duration" })).toHaveTextContent("2:30:00");
+    expect(screen.getByRole("button", { name: "Edit duration" })).toHaveTextContent("2h 30m");
   });
 
   it("点击开始槽展开面板，再次点击收起", async () => {
@@ -180,8 +180,8 @@ describe("EntryTimeRangeEditor 时长编辑", () => {
     await user.clear(input);
     await user.type(input, "{Enter}");
     expect(props.onStopChange).not.toHaveBeenCalled();
-    // 紧凑行仍显示原时长 2:30:00
-    expect(screen.getByRole("button", { name: "Edit duration" })).toHaveTextContent("2:30:00");
+    // 紧凑行仍显示原时长 2h 30m
+    expect(screen.getByRole("button", { name: "Edit duration" })).toHaveTextContent("2h 30m");
   });
 
   it("快捷 chips（15/30/60/90 分钟）反推结束时间", async () => {
@@ -215,6 +215,6 @@ describe("EntryTimeRangeEditor 时长编辑", () => {
     const input = await openDuration(user);
     await user.type(input, "999999999999m{Enter}");
     expect(props.onStopChange).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "Edit duration" })).toHaveTextContent("2:30:00");
+    expect(screen.getByRole("button", { name: "Edit duration" })).toHaveTextContent("2h 30m");
   });
 });

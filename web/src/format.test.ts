@@ -24,35 +24,42 @@ afterEach(() => {
 });
 
 describe("formatDuration", () => {
-  it("0 → 0:00:00", () => {
-    expect(formatDuration(0)).toBe("0:00:00");
+  it("letters（默认）：0 → 0s", () => {
+    expect(formatDuration(0)).toBe("0s");
+    expect(formatDuration(0, "letters")).toBe("0s");
   });
 
-  it("秒/分/时各段补零", () => {
-    expect(formatDuration(5)).toBe("0:00:05");
-    expect(formatDuration(65)).toBe("0:01:05");
-    expect(formatDuration(3600)).toBe("1:00:00");
-    expect(formatDuration(3661)).toBe("1:01:01");
+  it("letters：非零单位拼接，零单位省略", () => {
+    expect(formatDuration(5)).toBe("5s");
+    expect(formatDuration(65)).toBe("1m 5s");
+    expect(formatDuration(3600)).toBe("1h");
+    expect(formatDuration(3661)).toBe("1h 1m 1s");
   });
 
-  it("进位：59→60 秒进位到分，59:59→1:00:00", () => {
-    expect(formatDuration(59)).toBe("0:00:59");
-    expect(formatDuration(60)).toBe("0:01:00");
-    expect(formatDuration(3599)).toBe("0:59:59");
+  it("letters：进位（59→60 秒进位到分）", () => {
+    expect(formatDuration(59)).toBe("59s");
+    expect(formatDuration(60)).toBe("1m");
+    expect(formatDuration(3599)).toBe("59m 59s");
   });
 
-  it("大小时数不截断", () => {
-    expect(formatDuration(100 * 3600)).toBe("100:00:00");
+  it("letters：大小时数不截断", () => {
+    expect(formatDuration(100 * 3600)).toBe("100h");
   });
 
-  it("负数钳制为 0", () => {
-    expect(formatDuration(-1)).toBe("0:00:00");
-    expect(formatDuration(-9999)).toBe("0:00:00");
+  it("letters：负数钳制为 0，小数向下取整", () => {
+    expect(formatDuration(-1)).toBe("0s");
+    expect(formatDuration(-9999)).toBe("0s");
+    expect(formatDuration(1.9)).toBe("1s");
+    expect(formatDuration(59.999)).toBe("59s");
   });
 
-  it("小数向下取整", () => {
-    expect(formatDuration(1.9)).toBe("0:00:01");
-    expect(formatDuration(59.999)).toBe("0:00:59");
+  it("chinese：非零单位拼接，零单位省略；全零 → 0秒", () => {
+    expect(formatDuration(0, "chinese")).toBe("0秒");
+    expect(formatDuration(5, "chinese")).toBe("5秒");
+    expect(formatDuration(65, "chinese")).toBe("1分5秒");
+    expect(formatDuration(3600, "chinese")).toBe("1小时");
+    expect(formatDuration(3661, "chinese")).toBe("1小时1分1秒");
+    expect(formatDuration(-1, "chinese")).toBe("0秒");
   });
 });
 

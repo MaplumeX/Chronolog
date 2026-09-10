@@ -95,10 +95,10 @@ describe("MonthView 渲染冒烟", () => {
     expect(screen.getByText("15/15 days")).toBeTruthy();
     // 连续记录：前 20 天连续 → 20 天
     expect(screen.getByText("20 days")).toBeTruthy();
-    // 默认选中 Work（最大分类）：月合计 15:00:00
-    expect(screen.getAllByText("15:00:00").length).toBeGreaterThan(0);
-    // 日均 = 54000/30 = 1800s = 0:30:00（插值整句 avg 0:30:00/day，用正则匹配）
-    expect(screen.getAllByText(/0:30:00/).length).toBeGreaterThan(0);
+    // 默认选中 Work（最大分类）：月合计 15h
+    expect(screen.getAllByText("15h").length).toBeGreaterThan(0);
+    // 日均 = 54000/30 = 1800s = 30m（插值整句 avg 30m/day，用正则匹配）
+    expect(screen.getAllByText(/30m/).length).toBeGreaterThan(0);
     // prevStats null → 环比 "—"
     expect(screen.getByText("—")).toBeTruthy();
 

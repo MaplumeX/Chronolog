@@ -6,6 +6,7 @@ import { MobileTimerDock } from "./components/MobileTimerDock";
 import { TimerBar } from "./components/TimerBar";
 import { Timeline } from "./components/Timeline";
 import { elapsedSeconds, browserTz } from "./format";
+import { useDurationFormat } from "./duration-format";
 import { useTheme } from "./hooks/use-theme";
 import { useTimerController } from "./hooks/use-timer-controller";
 import { AuthPage } from "./pages/AuthPage";
@@ -26,6 +27,8 @@ const HEADER_TITLE_KEYS = {
 export function App() {
   const { t } = useTranslation();
   const { mode: themeMode, setMode: setThemeMode } = useTheme();
+  // 订阅时长显示格式偏好：切换时全树重渲染（无 memo 屏障），各处 formatDuration 立即换格式
+  useDurationFormat();
   const [user, setUser] = useState<User | null | undefined>(undefined);
   // 已为其触发过时区自动持久化的 user id，避免 me()/登录/其他路径重复触发
   const tzPersistedForRef = useRef<string | null>(null);
