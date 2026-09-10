@@ -8,7 +8,7 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 59
+- **Total Sessions**: 60
 - **Last Active**: 2026-09-10
 <!-- @@@/auto:current-status -->
 
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~1262 | Active |
+| `journal-1.md` | ~1283 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,7 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 60 | 2026-09-10 | 分类/标签选择器改为内联胶囊 | `d8840d9` | `design/category-tag-picker-redesign` |
 | 59 | 2026-09-10 | 无间隙计时适配移动端停靠胶囊 | `ec6ed7f` | `feat/redesign-mobile-timer-header` |
 | 58 | 2026-09-10 | 移动端计时器改为底部停靠胶囊 | `a0b9b7a` | `feat/redesign-mobile-timer-header` |
 | 57 | 2026-09-09 | 移动端编辑底部弹层范式 | `2acb715` | `fix/mobile-adaptation-entry-editing` |

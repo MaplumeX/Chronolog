@@ -1260,3 +1260,24 @@ Restyled the day timeline entries (axis) subview per user decision: dropped the 
 ### Status
 
 [OK] **Completed**
+
+
+## Session 60: 分类/标签选择器改为内联胶囊
+
+**Date**: 2026-09-10
+**Task**: 分类/标签选择器改为内联胶囊
+**Branch**: `design/category-tag-picker-redesign`
+
+### Summary
+
+把分类/标签选择从 DropdownMenu 改为彩色胶囊平铺（一次点击完成选择）。新建 ChipGroup 纯展示基元，CategoryPicker/TagPicker 重写为两段式胶囊组（父级行常驻，点父级=选中+展开子级行）；桌面 TimerBar 改双行承载胶囊带，Shell header 改 items-start 适配折行。删除运行中只读标签徽章行——计时中改标签从不可能变为一次点击（走既有 PATCH /api/timer/current）。换段引导由受控下拉自动弹出改为有限次 CSS 脉冲；归档分类以 disabled 尾随胶囊显示当前值。保持创建顺序不做频次排序（全量可见后排序只剩位置稳定性价值）。无后端改动。两个关键技术决策已写入 spec：(1) 胶囊禁用 .touch-hit——gap 6px < 该机制要求的 16px，伪元素会互相覆盖反而缩小命中区，改为增大胶囊自身 padding；(2) 运行时着色必须走 inline CSS 变量 + CSS 侧 background，且高特异性 variant 规则须排除未注入该变量的状态（只读胶囊曾因此底色静默失效）。check 阶段另发现并修复一个 P1：点击无子级的顶层项时未收起其它父级的子级行，违反手风琴语义。321 测试全绿。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `d8840d9` | (see git log) |
+
+### Status
+
+[OK] **Completed**
