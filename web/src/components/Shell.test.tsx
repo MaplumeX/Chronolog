@@ -13,7 +13,10 @@ vi.mock("../hooks/use-mobile", () => ({
 
 const useIsMobileMock = vi.mocked(useIsMobile);
 
-function renderShell(page: PageId = "timer") {
+function renderShell(
+  page: PageId = "timer",
+  mobileTimerDock?: React.ReactNode,
+) {
   const onPage = vi.fn();
   render(
     <Shell
@@ -24,6 +27,7 @@ function renderShell(page: PageId = "timer") {
       header={
         <h1 className="px-2 text-xl font-semibold tracking-tight">Stats</h1>
       }
+      mobileTimerDock={mobileTimerDock}
     >
       <div>content</div>
     </Shell>,
@@ -121,5 +125,50 @@ describe("Shell 移动端（<768px）", () => {
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "Settings" }));
     expect(onPage).toHaveBeenCalledWith("settings");
+  });
+
+  it("timer 页 header 显示页面标题（不渲染传入的 header 内容）+ dock 插槽", () => {
+    renderShell(
+      "timer",
+      <div data-testid="mobile-timer-dock">dock</div>,
+    );
+    // header 替换为统一的页面标题（TimerBar 不进移动端顶栏）
+    expect(screen.getByRole("heading", { name: "Timer" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Stats" })).toBeNull();
+    // 停靠胶囊插槽渲染在 Tab 栏之后
+    expect(screen.getByTestId("mobile-timer-dock")).toBeInTheDocument();
+    expect(screen.getByTestId("mobile-tab-bar")).toBeInTheDocument();
+    const dock = screen.getByTestId("mobile-timer-dock");
+    const tabBar = screen.getByTestId("mobile-tab-bar");
+    // dock 在 DOM 中位于 Tab 栏之后（同一 flex 容器内）
+    expect(
+      dock.compareDocumentPosition(tabBar) & Node.DOCUMENT_POSITION_PRECEDING,
+    ).toBeTruthy();
+  });
+
+  it("非 timer 页不渲染 dock 插槽，header 内容原样透传", () => {
+    renderShell(
+      "stats",
+      <div data-testid="mobile-timer-dock">dock</div>,
+    );
+    expect(screen.getByRole("heading", { name: "Stats" })).toBeInTheDocument();
+    expect(screen.queryByTestId("mobile-timer-dock")).toBeNull();
+  });
+});
+
+describe("Shell 桌面端忽略 mobileTimerDock", () => {
+  beforeEach(() => {
+    stubBrowserApis();
+    useIsMobileMock.mockReturnValue(false);
+  });
+
+  it("桌面分支不渲染 dock 插槽，header 原样透传", () => {
+    renderShell(
+      "timer",
+      <div data-testid="mobile-timer-dock">dock</div>,
+    );
+    expect(screen.queryByTestId("mobile-timer-dock")).toBeNull();
+    // 桌面 header 内容（非 timer 分支的标题）仍透传
+    expect(screen.getByRole("heading", { name: "Stats" })).toBeInTheDocument();
   });
 });

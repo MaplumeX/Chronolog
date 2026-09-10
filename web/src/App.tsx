@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { api, setOnUnauthorized, type TimeEntry, type User } from "./api";
 import { Shell, type PageId } from "./components/Shell";
+import { MobileTimerDock } from "./components/MobileTimerDock";
 import { TimerBar } from "./components/TimerBar";
 import { Timeline } from "./components/Timeline";
 import { elapsedSeconds, browserTz } from "./format";
@@ -104,6 +105,11 @@ export function App() {
     setCurrent(null);
   }
 
+  const timerBarProps = timer.barProps;
+  // 移动端 timer 页的停靠胶囊（桌面端 Shell 忽略该插槽）
+  const mobileTimerDock =
+    page === "timer" ? <MobileTimerDock {...timerBarProps} /> : null;
+
   return (
     <Shell
       username={user.username}
@@ -115,13 +121,14 @@ export function App() {
       onPage={setPage}
       header={
         page === "timer" ? (
-          <TimerBar {...timer.barProps} />
+          <TimerBar {...timerBarProps} />
         ) : (
           <h1 className="px-2 text-xl font-semibold tracking-tight">
             {t(HEADER_TITLE_KEYS[page])}
           </h1>
         )
       }
+      mobileTimerDock={mobileTimerDock}
     >
       {page === "timer" ? <Timeline {...timer.timelineProps} /> : null}
       {page === "stats" ? <StatsPage tz={tz} /> : null}

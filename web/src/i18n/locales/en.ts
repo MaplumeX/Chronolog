@@ -15,6 +15,8 @@ export const en: Record<keyof typeof zh, string> = {
   "timer.selectCategory": "Select category",
   "timer.selectTags": "Select tags",
   "timer.tagSeparator": ", ",
+  "timer.dockAria": "Expand timer editor",
+  "timer.dockSheetTitle": "Edit timer",
   "timeline.weekEmpty": "No entries",
   "timeline.noDescription": "No description",
   "timeline.todayPrefix": "Today · ",

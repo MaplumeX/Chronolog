@@ -12,7 +12,7 @@ import {
 } from "../api";
 import { CategoryPicker } from "../components/CategoryPicker";
 import { TagPicker } from "../components/TagPicker";
-import { clipSeconds, elapsedSeconds } from "../format";
+import { clipSeconds, elapsedSeconds, paletteColor } from "../format";
 import { filterActive } from "../hierarchy";
 
 const DATE_VIEW_KEY = "chronolog-date-view";
@@ -155,6 +155,9 @@ export function useTimerController(props: {
 
   const selected = categories.find((c) => c.id === categoryId);
   const running = props.current;
+  const runningCategory = running
+    ? categories.find((c) => c.id === running.categoryId)
+    : undefined;
   // 选择器只展示活动分类：归档父级整个子树隐藏，归档子级仅隐藏自身（分类归档功能）
   const activeCategories = filterActive(categories);
 
@@ -348,6 +351,14 @@ export function useTimerController(props: {
     ),
     runningTags: running?.tags ?? [],
     runningTagColors: (id: string) => tags.find((x) => x.id === id)?.color ?? null,
+    /** 摘要色点用分类色（running ?? selected）；null = 未选分类（未运行且未选时无色点） */
+    categoryColor: running
+      ? running.categoryId
+        ? paletteColor(runningCategory?.color ?? null, running.categoryName)
+        : null
+      : selected
+        ? paletteColor(selected.color, selected.name)
+        : null,
     elapsed,
     running: Boolean(running),
     canStart: Boolean(categoryId),

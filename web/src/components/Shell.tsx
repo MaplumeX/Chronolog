@@ -138,30 +138,48 @@ export function Shell(props: {
   page: PageId;
   elapsedSeconds?: number;
   onPage: (page: PageId) => void;
-  /** 顶栏内容：非 Timer 页为页面大标题，Timer 页为 TimerBar */
+  /** 顶栏内容：非 Timer 页为页面大标题，Timer 页为 TimerBar（仅桌面渲染；移动端 timer 页固定显示页面标题） */
   header?: ReactNode;
+  /** 移动端 Timer 页底部停靠胶囊（仅移动端分支渲染，桌面忽略） */
+  mobileTimerDock?: ReactNode;
   children: ReactNode;
 }) {
   const { t } = useTranslation();
   const isMobile = useIsMobile();
 
   if (isMobile) {
-    // 移动端：无侧栏抽屉 —— 顶栏（标题/TimerBar + 设置入口）+ 底部 Tab 栏
+    // 移动端：无侧栏抽屉 —— 顶栏（标题 + 设置入口）+ 底部 Tab 栏 + Timer 页停靠胶囊
+    // timer 页的 header（TimerBar）不进移动端顶栏，改为统一的页面标题；
+    // 计时入口由 Tab 栏上方的停靠胶囊（mobileTimerDock 插槽）承担。
+    const dockPresent = props.page === "timer" && props.mobileTimerDock != null;
     return (
       <div className="flex h-dvh min-h-dvh flex-col bg-background">
         <header className="flex min-h-12 shrink-0 items-center gap-1 border-b px-2">
           <div className="flex min-w-0 flex-1 items-center overflow-hidden">
-            {props.header}
+            {props.page === "timer" ? (
+              <h1 className="px-2 text-xl font-semibold tracking-tight">
+                {t("nav.timer")}
+              </h1>
+            ) : (
+              props.header
+            )}
           </div>
           <MobileSettingsButton
             title={t("nav.settings")}
             onPage={props.onPage}
           />
         </header>
-        <div className="flex min-h-0 flex-1 flex-col overflow-auto pb-[calc(5rem+env(safe-area-inset-bottom))]">
+        <div
+          className={
+            dockPresent
+              ? "flex min-h-0 flex-1 flex-col overflow-auto pb-[calc(8.5rem+env(safe-area-inset-bottom))]"
+              : "flex min-h-0 flex-1 flex-col overflow-auto pb-[calc(5rem+env(safe-area-inset-bottom))]"
+          }
+        >
           {props.children}
         </div>
         <MobileTabBar page={props.page} onPage={props.onPage} />
+        {dockPresent ? props.mobileTimerDock : null}
       </div>
     );
   }
