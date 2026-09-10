@@ -333,9 +333,10 @@ describe("onToggle 停止分支（无间隙计时，task 09-08）", () => {
       await result.current.barProps.onToggle();
     });
     expect(onCurrent).toHaveBeenCalledWith(null);
-    // 完全停止：分类选择器不自动打开（open 为 undefined = 非受控）
+    // 完全停止：分类选择器不自动打开（open 为 undefined = 非受控），引导信号亦为 false
     expect(result.current.barProps.categoryPicker).toBeDefined();
     expect(result.current.barProps.categoryPicker.props.open).toBeUndefined();
+    expect(result.current.barProps.autoOpenEditor).toBe(false);
     unmount();
   });
 
@@ -343,7 +344,7 @@ describe("onToggle 停止分支（无间隙计时，task 09-08）", () => {
     const fetchSpy = stubToggleFetch({ stopEntry: NEXT_ENTRY });
     vi.stubGlobal("fetch", fetchSpy);
     const onCurrent = vi.fn();
-    const { result, unmount } = renderController({
+    const { result, rerender, unmount } = renderController({
       enabled: false,
       current: RUNNING_ENTRY,
       onCurrent,
@@ -356,6 +357,25 @@ describe("onToggle 停止分支（无间隙计时，task 09-08）", () => {
     expect(onCurrent).toHaveBeenCalledTimes(1);
     expect(onCurrent).toHaveBeenCalledWith(NEXT_ENTRY);
     expect(result.current.barProps.categoryPicker.props.open).toBe(true);
+    // barProps 暴露引导信号：移动端停靠胶囊据此自动展开编辑 sheet
+    expect(result.current.barProps.autoOpenEditor).toBe(true);
+    // 选完分类：onChange 内复位信号 → autoOpenEditor 变 false（sheet 派生关闭）
+    rerender({
+      tz: "UTC",
+      nowMs: Date.now(),
+      current: NEXT_ENTRY,
+      onCurrent,
+      enabled: false,
+    });
+    await act(async () => {
+      result.current.barProps.categoryPicker.props.onChange("cat-9");
+    });
+    expect(result.current.barProps.autoOpenEditor).toBe(false);
+    // onAutoOpenConsumed（用户未选分类直接关 sheet）同样复位
+    await act(async () => {
+      result.current.barProps.onAutoOpenConsumed();
+    });
+    expect(result.current.barProps.autoOpenEditor).toBe(false);
     // 刷新 today 数据
     const paths = fetchSpy.mock.calls.map((c) => String(c[0]));
     expect(paths.some((p) => p.startsWith("/api/entries/today"))).toBe(true);
@@ -394,6 +414,7 @@ describe("onToggle 停止分支（无间隙计时，task 09-08）", () => {
     expect(onCurrent).not.toHaveBeenCalled();
     expect(result.current.barProps.error).not.toBe("");
     expect(result.current.barProps.categoryPicker.props.open).toBeUndefined();
+    expect(result.current.barProps.autoOpenEditor).toBe(false);
     unmount();
   });
 });
