@@ -103,6 +103,8 @@ export function MobileTimerDock(props: {
         showCloseButton={false}
         aria-describedby={undefined}
         className="max-h-[85dvh] gap-0 pb-[env(safe-area-inset-bottom)]"
+        // 默认不聚焦输入框（避免移动端键盘弹出遮挡）；需要输入时用户自己点击
+        onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <SheetHeader className="sr-only">
           <SheetTitle>{t("timer.dockSheetTitle")}</SheetTitle>
