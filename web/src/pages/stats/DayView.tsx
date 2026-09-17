@@ -195,11 +195,6 @@ export function DayView(props: DayViewProps) {
     0,
     hourly.windowSeconds - hourly.coveredSeconds,
   );
-  const maxRow = Math.max(
-    1,
-    ...composition.map((r) => r.seconds),
-    unloggedSeconds,
-  );
 
   /* ---------- 导航 ---------- */
 
@@ -338,7 +333,7 @@ export function DayView(props: DayViewProps) {
                 <div className="min-w-0 flex-1 divide-y">
                   {composition.map((row) => (
                     <div
-                      className="grid grid-cols-[minmax(0,7rem)_1fr_auto_auto] items-center gap-3 py-3 md:grid-cols-[160px_1fr_56px_88px]"
+                      className="flex items-center justify-between gap-3 py-3"
                       key={row.key}
                     >
                       <span className="flex items-center gap-2">
@@ -348,26 +343,21 @@ export function DayView(props: DayViewProps) {
                         />
                         {row.name}
                       </span>
-                      <div className="h-2.5 overflow-hidden rounded-full bg-muted">
-                        <span
-                          className="block h-full rounded-full"
-                          style={{
-                            width: `${(row.seconds / maxRow) * 100}%`,
-                            background: row.color,
-                          }}
-                        />
-                      </div>
-                      <span className="text-right text-muted-foreground tabular-nums">
-                        {Math.round((row.seconds / hourly.windowSeconds) * 100)}
-                        %
-                      </span>
-                      <span className="text-right font-mono tabular-nums">
-                        {formatDuration(row.seconds)}
+                      <span className="flex items-baseline gap-3">
+                        <span className="text-right text-muted-foreground tabular-nums">
+                          {Math.round(
+                            (row.seconds / hourly.windowSeconds) * 100,
+                          )}
+                          %
+                        </span>
+                        <span className="w-20 text-right font-mono tabular-nums">
+                          {formatDuration(row.seconds)}
+                        </span>
                       </span>
                     </div>
                   ))}
                   {/* 未记录灰桶行（最后） */}
-                  <div className="grid grid-cols-[minmax(0,7rem)_1fr_auto_auto] items-center gap-3 py-3 md:grid-cols-[160px_1fr_56px_88px]">
+                  <div className="flex items-center justify-between gap-3 py-3">
                     <span className="flex items-center gap-2">
                       <span
                         className="size-2 shrink-0 rounded-full"
@@ -375,23 +365,16 @@ export function DayView(props: DayViewProps) {
                       />
                       {t("stats.unlogged")}
                     </span>
-                    <div className="h-2.5 overflow-hidden rounded-full bg-muted">
-                      <span
-                        className="block h-full rounded-full"
-                        style={{
-                          width: `${(unloggedSeconds / maxRow) * 100}%`,
-                          background: UNLOGGED_COLOR,
-                        }}
-                      />
-                    </div>
-                    <span className="text-right text-muted-foreground tabular-nums">
-                      {Math.round(
-                        (unloggedSeconds / hourly.windowSeconds) * 100,
-                      )}
-                      %
-                    </span>
-                    <span className="text-right font-mono tabular-nums">
-                      {formatDuration(unloggedSeconds)}
+                    <span className="flex items-baseline gap-3">
+                      <span className="text-right text-muted-foreground tabular-nums">
+                        {Math.round(
+                          (unloggedSeconds / hourly.windowSeconds) * 100,
+                        )}
+                        %
+                      </span>
+                      <span className="w-20 text-right font-mono tabular-nums">
+                        {formatDuration(unloggedSeconds)}
+                      </span>
                     </span>
                   </div>
                 </div>
